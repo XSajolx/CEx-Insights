@@ -59,16 +59,14 @@ async function getSupabaseData(filters = {}) {
             .from('Intercom Topic')
             .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
 
-        // Apply Date Filter (Temporarily disabled due to potential DB format mismatch)
-        // We will rely on client-side filtering for dates until schema is verified.
-        /* 
+        // Apply Date Filter with CAST
+        // We use ::date cast to handle text dates. Supabase/Postgres is smart enough to handle most formats.
         if (filters.dateRangeStart) {
-            query = query.gte('created_date_bd', filters.dateRangeStart);
+            query = query.filter('created_date_bd::date', 'gte', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
-            query = query.lte('created_date_bd', filters.dateRangeEnd);
+            query = query.filter('created_date_bd::date', 'lte', filters.dateRangeEnd);
         }
-        */
 
         // Apply Country Filter
         if (filters.country && filters.country !== 'All') {
