@@ -59,16 +59,16 @@ async function getSupabaseData(filters = {}) {
             .from('Intercom Topic')
             .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
 
-        // Apply Date Filter
+        // Apply Date Filter (Temporarily disabled due to potential DB format mismatch)
+        // We will rely on client-side filtering for dates until schema is verified.
+        /* 
         if (filters.dateRangeStart) {
             query = query.gte('created_date_bd', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
-            // Include the end date fully (e.g. through 23:59:59 if it were a timestamp, but for Date type lte 'YYYY-MM-DD' is usually inclusive or up to 00:00 of that day depending on exact type)
-            // Safer to assume string comparison or explicit date types.
-            // If dateRangeEnd is YYYY-MM-DD, and DB is YYYY-MM-DD, lte is inclusive.
             query = query.lte('created_date_bd', filters.dateRangeEnd);
         }
+        */
 
         // Apply Country Filter
         if (filters.country && filters.country !== 'All') {
