@@ -6,28 +6,31 @@ const getDbDateFilter = (dateRange) => {
 
     const now = new Date();
 
+    // Helper to format date as YYYY-MM-DD
+    const fmt = (d) => d.toISOString().split('T')[0];
+
     if (dateRange.startsWith('custom_')) {
         const parts = dateRange.split('_');
         if (parts.length === 3) {
             return {
-                start: new Date(parts[1]).toISOString(),
-                end: new Date(parts[2] + ' 23:59:59').toISOString()
+                start: parts[1], // Assuming YYYY-MM-DD
+                end: parts[2]
             };
         }
         return { start: null, end: null };
     }
 
     let dateLimit;
-    // Clone now to avoid mutation issues
     const d = new Date(now);
 
     switch (dateRange) {
         case 'today':
+            // start of today 00:00
             dateLimit = new Date(d.setHours(0, 0, 0, 0));
             break;
         case 'yesterday':
-            // "Yesterday" in current logic means "From start of yesterday onwards" (includes today)
             dateLimit = new Date(d.setDate(d.getDate() - 1));
+            // yesterday 00:00
             dateLimit.setHours(0, 0, 0, 0);
             break;
         case 'last_week':
@@ -42,27 +45,16 @@ const getDbDateFilter = (dateRange) => {
             break;
     }
 
-    return { start: dateLimit.toISOString(), end: null };
+    // Return YYYY-MM-DD which works well with most DB date/timestamp columns for 'gte'
+    return { start: fmt(dateLimit), end: null };
 };
 
-// Helper function to get Supabase data with server-side filtering
+// Start: Optimized Supabase Data Fetching
 async function getSupabaseData(filters = {}) {
     try {
         console.log('Fetching Supabase data with filters:', filters);
 
-        // Parallelize independent fetches where possible
-
-        // 1. Fetch Topics (mapping table)
-        const topicsPromise = supabase
-            .from('all_topics')
-            .select('"Conversation ID",topic');
-
-        // 2. Fetch Main Topics (mapping table)
-        const mainTopicsPromise = supabase
-            .from('all_topics_with_main')
-            .select('"Conversation ID",main_topic');
-
-        // 3. Build Intercom Topic query with filters
+        // 1. Build Query for Conversations
         let query = supabase
             .from('Intercom Topic')
             .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
@@ -72,6 +64,9 @@ async function getSupabaseData(filters = {}) {
             query = query.gte('created_date_bd', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
+            // Include the end date fully (e.g. through 23:59:59 if it were a timestamp, but for Date type lte 'YYYY-MM-DD' is usually inclusive or up to 00:00 of that day depending on exact type)
+            // Safer to assume string comparison or explicit date types.
+            // If dateRangeEnd is YYYY-MM-DD, and DB is YYYY-MM-DD, lte is inclusive.
             query = query.lte('created_date_bd', filters.dateRangeEnd);
         }
 
@@ -85,61 +80,91 @@ async function getSupabaseData(filters = {}) {
             query = query.eq('"Product"', filters.product);
         }
 
-        // Apply Region Filter (if Country is All)
+        // Apply Region Filter
         if ((!filters.country || filters.country === 'All') && filters.region && filters.region !== 'All') {
             query = query.eq('"Region"', filters.region);
         }
 
-        // Execute all requests
-        const [topicsResponse, mainTopicsResponse, conversationsResponse] = await Promise.all([
-            topicsPromise,
-            mainTopicsPromise,
-            query
-        ]);
-
-        const { data: allTopics, error: topicsError } = topicsResponse;
-        if (topicsError) throw topicsError;
-
-        const { data: allMainTopics, error: mainTopicsError } = mainTopicsResponse;
-        if (mainTopicsError) throw mainTopicsError;
-
-        const { data: conversations, error: conversationsError } = conversationsResponse;
+        // FETCH CONVERSATIONS FIRST
+        const { data: conversations, error: conversationsError } = await query;
         if (conversationsError) throw conversationsError;
 
         console.log(`Fetched ${conversations?.length || 0} conversations`);
 
-        // Create topic map
+        if (!conversations || conversations.length === 0) {
+            return [];
+        }
+
+        // 2. Extract IDs for batch fetching topics
+        // Use Set to ensure uniqueness
+        const conversationIds = [...new Set(
+            conversations
+                .map(c => c['Conversation ID'])
+                .filter(id => id) // remove nulls
+                .map(id => String(id).trim())
+        )];
+
+        console.log(`Unique IDs to fetch details for: ${conversationIds.length}`);
+
+        // 3. Helper to chunk requests (Supabase URL limits prevent sending 10k IDs in one go)
+        const fetchInChunks = async (table, idColumn, ids, select = '*') => {
+            const CHUNK_SIZE = 800; // Safe limit for URL length usually
+            const results = [];
+
+            for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+                const chunk = ids.slice(i, i + CHUNK_SIZE);
+                const { data, error } = await supabase
+                    .from(table)
+                    .select(select)
+                    .in(idColumn, chunk);
+
+                if (error) {
+                    console.error(`Error fetching chunk for ${table}:`, error);
+                    continue; // Skip failed chunks but try others
+                }
+                if (data) results.push(...data);
+            }
+            return results;
+        };
+
+        // 4. Determine if we should fetch mappings
+        // If we have huge data (e.g. > 10000), fetching mappings might still be slow. 
+        // But better than fetching the WHOLE table.
+
+        // Fetch Topics Mapping
+        const allTopicsPromise = fetchInChunks('all_topics', 'Conversation ID', conversationIds, '"Conversation ID",topic');
+
+        // Fetch Main Topics Mapping
+        const allMainTopicsPromise = fetchInChunks('all_topics_with_main', 'Conversation ID', conversationIds, '"Conversation ID",main_topic');
+
+        const [allTopics, allMainTopics] = await Promise.all([allTopicsPromise, allMainTopicsPromise]);
+
+        // 5. Create Maps
         const topicMap = {};
-        allTopics?.forEach(row => {
+        allTopics.forEach(row => {
             if (row['Conversation ID']) {
                 topicMap[String(row['Conversation ID']).trim()] = row.topic;
             }
         });
 
-        // Create main topic map
         const mainTopicMap = {};
-        allMainTopics?.forEach(row => {
+        allMainTopics.forEach(row => {
             if (row['Conversation ID'] && row.main_topic) {
                 mainTopicMap[String(row['Conversation ID']).trim()] = row.main_topic;
             }
         });
 
-        // Transform the data
+        // 6. Transform Data
         const transformedData = [];
-        conversations?.forEach(row => {
+        conversations.forEach(row => {
             const convId = row['Conversation ID'] ? String(row['Conversation ID']).trim() : '';
 
-            // Use topic from all_topics if available, otherwise fallback to Topic 1
+            // Map Logic
             let topicName = topicMap[convId] || row['Topic 1'] || '';
-
-            // Get Main Topic
             const mainTopic = mainTopicMap[convId] || 'Other';
 
-            // Trim whitespace and skip if topic is empty
             topicName = topicName.trim();
-            if (!topicName) {
-                return; // Skip this conversation if topic is blank
-            }
+            if (!topicName) return;
 
             transformedData.push({
                 created_date_bd: row.created_date_bd || '',
@@ -155,11 +180,13 @@ async function getSupabaseData(filters = {}) {
         });
 
         return transformedData;
+
     } catch (error) {
         console.error('Error fetching Supabase data:', error);
         throw error;
     }
 }
+
 
 // Apply filters to the data (Client-side Refinement)
 // We keep this to handle any logic that might not be perfectly mapped to DB columns 
