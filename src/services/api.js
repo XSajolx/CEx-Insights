@@ -59,14 +59,16 @@ async function getSupabaseData(filters = {}) {
             .from('Intercom Topic')
             .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
 
-        // Apply Date Filter with CAST
-        // We use ::date cast to handle text dates. Supabase/Postgres is smart enough to handle most formats.
+        // Note: Date filtering is disabled server-side to prevent timeouts on text columns.
+        // We will filter by date on the client side. Detailed filtering is better than no data.
+        /*
         if (filters.dateRangeStart) {
             query = query.filter('created_date_bd::date', 'gte', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
             query = query.filter('created_date_bd::date', 'lte', filters.dateRangeEnd);
         }
+        */
 
         // Apply Country Filter
         if (filters.country && filters.country !== 'All') {
@@ -93,64 +95,10 @@ async function getSupabaseData(filters = {}) {
             return [];
         }
 
-        // 2. Extract IDs for batch fetching topics
-        // Use Set to ensure uniqueness
-        const conversationIds = [...new Set(
-            conversations
-                .map(c => c['Conversation ID'])
-                .filter(id => id) // remove nulls
-                .map(id => String(id).trim())
-        )];
-
-        console.log(`Unique IDs to fetch details for: ${conversationIds.length}`);
-
-        // 3. Helper to chunk requests (Supabase URL limits prevent sending 10k IDs in one go)
-        const fetchInChunks = async (table, idColumn, ids, select = '*') => {
-            const CHUNK_SIZE = 800; // Safe limit for URL length usually
-            const results = [];
-
-            for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
-                const chunk = ids.slice(i, i + CHUNK_SIZE);
-                const { data, error } = await supabase
-                    .from(table)
-                    .select(select)
-                    .in(idColumn, chunk);
-
-                if (error) {
-                    console.error(`Error fetching chunk for ${table}:`, error);
-                    continue; // Skip failed chunks but try others
-                }
-                if (data) results.push(...data);
-            }
-            return results;
-        };
-
-        // 4. Determine if we should fetch mappings
-        // If we have huge data (e.g. > 10000), fetching mappings might still be slow. 
-        // But better than fetching the WHOLE table.
-
-        // Fetch Topics Mapping
-        const allTopicsPromise = fetchInChunks('all_topics', 'Conversation ID', conversationIds, '"Conversation ID",topic');
-
-        // Fetch Main Topics Mapping
-        const allMainTopicsPromise = fetchInChunks('all_topics_with_main', 'Conversation ID', conversationIds, '"Conversation ID",main_topic');
-
-        const [allTopics, allMainTopics] = await Promise.all([allTopicsPromise, allMainTopicsPromise]);
-
-        // 5. Create Maps
+        // EMERGENCY OPTIMIZATION: SKIP fetching additional topics map to avoid DB timeouts. 
+        // We rely on 'Topic 1' from the Intercom Topic table itself.
         const topicMap = {};
-        allTopics.forEach(row => {
-            if (row['Conversation ID']) {
-                topicMap[String(row['Conversation ID']).trim()] = row.topic;
-            }
-        });
-
         const mainTopicMap = {};
-        allMainTopics.forEach(row => {
-            if (row['Conversation ID'] && row.main_topic) {
-                mainTopicMap[String(row['Conversation ID']).trim()] = row.main_topic;
-            }
-        });
 
         // 6. Transform Data
         const transformedData = [];
@@ -158,8 +106,9 @@ async function getSupabaseData(filters = {}) {
             const convId = row['Conversation ID'] ? String(row['Conversation ID']).trim() : '';
 
             // Map Logic
-            let topicName = topicMap[convId] || row['Topic 1'] || '';
-            const mainTopic = mainTopicMap[convId] || 'Other';
+            // Fallback to Topic 1 immediately since we aren't fetching the map
+            let topicName = row['Topic 1'] || '';
+            const mainTopic = 'Other';
 
             topicName = topicName.trim();
             if (!topicName) return;
@@ -185,10 +134,9 @@ async function getSupabaseData(filters = {}) {
     }
 }
 
-
 // Apply filters to the data (Client-side Refinement)
 // We keep this to handle any logic that might not be perfectly mapped to DB columns 
-// or to ensure consistency, but the heavy lifting is done by valid DB filters.
+// or to ensure consistency, but the heavy lifting is done by valid DB filters (except date now).
 const countryToRegion = {
     // Africa
     'Algeria': 'Africa', 'Angola': 'Africa', 'Benin': 'Africa', 'Botswana': 'Africa',
