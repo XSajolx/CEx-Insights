@@ -1,14 +1,112 @@
 import { supabase } from './supabaseClient';
 
-// Helper function to get all Supabase data
-async function getSupabaseData() {
+// Helper to get date filter for DB query
+const getDbDateFilter = (dateRange) => {
+    if (!dateRange) return { start: null, end: null };
+
+    const now = new Date();
+
+    if (dateRange.startsWith('custom_')) {
+        const parts = dateRange.split('_');
+        if (parts.length === 3) {
+            return {
+                start: new Date(parts[1]).toISOString(),
+                end: new Date(parts[2] + ' 23:59:59').toISOString()
+            };
+        }
+        return { start: null, end: null };
+    }
+
+    let dateLimit;
+    // Clone now to avoid mutation issues
+    const d = new Date(now);
+
+    switch (dateRange) {
+        case 'today':
+            dateLimit = new Date(d.setHours(0, 0, 0, 0));
+            break;
+        case 'yesterday':
+            // "Yesterday" in current logic means "From start of yesterday onwards" (includes today)
+            dateLimit = new Date(d.setDate(d.getDate() - 1));
+            dateLimit.setHours(0, 0, 0, 0);
+            break;
+        case 'last_week':
+            dateLimit = new Date(d.setDate(d.getDate() - 7));
+            break;
+        case 'last_month':
+            dateLimit = new Date(d.setMonth(d.getMonth() - 1));
+            break;
+        case 'last_3_months':
+        default:
+            dateLimit = new Date(d.setMonth(d.getMonth() - 3));
+            break;
+    }
+
+    return { start: dateLimit.toISOString(), end: null };
+};
+
+// Helper function to get Supabase data with server-side filtering
+async function getSupabaseData(filters = {}) {
     try {
-        // Get all topics from all_topics table
-        const { data: allTopics, error: topicsError } = await supabase
+        console.log('Fetching Supabase data with filters:', filters);
+
+        // Parallelize independent fetches where possible
+
+        // 1. Fetch Topics (mapping table)
+        const topicsPromise = supabase
             .from('all_topics')
             .select('"Conversation ID",topic');
 
+        // 2. Fetch Main Topics (mapping table)
+        const mainTopicsPromise = supabase
+            .from('all_topics_with_main')
+            .select('"Conversation ID",main_topic');
+
+        // 3. Build Intercom Topic query with filters
+        let query = supabase
+            .from('Intercom Topic')
+            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
+
+        // Apply Date Filter
+        if (filters.dateRangeStart) {
+            query = query.gte('created_date_bd', filters.dateRangeStart);
+        }
+        if (filters.dateRangeEnd) {
+            query = query.lte('created_date_bd', filters.dateRangeEnd);
+        }
+
+        // Apply Country Filter
+        if (filters.country && filters.country !== 'All') {
+            query = query.eq('"Country"', filters.country);
+        }
+
+        // Apply Product Filter
+        if (filters.product && filters.product !== 'All') {
+            query = query.eq('"Product"', filters.product);
+        }
+
+        // Apply Region Filter (if Country is All)
+        if ((!filters.country || filters.country === 'All') && filters.region && filters.region !== 'All') {
+            query = query.eq('"Region"', filters.region);
+        }
+
+        // Execute all requests
+        const [topicsResponse, mainTopicsResponse, conversationsResponse] = await Promise.all([
+            topicsPromise,
+            mainTopicsPromise,
+            query
+        ]);
+
+        const { data: allTopics, error: topicsError } = topicsResponse;
         if (topicsError) throw topicsError;
+
+        const { data: allMainTopics, error: mainTopicsError } = mainTopicsResponse;
+        if (mainTopicsError) throw mainTopicsError;
+
+        const { data: conversations, error: conversationsError } = conversationsResponse;
+        if (conversationsError) throw conversationsError;
+
+        console.log(`Fetched ${conversations?.length || 0} conversations`);
 
         // Create topic map
         const topicMap = {};
@@ -18,13 +116,6 @@ async function getSupabaseData() {
             }
         });
 
-        // Get Main Topics from all_topics_with_main table
-        const { data: allMainTopics, error: mainTopicsError } = await supabase
-            .from('all_topics_with_main')
-            .select('"Conversation ID",main_topic');
-
-        if (mainTopicsError) throw mainTopicsError;
-
         // Create main topic map
         const mainTopicMap = {};
         allMainTopics?.forEach(row => {
@@ -32,13 +123,6 @@ async function getSupabaseData() {
                 mainTopicMap[String(row['Conversation ID']).trim()] = row.main_topic;
             }
         });
-
-        // Get all conversations from Intercom Topic
-        const { data: conversations, error: conversationsError } = await supabase
-            .from('Intercom Topic')
-            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
-
-        if (conversationsError) throw conversationsError;
 
         // Transform the data
         const transformedData = [];
@@ -77,7 +161,9 @@ async function getSupabaseData() {
     }
 }
 
-// Apply filters to the data
+// Apply filters to the data (Client-side Refinement)
+// We keep this to handle any logic that might not be perfectly mapped to DB columns 
+// or to ensure consistency, but the heavy lifting is done by valid DB filters.
 const countryToRegion = {
     // Africa
     'Algeria': 'Africa', 'Angola': 'Africa', 'Benin': 'Africa', 'Botswana': 'Africa',
@@ -187,9 +273,6 @@ function applyFilters(data, filters) {
         filteredData = filteredData.filter(item => item.country === filters.country);
     }
     // Apply region filter (Only filter by region if country is NOT selected, or logic matches)
-    // Actually, if country is selected, we usually ignore region filter logic because country implies region.
-    // By placing country filter first in this if/else block, we ensure we don't accidentally double filter 
-    // effectively decoupling them for the data query if desired.
     else if (filters.region && filters.region !== 'All') {
         filteredData = filteredData.filter(item => {
             // Check if this item's country belongs to the selected region
@@ -207,7 +290,19 @@ function applyFilters(data, filters) {
 }
 
 export const fetchConversations = async (filters) => {
-    const data = await getSupabaseData();
+    // Optimization: Apply server-side filters if possible
+    const range = getDbDateFilter(filters.dateRange);
+    const dbFilters = {
+        ...filters,
+        dateRangeStart: range.start,
+        dateRangeEnd: range.end
+    };
+
+    // Fetch with push-down predicates
+    const data = await getSupabaseData(dbFilters);
+
+    // Apply client-side filters for consistency (e.g. detailed region mapping, or minor date adjustments)
+    // Note: Since DB has already filtered most things, this should be fast.
     return applyFilters(data, filters);
 };
 
@@ -811,5 +906,3 @@ export const fetchCSATKYC = async (filters, category = 'KYC_Issue') => {
         return [];
     }
 };
-
-
