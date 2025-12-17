@@ -1,0 +1,1043 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    /* CEx Insights Color Palette */
+
+    /* Background Tones - Dark Charcoal/Graphite */
+    --app-bg: #0D1117;
+    --sidebar-bg: #161B22;
+    --card-bg: #1C2128;
+    --card-border: #30363D;
+    --card-hover: #21262D;
+
+    /* Text Hierarchy */
+    --text-primary: #F0F6FC;
+    --text-secondary: #8B949E;
+    --text-muted: #6E7681;
+
+    /* Accent Colors - Blue/Purple */
+    --accent: #58A6FF;
+    --accent-hover: #79C0FF;
+    --accent-soft: rgba(88, 166, 255, 0.15);
+    --accent-glow: rgba(88, 166, 255, 0.3);
+
+    /* Chart Colors */
+    --chart-blue: #58A6FF;
+    --chart-purple: #A371F7;
+    --chart-cyan: #3FB950;
+    --chart-orange: #F0883E;
+    --chart-pink: #DB61A2;
+    --chart-red: #FF7B72;
+    --chart-grid: rgba(139, 148, 158, 0.1);
+
+    /* Input/Filter Styling */
+    --input-bg: #21262D;
+    --input-text: #C9D1D9;
+    --input-border: #30363D;
+    --input-focus: #58A6FF;
+
+    /* Spacing & Layout */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Shadows & Glow */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --glow-accent: 0 0 20px rgba(88, 166, 255, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--app-bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+.dashboard-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar - CEx Insights Style */
+.sidebar {
+    width: 240px;
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--card-border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.sidebar-nav {
+    padding: 0.75rem;
+    flex: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 0.25rem;
+    border: 1px solid transparent;
+}
+
+.nav-item:hover {
+    color: var(--text-primary);
+    background-color: var(--card-hover);
+}
+
+.nav-item.active {
+    color: var(--accent);
+    background-color: var(--accent-soft);
+    border-color: rgba(88, 166, 255, 0.2);
+}
+
+.nav-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+}
+
+.nav-item.active .nav-icon {
+    opacity: 1;
+}
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--card-border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Main Content Area */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 1.5rem 2rem;
+    background-color: var(--app-bg);
+}
+
+/* Page Header */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Filters - CEx Insights Style */
+.filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: var(--app-bg);
+    padding: 0.75rem 0;
+}
+
+.filter-card {
+    background: var(--input-bg);
+    padding: 0.5rem 0.875rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--input-border);
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    transition: all 0.15s ease;
+}
+
+.filter-card:hover {
+    border-color: var(--text-muted);
+    background: var(--card-hover);
+}
+
+.filter-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.filter-icon {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.filter-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+}
+
+.filter-select {
+    padding: 0.375rem 0.625rem;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 120px;
+}
+
+.filter-select:focus {
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* KPI Row */
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.kpi-card:hover {
+    border-color: var(--text-muted);
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.kpi-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.kpi-trend {
+    font-size: 0.8125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+}
+
+.kpi-trend.positive {
+    color: #3FB950;
+}
+
+.kpi-trend.negative {
+    color: #FF7B72;
+}
+
+.kpi-trend.neutral {
+    color: var(--text-muted);
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.section-icon {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.section-subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* Charts & Cards - CEx Insights Style */
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--card-border);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--text-muted);
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.card-title-icon {
+    color: var(--accent);
+}
+
+.chart-container {
+    width: 100%;
+    height: 350px;
+}
+
+/* Charts Grid - Side by Side Layout */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.charts-grid .card {
+    margin-bottom: 0;
+}
+
+/* Topic Selector in Charts */
+.topic-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.topic-selector label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+}
+
+.topic-selector select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-bg);
+    color: var(--input-text);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--app-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--card-border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+
+    .kpi-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Loading State */
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+/* Date Input Styling */
+.date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* =====================================================
+   CSAT Dashboard Styles
+   ===================================================== */
+
+.cex-csat {
+    --csat-bg: var(--app-bg);
+    --csat-card: var(--card-bg);
+    --csat-border: var(--card-border);
+    --csat-text: var(--text-primary);
+    --csat-muted: var(--text-secondary);
+    --csat-accent: var(--chart-cyan);
+    --csat-grid: var(--chart-grid);
+}
+
+/* KPI Bars */
+.csat-kpi-bars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.kpi-bar {
+    background: var(--csat-card);
+    border: 1px solid var(--csat-border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.kpi-bar:hover {
+    border-color: var(--text-muted);
+    box-shadow: var(--shadow-md);
+}
+
+.kpi-bar-title {
+    font-size: 0.75rem;
+    color: var(--csat-muted);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-bar-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--csat-text);
+    line-height: 1.2;
+}
+
+.kpi-bar-delta {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+.kpi-bar-delta.up {
+    color: var(--chart-cyan);
+}
+
+.kpi-bar-delta.down {
+    color: var(--chart-red);
+}
+
+.kpi-bar-progress {
+    height: 6px;
+    background: var(--csat-grid);
+    border-radius: 3px;
+    margin-top: 0.75rem;
+    overflow: hidden;
+}
+
+.kpi-bar-progress-fill {
+    height: 100%;
+    background: var(--csat-accent);
+    transition: width 0.3s ease;
+}
+
+.kpi-bar-total {
+    font-size: 0.75rem;
+    color: var(--csat-muted);
+    margin-top: 0.5rem;
+}
+
+/* KPI Mini Counters */
+.csat-kpi-counters {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.kpi-mini {
+    background: var(--csat-card);
+    border: 1px solid var(--csat-border);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    transition: all 0.2s ease;
+}
+
+.kpi-mini:hover {
+    border-color: var(--text-muted);
+}
+
+.kpi-mini-title {
+    font-size: 0.7rem;
+    color: var(--csat-muted);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-mini-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--csat-text);
+    line-height: 1.2;
+}
+
+.kpi-mini-delta {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.kpi-mini-delta.positive {
+    color: var(--chart-cyan);
+}
+
+.kpi-mini-delta.negative {
+    color: var(--chart-red);
+}
+
+/* Charts Grid */
+.csat-charts-row-1,
+.csat-charts-row-2 {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.csat-charts-row-1 {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.csat-charts-row-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.csat-support-section,
+.csat-trend-section {
+    display: flex;
+    flex-direction: column;
+}
+
+/* New CSAT Charts Grid Layout */
+.csat-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.csat-charts-grid .card {
+    background: #050816;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 18px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+    margin-bottom: 0;
+}
+
+.csat-charts-grid .card:hover {
+    border-color: rgba(148, 163, 184, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.csat-charts-grid .card-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.csat-charts-grid .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #E5E7EB;
+}
+
+.csat-charts-grid .chart-container {
+    margin-top: 1rem;
+}
+
+/* Row 3: Main chart + Side charts layout */
+.csat-row-3 {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 7fr 5fr;
+    gap: 1.5rem;
+}
+
+.csat-main-chart {
+    min-height: 400px;
+}
+
+.csat-main-chart .card {
+    height: 100%;
+}
+
+.csat-side-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.csat-side-charts .card {
+    flex: 1;
+    min-height: 280px;
+}
+
+/* KYC Drilled-in Chart specific styles */
+.kyc-drilled-card {
+    background: #050816 !important;
+}
+
+.kyc-issue-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.kyc-issue-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.kyc-issue-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kyc-issue-list::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+}
+
+.kyc-issue-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.5);
+}
+
+/* CSAT Distribution Chart specific styles */
+.csat-distribution-card {
+    background: #050816 !important;
+}
+
+/* Responsive: Tablet and below */
+@media (max-width: 1024px) {
+    .csat-row-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .csat-side-charts {
+        flex-direction: row;
+    }
+
+    .csat-side-charts .card {
+        flex: 1;
+        min-height: 320px;
+    }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 768px) {
+    .csat-charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .csat-row-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .csat-side-charts {
+        flex-direction: column;
+    }
+
+    .csat-side-charts .card {
+        min-height: 300px;
+    }
+
+    .csat-charts-grid .card {
+        padding: 1rem;
+    }
+}
+
+/* CSAT Tables */
+.csat-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.csat-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+}
+
+.csat-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--csat-card);
+    z-index: 1;
+}
+
+.csat-table th {
+    text-align: left;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--csat-muted);
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--csat-border);
+}
+
+.csat-table td {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--csat-text);
+    border-bottom: 1px solid var(--csat-border);
+}
+
+
+/* Premium Rocket Loader */
+.rocket-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    /* Full viewport height */
+    width: 100%;
+    position: fixed;
+    /* Fixed to cover screen and center perfectly */
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background-color: var(--app-bg, #0d1117);
+    /* Fallback to dark if var missing */
+}
+
+/* Glowing Orbital Ring */
+.loader-ring {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 2px solid rgba(88, 166, 255, 0.1);
+    border-top: 2px solid #58A6FF;
+    border-right: 2px solid transparent;
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.15);
+    animation: spin-ring 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loader-ring::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-bottom: 2px solid #A371F7;
+    /* Purple accent */
+    transform: rotate(45deg);
+}
+
+/* Rocket Wrapper for Floating Animation */
+.rocket-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: float-rocket 3s ease-in-out infinite;
+    z-index: 2;
+}
+
+.rocket-icon {
+    filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.4));
+}
+
+/* Exhaust Particles */
+.rocket-exhaust {
+    position: absolute;
+    bottom: -15px;
+    width: 20px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: #3FB950;
+    /* Green ignition/energy */
+    opacity: 0;
+}
+
+.p1 {
+    width: 6px;
+    height: 6px;
+    animation: exhaust-move 1s ease-out infinite;
+    animation-delay: 0.1s;
+    bottom: 10px;
+}
+
+.p2 {
+    width: 4px;
+    height: 4px;
+    animation: exhaust-move 1s ease-out infinite;
+    animation-delay: 0.3s;
+    bottom: 10px;
+}
+
+.p3 {
+    width: 8px;
+    height: 8px;
+    background: #58A6FF;
+    animation: exhaust-move 1.2s ease-out infinite;
+    animation-delay: 0.0s;
+    bottom: 10px;
+}
+
+.p4 {
+    width: 5px;
+    height: 5px;
+    background: #A371F7;
+    animation: exhaust-move 0.8s ease-out infinite;
+    animation-delay: 0.5s;
+    bottom: 10px;
+}
+
+/* Text */
+.loading-text {
+    color: #8B949E;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: text-pulse 2s infinite;
+    margin-top: 1rem;
+    font-family: 'Inter', monospace;
+    /* Tech feel */
+    position: relative;
+    z-index: 5;
+}
+
+/* Animations */
+@keyframes spin-ring {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes float-rocket {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes exhaust-move {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translateY(30px) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes text-pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(139, 148, 158, 0.3);
+    }
+}
+
+.csat-table tr:hover {
+    background: var(--card-hover);
+}
+
+.csat-table td.positive {
+    color: var(--chart-cyan);
+}
+
+.csat-table td.negative {
+    color: var(--chart-red);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+    .csat-charts-row-1 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .csat-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1024px) {
+    .csat-kpi-bars {
+        grid-template-columns: 1fr;
+    }
+
+    .csat-kpi-counters {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .csat-charts-row-1,
+    .csat-charts-row-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .csat-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .csat-kpi-counters {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #30363D;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #58A6FF;
+}
