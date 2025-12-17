@@ -31,7 +31,10 @@ const SearchableSelect = ({ options, value, onChange, label, disabled = false, s
     };
 
     const getDisplayText = () => {
-        if (value === 'All') return `All ${label}s`;
+        if (value === 'All') {
+            if (label === 'Country') return 'All Countries';
+            return `All ${label}s`;
+        }
         return value;
     };
 
@@ -138,7 +141,7 @@ const SearchableSelect = ({ options, value, onChange, label, disabled = false, s
                                     if (value !== 'All') e.target.style.backgroundColor = 'transparent';
                                 }}
                             >
-                                All {label}s
+                                All {label === 'Country' ? 'Countries' : `${label}s`}
                             </div>
                         )}
                         {filteredOptions.map(option => (

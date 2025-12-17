@@ -1,5 +1,48 @@
 import { supabase } from './supabaseClient';
 
+// Regions and country mappings for Conversation Topics
+const COUNTRY_TO_REGION = {
+    // Africa
+    'Algeria': 'Africa', 'Botswana': 'Africa', 'Cameroon': 'Africa', 'Egypt': 'Africa',
+    'Ethiopia': 'Africa', 'Gambia': 'Africa', 'Ghana': 'Africa', 'Kenya': 'Africa',
+    'Madagascar': 'Africa', 'Mali': 'Africa', 'Mauritania': 'Africa', 'Morocco': 'Africa',
+    'Nigeria': 'Africa', 'South Africa': 'Africa', 'Somalia': 'Africa', 'Togo': 'Africa',
+    'Uganda': 'Africa', 'Zambia': 'Africa', 'Zimbabwe': 'Africa', 'Réunion': 'Africa',
+
+    // Asia
+    'Afghanistan': 'Asia', 'Azerbaijan': 'Asia', 'Bahrain': 'Asia', 'China': 'Asia',
+    'Hong Kong': 'Asia', 'India': 'Asia', 'Indonesia': 'Asia', 'Iran, Islamic Republic of': 'Asia',
+    'Iraq': 'Asia', 'Israel': 'Asia', 'Japan': 'Asia', 'Jordan': 'Asia',
+    'Korea, Republic of': 'Asia', 'South Korea': 'Asia', 'Kyrgyzstan': 'Asia', 'Lebanon': 'Asia', 'Malaysia': 'Asia',
+    'Mongolia': 'Asia', 'Nepal': 'Asia', 'Oman': 'Asia', 'Pakistan': 'Asia',
+    'Philippines': 'Asia', 'Qatar': 'Asia', 'Russian Federation': 'Asia', 'Saudi Arabia': 'Asia',
+    'Singapore': 'Asia', 'Taiwan': 'Asia', 'Thailand': 'Asia', 'Turkey': 'Asia',
+    'United Arab Emirates': 'Asia', 'Uzbekistan': 'Asia', 'Viet Nam': 'Asia', 'Vietnam': 'Asia',
+
+    // Europe
+    'Austria': 'Europe', 'Belgium': 'Europe', 'Bulgaria': 'Europe', 'Cyprus': 'Europe',
+    'Czech Republic': 'Europe', 'Estonia': 'Europe', 'Finland': 'Europe', 'France': 'Europe',
+    'Germany': 'Europe', 'Hungary': 'Europe', 'Ireland': 'Europe', 'Italy': 'Europe',
+    'Netherlands': 'Europe', 'Poland': 'Europe', 'Romania': 'Europe', 'Serbia': 'Europe',
+    'Slovakia': 'Europe', 'Spain': 'Europe', 'Sweden': 'Europe', 'Switzerland': 'Europe',
+    'Ukraine': 'Europe', 'United Kingdom': 'Europe',
+
+    // North America
+    'Canada': 'North America', 'Costa Rica': 'North America', 'Cuba': 'North America',
+    'Dominican Republic': 'North America', 'El Salvador': 'North America', 'Haiti': 'North America',
+    'Mexico': 'North America', 'Trinidad and Tobago': 'North America', 'United States': 'North America',
+    'Bahamas': 'North America', 'Aruba': 'North America',
+
+    // Oceania
+    'Australia': 'Oceania', 'French Polynesia': 'Oceania',
+
+    // South America
+    'Argentina': 'South America', 'Bolivia, Plurinational State of': 'South America',
+    'Chile': 'South America', 'Colombia': 'South America', 'Paraguay': 'South America',
+    'Venezuela, Bolivarian Republic of': 'South America'
+};
+
+const REGIONS = ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
 // Helper to get date filter for DB query
 const getDbDateFilter = (dateRange) => {
     if (!dateRange) return { start: null, end: null };
@@ -49,26 +92,75 @@ const getDbDateFilter = (dateRange) => {
     return { start: fmt(dateLimit), end: null };
 };
 
+// Fetch pre-aggregated topic distribution using server-side RPC (fast!)
+export const fetchTopicDistribution = async () => {
+    try {
+        console.log('Fetching topic distribution via RPC...');
+        const { data, error } = await supabase.rpc('get_topic_distribution', { p_limit: 50 });
+
+        if (error) {
+            console.error('Error fetching topic distribution:', error);
+            return [];
+        }
+
+        console.log(`Got ${data?.length || 0} topic distribution entries`);
+        return data || [];
+    } catch (err) {
+        console.error('Exception in topic distribution:', err);
+        return [];
+    }
+};
+
+// Cache for topic mapping
+let topicMappingCache = null;
+
+const fetchTopicMappingInternal = async () => {
+    if (topicMappingCache) return topicMappingCache;
+    try {
+        console.log('Fetching topic mapping...');
+        const { data, error } = await supabase
+            .from('all_topics_with_main')
+            .select('topic, main_topic')
+            .limit(10000); // Increased limit to ensure all topics are mapped
+
+        if (error) {
+            console.error('Error fetching topic mapping:', error);
+            // Return empty object on error so app doesn't crash
+            return {};
+        }
+
+        topicMappingCache = {};
+        data?.forEach(row => {
+            if (row.topic && row.main_topic) {
+                topicMappingCache[row.topic.trim()] = row.main_topic.trim();
+            }
+        });
+        console.log(`Loaded ${Object.keys(topicMappingCache).length} topic mappings`);
+        return topicMappingCache;
+    } catch (err) {
+        console.error('Exception in topic mapping:', err);
+        return {};
+    }
+};
+
 // Start: Optimized Supabase Data Fetching
 async function getSupabaseData(filters = {}) {
     try {
         console.log('Fetching Supabase data with filters:', filters);
 
         // 1. Build Query for Conversations
+        // Updated to fetch Main-Topics and Sub-Topics directly
         let query = supabase
             .from('Intercom Topic')
-            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Topic 1"');
+            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics"');
 
-        // Note: Date filtering is disabled server-side to prevent timeouts on text columns.
-        // We will filter by date on the client side. Detailed filtering is better than no data.
-        /*
+        // Apply Server-Side Date Filtering using created_at_bd (ISO Timestamp) to prevent timeouts
         if (filters.dateRangeStart) {
-            query = query.filter('created_date_bd::date', 'gte', filters.dateRangeStart);
+            query = query.gte('created_at_bd', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
-            query = query.filter('created_date_bd::date', 'lte', filters.dateRangeEnd);
+            query = query.lte('created_at_bd', filters.dateRangeEnd + 'T23:59:59');
         }
-        */
 
         // Apply Country Filter
         if (filters.country && filters.country !== 'All') {
@@ -81,11 +173,24 @@ async function getSupabaseData(filters = {}) {
         }
 
         // Apply Region Filter
-        if ((!filters.country || filters.country === 'All') && filters.region && filters.region !== 'All') {
-            query = query.eq('"Region"', filters.region);
+        if (filters.region && filters.region !== 'All') {
+            const countriesInRegion = Object.keys(COUNTRY_TO_REGION)
+                .filter(country => COUNTRY_TO_REGION[country] === filters.region);
+
+            if (countriesInRegion.length > 0) {
+                query = query.in('"Country"', countriesInRegion);
+            } else {
+                console.log('No countries found for region:', filters.region);
+            }
         }
 
-        // FETCH CONVERSATIONS FIRST
+        // OPTIMIZATION: Filter out rows without topics
+        query = query
+            .not('created_at_bd', 'is', null)
+            //.neq('"Topic 1"', '')  // Legacy column check removed
+            .order('created_at_bd', { ascending: false })
+            .limit(5000);
+
         const { data: conversations, error: conversationsError } = await query;
         if (conversationsError) throw conversationsError;
 
@@ -95,106 +200,62 @@ async function getSupabaseData(filters = {}) {
             return [];
         }
 
-        // EMERGENCY OPTIMIZATION: SKIP fetching additional topics map to avoid DB timeouts. 
-        // We rely on 'Topic 1' from the Intercom Topic table itself.
-        const topicMap = {};
-        const mainTopicMap = {};
-
         // 6. Transform Data
         const transformedData = [];
+
         conversations.forEach(row => {
             const convId = row['Conversation ID'] ? String(row['Conversation ID']).trim() : '';
+            const mappedRegion = COUNTRY_TO_REGION[row.Country] || 'Unknown';
 
-            // Map Logic
-            // Fallback to Topic 1 immediately since we aren't fetching the map
-            let topicName = row['Topic 1'] || '';
-            const mainTopic = 'Other';
+            // Get arrays from JSONB columns
+            // Handle cases where it might be null
+            let mainTopics = row['Main-Topics'] || [];
+            let subTopics = row['Sub-Topics'] || [];
 
-            topicName = topicName.trim();
-            if (!topicName) return;
+            // Ensure they are arrays (if string/null came back)
+            if (typeof mainTopics === 'string') {
+                try { mainTopics = JSON.parse(mainTopics); } catch (e) { mainTopics = [mainTopics]; }
+            }
+            if (!Array.isArray(mainTopics)) mainTopics = [];
+
+            if (typeof subTopics === 'string') {
+                try { subTopics = JSON.parse(subTopics); } catch (e) { subTopics = [subTopics]; }
+            }
+            if (!Array.isArray(subTopics)) subTopics = [];
+
+            // Filter out nulls/empty strings
+            mainTopics = mainTopics.filter(t => t && t.trim());
+            subTopics = subTopics.filter(t => t && t.trim());
+
+            if (mainTopics.length === 0 && subTopics.length === 0) return; // Skip empty rows
 
             transformedData.push({
                 created_date_bd: row.created_date_bd || '',
                 conversation_id: convId,
                 country: row.Country || 'Unknown',
-                region: row.Region || 'Unknown',
+                region: mappedRegion,
                 product: row.Product || 'Unknown',
                 assigned_channel_name: row.assigned_channel_name || 'Unknown',
                 cx_score_rating: row['CX Score Rating'] ? parseInt(row['CX Score Rating']) : 0,
-                topic: topicName,
-                main_topic: mainTopic
+                topic: subTopics,      // Now an array
+                main_topic: mainTopics // Now an array
             });
         });
+
+        if (transformedData.length > 0) {
+            console.log('API Transformed Data [0]:', JSON.stringify(transformedData[0]));
+        }
 
         return transformedData;
 
     } catch (error) {
         console.error('Error fetching Supabase data:', error);
-        throw error;
+        return [];
     }
 }
 
-// Apply filters to the data (Client-side Refinement)
-// We keep this to handle any logic that might not be perfectly mapped to DB columns 
-// or to ensure consistency, but the heavy lifting is done by valid DB filters (except date now).
-const countryToRegion = {
-    // Africa
-    'Algeria': 'Africa', 'Angola': 'Africa', 'Benin': 'Africa', 'Botswana': 'Africa',
-    'Burkina Faso': 'Africa', 'Burundi': 'Africa', 'Cameroon': 'Africa', 'Cape Verde': 'Africa',
-    'Central African Republic': 'Africa', 'Chad': 'Africa', 'Comoros': 'Africa', 'Congo': 'Africa',
-    'DR Congo': 'Africa', 'Djibouti': 'Africa', 'Egypt': 'Africa', 'Equatorial Guinea': 'Africa',
-    'Eritrea': 'Africa', 'Eswatini': 'Africa', 'Ethiopia': 'Africa', 'Gabon': 'Africa',
-    'Gambia': 'Africa', 'Ghana': 'Africa', 'Guinea': 'Africa', 'Guinea-Bissau': 'Africa',
-    'Ivory Coast': 'Africa', 'Kenya': 'Africa', 'Lesotho': 'Africa', 'Liberia': 'Africa',
-    'Libya': 'Africa', 'Madagascar': 'Africa', 'Malawi': 'Africa', 'Mali': 'Africa',
-    'Mauritania': 'Africa', 'Mauritius': 'Africa', 'Morocco': 'Africa', 'Mozambique': 'Africa',
-    'Namibia': 'Africa', 'Niger': 'Africa', 'Nigeria': 'Africa', 'Rwanda': 'Africa',
-    'Sao Tome and Principe': 'Africa', 'Senegal': 'Africa', 'Seychelles': 'Africa',
-    'Sierra Leone': 'Africa', 'Somalia': 'Africa', 'South Africa': 'Africa', 'South Sudan': 'Africa',
-    'Sudan': 'Africa', 'Tanzania': 'Africa', 'Togo': 'Africa', 'Tunisia': 'Africa',
-    'Uganda': 'Africa', 'Zambia': 'Africa', 'Zimbabwe': 'Africa',
-    // Americas
-    'Argentina': 'Americas', 'Bolivia': 'Americas', 'Brazil': 'Americas', 'Canada': 'Americas',
-    'Chile': 'Americas', 'Colombia': 'Americas', 'Costa Rica': 'Americas', 'Cuba': 'Americas',
-    'Dominican Republic': 'Americas', 'Ecuador': 'Americas', 'El Salvador': 'Americas',
-    'Guatemala': 'Americas', 'Haiti': 'Americas', 'Honduras': 'Americas', 'Jamaica': 'Americas',
-    'Mexico': 'Americas', 'Nicaragua': 'Americas', 'Panama': 'Americas', 'Paraguay': 'Americas',
-    'Peru': 'Americas', 'Puerto Rico': 'Americas', 'Trinidad and Tobago': 'Americas',
-    'United States': 'Americas', 'USA': 'Americas', 'Uruguay': 'Americas', 'Venezuela': 'Americas',
-    // Asia
-    'Afghanistan': 'Asia', 'Armenia': 'Asia', 'Azerbaijan': 'Asia', 'Bahrain': 'Asia',
-    'Bangladesh': 'Asia', 'Bhutan': 'Asia', 'Brunei': 'Asia', 'Cambodia': 'Asia',
-    'China': 'Asia', 'Georgia': 'Asia', 'India': 'Asia', 'Indonesia': 'Asia',
-    'Iran': 'Asia', 'Iraq': 'Asia', 'Israel': 'Asia', 'Japan': 'Asia', 'Jordan': 'Asia',
-    'Kazakhstan': 'Asia', 'Kuwait': 'Asia', 'Kyrgyzstan': 'Asia', 'Laos': 'Asia',
-    'Lebanon': 'Asia', 'Malaysia': 'Asia', 'Maldives': 'Asia', 'Mongolia': 'Asia',
-    'Myanmar': 'Asia', 'Nepal': 'Asia', 'North Korea': 'Asia', 'Oman': 'Asia',
-    'Pakistan': 'Asia', 'Palestine': 'Asia', 'Philippines': 'Asia', 'Qatar': 'Asia',
-    'Saudi Arabia': 'Asia', 'Singapore': 'Asia', 'South Korea': 'Asia', 'Sri Lanka': 'Asia',
-    'Syria': 'Asia', 'Taiwan': 'Asia', 'Tajikistan': 'Asia', 'Thailand': 'Asia',
-    'Timor-Leste': 'Asia', 'Turkey': 'Asia', 'Turkmenistan': 'Asia', 'UAE': 'Asia',
-    'United Arab Emirates': 'Asia', 'Uzbekistan': 'Asia', 'Vietnam': 'Asia', 'Yemen': 'Asia',
-    // Europe
-    'Albania': 'Europe', 'Andorra': 'Europe', 'Austria': 'Europe', 'Belarus': 'Europe',
-    'Belgium': 'Europe', 'Bosnia and Herzegovina': 'Europe', 'Bulgaria': 'Europe',
-    'Croatia': 'Europe', 'Cyprus': 'Europe', 'Czech Republic': 'Europe', 'Czechia': 'Europe',
-    'Denmark': 'Europe', 'Estonia': 'Europe', 'Finland': 'Europe', 'France': 'Europe',
-    'Germany': 'Europe', 'Greece': 'Europe', 'Hungary': 'Europe', 'Iceland': 'Europe',
-    'Ireland': 'Europe', 'Italy': 'Europe', 'Kosovo': 'Europe', 'Latvia': 'Europe',
-    'Liechtenstein': 'Europe', 'Lithuania': 'Europe', 'Luxembourg': 'Europe',
-    'Malta': 'Europe', 'Moldova': 'Europe', 'Monaco': 'Europe', 'Montenegro': 'Europe',
-    'Netherlands': 'Europe', 'North Macedonia': 'Europe', 'Norway': 'Europe', 'Poland': 'Europe',
-    'Portugal': 'Europe', 'Romania': 'Europe', 'Russia': 'Europe', 'San Marino': 'Europe',
-    'Serbia': 'Europe', 'Slovakia': 'Europe', 'Slovenia': 'Europe', 'Spain': 'Europe',
-    'Sweden': 'Europe', 'Switzerland': 'Europe', 'Ukraine': 'Europe', 'United Kingdom': 'Europe',
-    'UK': 'Europe', 'Vatican City': 'Europe',
-    // Oceania
-    'Australia': 'Oceania', 'Fiji': 'Oceania', 'Kiribati': 'Oceania', 'Marshall Islands': 'Oceania',
-    'Micronesia': 'Oceania', 'Nauru': 'Oceania', 'New Zealand': 'Oceania', 'Palau': 'Oceania',
-    'Papua New Guinea': 'Oceania', 'Samoa': 'Oceania', 'Solomon Islands': 'Oceania',
-    'Tonga': 'Oceania', 'Tuvalu': 'Oceania', 'Vanuatu': 'Oceania'
-};
 
+// Apply filters to the data (Client-side Refinement)
 function applyFilters(data, filters) {
     let filteredData = [...data];
 
@@ -241,17 +302,14 @@ function applyFilters(data, filters) {
         }
     }
 
-    // Apply country filter (Priority)
+    // Apply country filter
     if (filters.country && filters.country !== 'All') {
         filteredData = filteredData.filter(item => item.country === filters.country);
     }
-    // Apply region filter (Only filter by region if country is NOT selected, or logic matches)
-    else if (filters.region && filters.region !== 'All') {
-        filteredData = filteredData.filter(item => {
-            // Check if this item's country belongs to the selected region
-            const region = countryToRegion[item.country];
-            return region === filters.region;
-        });
+
+    // Apply region filter
+    if (filters.region && filters.region !== 'All') {
+        filteredData = filteredData.filter(item => item.region === filters.region);
     }
 
     // Apply product filter
@@ -274,8 +332,6 @@ export const fetchConversations = async (filters) => {
     // Fetch with push-down predicates
     const data = await getSupabaseData(dbFilters);
 
-    // Apply client-side filters for consistency (e.g. detailed region mapping, or minor date adjustments)
-    // Note: Since DB has already filtered most things, this should be fast.
     return applyFilters(data, filters);
 };
 
@@ -283,7 +339,8 @@ export const fetchTopics = async () => {
     try {
         const { data: topics, error } = await supabase
             .from('all_topics')
-            .select('topic');
+            .select('topic')
+            .limit(10000); // Increased limit
 
         if (error) throw error;
 
@@ -297,89 +354,76 @@ export const fetchTopics = async () => {
         return uniqueTopics;
     } catch (error) {
         console.error('Error fetching topics:', error);
-        throw error;
+        return [];
     }
 };
 
-// Fetch unique main topics from all_topics_with_main table
-// Main topics are the unique values in the main_topic column (where main_topic IS NOT NULL)
+// Fetch known main topics
 export const fetchMainTopics = async () => {
-    try {
-        const { data: topics, error } = await supabase
-            .from('all_topics_with_main')
-            .select('main_topic');
-
-        if (error) throw error;
-
-        // Calculate frequency of each main topic to filter out noise
-        const counts = {};
-        topics?.forEach(row => {
-            if (row.main_topic && row.main_topic.trim()) {
-                const topic = row.main_topic.trim();
-                counts[topic] = (counts[topic] || 0) + 1;
-            }
-        });
-
-        // Filter out very low frequency items (noise/garbage in the main_topic column)
-        const NOISE_THRESHOLD = 20;
-
-        const uniqueMainTopics = Object.keys(counts)
-            .filter(topic => counts[topic] >= NOISE_THRESHOLD)
-            .sort();
-
-        console.log('Fetched main topics:', uniqueMainTopics);
-        return uniqueMainTopics;
-    } catch (error) {
-        console.error('Error fetching main topics:', error);
-        throw error;
-    }
+    // Return hardcoded list since mapping table is missing and user wants to rely on triggered column
+    return [
+        'KYC_Issue', 'Account Related Issue', 'Dashboard Related Issue', 'Breach Issue',
+        'Login_Issue', 'Password issue', 'Next Phase Button Missing', 'Platform Issue',
+        'Trade Issue', 'Slippage', 'SWAP', 'Commission', 'Payout related issue',
+        'Certificate Issue', 'Competition Issue', 'Restriction Related Issue',
+        'Verdict from different team', 'Tech Issue', 'Other Payment Issues',
+        'Crypto Payment Isssue', 'Card Payment issue', 'Refund Related Issue',
+        'Coupon Code related issue', 'Discount related issue', 'Offer Related Query',
+        'Random Issues'
+    ];
 };
-
-
 
 
 export const fetchFilters = async () => {
     try {
-        // Always return the 6 major continents
-        const uniqueRegions = ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
+        console.log('Fetching filter options from Intercom Topic...');
 
-        // Get unique countries from DB
-        const { data: countries, error: countriesError } = await supabase
-            .from('Intercom Topic')
-            .select('"Country"');
+        // Get countries from Intercom Topic using RPC
+        const { data: countryData, error: countryError } = await supabase
+            .rpc('get_intercom_countries');
 
-        if (countriesError) throw countriesError;
+        if (countryError) {
+            console.error('Error fetching countries (RPC):', countryError);
+        }
 
-        const uniqueCountries = [...new Set(
-            countries
-                ?.map(row => row.Country)
-                .filter(country => country)
-        )];
-        uniqueCountries.sort();
+        // Get products from Intercom Topic using RPC
+        const { data: productData, error: productError } = await supabase
+            .rpc('get_intercom_products');
 
-        // Get unique products
-        const { data: products, error: productsError } = await supabase
-            .from('Intercom Topic')
-            .select('"Product"');
+        if (productError) {
+            console.error('Error fetching products (RPC):', productError);
+        }
 
-        if (productsError) throw productsError;
+        let countries = (countryData || []).filter(c => c && c.trim()).sort();
+        const products = (productData || []).filter(p => p && p.trim()).sort();
 
-        const uniqueProducts = [...new Set(
-            products
-                ?.map(row => row.Product)
-                .filter(product => product)
-        )];
-        uniqueProducts.sort();
+        // Fallback for Countries if empty
+        if (countries.length === 0) {
+            console.log('Using static country list fallback');
+            countries = Object.keys(COUNTRY_TO_REGION).sort();
+        }
+
+        // Fallback for Products if empty (e.g. RPC not created yet)
+        if (products.length === 0) {
+            products.push('CFD', 'Futures');
+        }
+
+        console.log(`Got ${REGIONS.length} regions, ${countries.length} countries, ${products.length} products`);
 
         return {
-            regions: uniqueRegions,
-            countries: uniqueCountries,
-            products: uniqueProducts,
-            countryToRegion: countryToRegion
+            regions: REGIONS,
+            countries,
+            products,
+            countryToRegion: COUNTRY_TO_REGION
         };
     } catch (error) {
         console.error('Error fetching filters:', error);
-        throw error;
+        return {
+            regions: REGIONS,
+            countries: [],
+            products: ['CFD', 'Futures'],
+            countryToRegion: COUNTRY_TO_REGION
+        };
     }
 };
 

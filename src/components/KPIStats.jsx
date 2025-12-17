@@ -2,8 +2,14 @@ import React, { useMemo } from 'react';
 
 const KPIStats = ({ conversations, previousConversations }) => {
     const stats = useMemo(() => {
-        // Filter conversations based on user criteria: must have conversation_id and topic
-        const validConversations = conversations.filter(c => c.conversation_id && c.topic);
+        // Filter conversations: Must have a topic (check for non-empty array)
+        // Note: conversations are coming from api.js which ensures main_topic/topic are arrays
+        const validConversations = conversations.filter(c => {
+            // Check if main_topic or topic has elements
+            const hasMain = Array.isArray(c.main_topic) && c.main_topic.length > 0;
+            const hasSub = Array.isArray(c.topic) && c.topic.length > 0;
+            return hasMain || hasSub;
+        });
 
         // 1. Total Conversations
         const total = validConversations.length;
@@ -11,10 +17,22 @@ const KPIStats = ({ conversations, previousConversations }) => {
         // 2. Top Topic (using main_topic, excluding "Other")
         const topicCounts = {};
         validConversations.forEach(c => {
-            const mainTopic = c.main_topic || c.topic; // Fallback to topic if main_topic doesn't exist
-            if (mainTopic) {
-                topicCounts[mainTopic] = (topicCounts[mainTopic] || 0) + 1;
+            // Prefer main_topic, fallback to topic
+            let topicsToCount = [];
+            if (Array.isArray(c.main_topic) && c.main_topic.length > 0) {
+                topicsToCount = c.main_topic;
+            } else if (Array.isArray(c.topic) && c.topic.length > 0) {
+                topicsToCount = c.topic;
+            } else if (c.topic && !Array.isArray(c.topic)) {
+                // Fallback for legacy data if any
+                topicsToCount = [c.topic];
             }
+
+            topicsToCount.forEach(t => {
+                if (t) {
+                    topicCounts[t] = (topicCounts[t] || 0) + 1;
+                }
+            });
         });
 
         // Sort topics by count and exclude "Other" variations
@@ -34,7 +52,11 @@ const KPIStats = ({ conversations, previousConversations }) => {
         // 3. Trend
         // Apply same filter to previous conversations for consistency
         const validPreviousConversations = previousConversations
-            ? previousConversations.filter(c => c.conversation_id && c.topic)
+            ? previousConversations.filter(c => {
+                const hasMain = Array.isArray(c.main_topic) && c.main_topic.length > 0;
+                const hasSub = Array.isArray(c.topic) && c.topic.length > 0;
+                return (hasMain || hasSub) && c.conversation_id;
+            })
             : [];
 
         const prevTotal = validPreviousConversations.length;

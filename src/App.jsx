@@ -5,7 +5,8 @@ import DashboardCharts from './components/DashboardCharts';
 import DashboardHeader from './components/DashboardHeader';
 import KPIStats from './components/KPIStats';
 import CSAT from './components/CSAT';
-import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics } from './services/api';
+import LoadingSpinner from './components/LoadingSpinner';
+import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
 import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [previousConversations, setPreviousConversations] = useState([]);
   const [availableTopics, setAvailableTopics] = useState([]);
   const [availableMainTopics, setAvailableMainTopics] = useState([]);
+  const [topicDistribution, setTopicDistribution] = useState([]); // Pre-aggregated from RPC
   const [filterOptions, setFilterOptions] = useState({
     regions: [],
     countries: [],
@@ -37,15 +39,17 @@ function App() {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [topics, filterOpts, mainTopics] = await Promise.all([
+        const [topics, filterOpts, mainTopics, topicDist] = await Promise.all([
           fetchTopics(),
           fetchFilters(),
-          fetchMainTopics()
+          fetchMainTopics(),
+          fetchTopicDistribution()  // Fast RPC for chart data
         ]);
 
         setAvailableTopics(topics);
         setFilterOptions(filterOpts);
         setAvailableMainTopics(mainTopics);
+        setTopicDistribution(topicDist);  // Pre-aggregated chart data
       } catch (error) {
         console.error('Error loading initial data:', error);
       } finally {
@@ -179,11 +183,7 @@ function App() {
   }, [filterOptions.regions]);
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <div style={{ fontSize: '1.5rem', color: '#6B7280' }}>Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -214,6 +214,7 @@ function App() {
               previousData={previousConversations}
               availableTopics={availableTopics}
               availableMainTopics={availableMainTopics}
+              topicDistribution={topicDistribution}
               filters={filters}
             />
           </>

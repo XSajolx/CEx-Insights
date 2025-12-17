@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchCSATMetrics, fetchCSATFilters } from '../services/api';
 import KpiBar from './KpiBar';
+import LoadingSpinner from './LoadingSpinner';
 import KpiMini from './KpiMini';
 import SearchableSelect from './SearchableSelect';
 import DateRangePicker from './DateRangePicker';
@@ -88,6 +89,10 @@ const CSAT = () => {
     const prevProdHigh = metrics ? metrics.previous.highCSAT : 0;
     const prevProdCSAT = calculateCSAT(prevProdHigh, prevProdValid);
     const prodDelta = prodCSAT - prevProdCSAT;
+
+    if (loading) {
+        return <LoadingSpinner />;
+    }
 
     return (
         <div className="cex-csat">

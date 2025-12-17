@@ -6,7 +6,7 @@ import {
 import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 import SearchableSelect from './SearchableSelect';
 import CustomLegend from './CustomLegend';
-import { topNWithOther, calculatePercentages } from '../utils/chartUtils';
+import { TOPIC_MAPPING } from '../utils/topicMapping';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -65,25 +65,59 @@ const TrendTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const DashboardCharts = ({ data, previousData, availableTopics, availableMainTopics = [], filters }) => {
+const DashboardCharts = ({ data, previousData, availableTopics, availableMainTopics = [], topicDistribution = [], filters }) => {
     const [selectedTopic, setSelectedTopic] = useState('');
     const [selectedMainTopic, setSelectedMainTopic] = useState('All');
 
-    // DEBUG: Log what main topics are received
-    console.log('DashboardCharts - availableMainTopics prop:', availableMainTopics);
-    console.log('DashboardCharts - availableMainTopics length:', availableMainTopics.length);
-
     // Note: availableMainTopics is now passed as a prop from App.jsx
-    // It contains unique main topics fetched from the database
 
-    // Compute filtered topics based on selected main topic (for Chart 2)
+    // Compute filtered topics based on selected main topic (for Chart 2 and Dropdown)
     const filteredTopics = useMemo(() => {
-        if (selectedMainTopic === 'All') return availableTopics;
-        return [...new Set(
-            data.filter(item => item.main_topic === selectedMainTopic)
-                .map(item => item.topic)
-        )].filter(Boolean).sort();
-    }, [data, selectedMainTopic, availableTopics]);
+        if (!data) return [];
+
+        let candidates = new Set();
+
+        // 1. Gather all unique sub-topics from the data first (to filter against available data)
+        data.forEach(item => {
+            const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+            subTopics.forEach(t => {
+                if (t) candidates.add(t);
+            });
+        });
+
+        const allAvailableSubTopics = [...candidates];
+
+        if (selectedMainTopic === 'All') {
+            return allAvailableSubTopics.sort();
+        }
+
+        // 2. Strict Filtering using TOPIC_MAPPING
+        // Only include sub-topics that officially map to the selected Main Topic
+        const strictSubTopics = allAvailableSubTopics.filter(sub => {
+            const mappedMain = TOPIC_MAPPING[sub];
+            // Match strict mapping
+            if (mappedMain) {
+                return mappedMain === selectedMainTopic;
+            }
+            // Fallback disabled to enforce strictness per user request
+            return false;
+        });
+
+        // 3. Fallback: If strict list empty, check data associations (legacy behavior, likely not hit if mapping is good)
+        if (strictSubTopics.length === 0) {
+            const associatedSubs = new Set();
+            data.forEach(item => {
+                const mainTopics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+                if (mainTopics.includes(selectedMainTopic)) {
+                    const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+                    subTopics.forEach(t => associatedSubs.add(t));
+                }
+            });
+            return [...associatedSubs].filter(Boolean).sort();
+        }
+
+        return strictSubTopics.sort();
+    }, [data, selectedMainTopic]);
 
     // Reset selectedTopic when main topic changes and current topic is not in filtered list
     useEffect(() => {
@@ -93,10 +127,10 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     }, [selectedMainTopic, filteredTopics]);
 
     useEffect(() => {
-        if (availableTopics.length > 0 && !selectedTopic) {
-            setSelectedTopic(availableTopics[0]);
+        if (filteredTopics.length > 0 && !selectedTopic) {
+            setSelectedTopic(filteredTopics[0]);
         }
-    }, [availableTopics, selectedTopic]);
+    }, [filteredTopics, selectedTopic]);
 
     // Calculate date range for display
     const getDateRangeText = () => {
@@ -136,27 +170,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     };
 
     // Aggregate data for Bar Chart (Total conversations per topic)
-    // NOTE: This chart is NOT affected by the Main Topic filter (per user request)
     const barData = useMemo(() => {
-        const counts = {};
-
-        // Always use all data for Topic Distribution
-        const filteredData = data || []; // Guard against undefined data
-        const validTopics = new Set(availableMainTopics);
-
-        filteredData.forEach(item => {
-            let mainTopic = item.main_topic || 'Other';
-            if (mainTopic !== 'Other' && !validTopics.has(mainTopic)) {
-                mainTopic = 'Other';
-            }
-            // User requested NO "Other" slicing/aggregation - only show valid main topics
-            // If it's Other or invalid, we track it for potential "Other" bucket if we wanted it,
-            // but the request is to Match the Bar Chart exactly, which filters out Other below.
-            counts[mainTopic] = (counts[mainTopic] || 0) + 1;
-        });
-
-        // Define comprehensive color palette with distinct colors for each topic
-        // Each color is unique and visually distinguishable
         const colorMap = {
             'Login_Issue': '#58A6FF',                        // Bright Blue
             'Payout related issue': '#3FB950',               // Green
@@ -167,67 +181,55 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             'Account Related Issue': '#79C0FF',              // Light Blue
             'Restriction Related Issue': '#F778BA',          // Rose
             'Delay in Receiving Customer Support': '#56D4DD', // Cyan
+            'Dashboard Related Issue': '#FFD700',            // Gold
+            'Trade Issue': '#00CED1',                        // Dark Turquoise
             'Other': '#FF7B72'                               // Red
         };
 
-        // Extended palette of 25+ distinct colors for any additional topics
         const defaultColors = [
-            '#FFD700', // Gold
-            '#FF6B9D', // Hot Pink
-            '#00CED1', // Dark Turquoise
-            '#FF8C00', // Dark Orange
-            '#9370DB', // Medium Purple
-            '#20B2AA', // Light Sea Green
-            '#FF69B4', // Hot Pink
-            '#4169E1', // Royal Blue
-            '#32CD32', // Lime Green
-            '#FF4500', // Orange Red
-            '#DA70D6', // Orchid
-            '#00FA9A', // Medium Spring Green
-            '#FF1493', // Deep Pink
-            '#1E90FF', // Dodger Blue
-            '#ADFF2F', // Green Yellow
-            '#FF6347', // Tomato
-            '#BA55D3', // Medium Orchid
-            '#00FFFF', // Aqua
-            '#FFA500', // Orange
-            '#9932CC', // Dark Orchid
-            '#00FF7F', // Spring Green
-            '#DC143C', // Crimson
-            '#4682B4', // Steel Blue
-            '#7FFF00', // Chartreuse
-            '#C71585'  // Medium Violet Red
+            '#FF6B9D', '#FF8C00', '#9370DB', '#20B2AA', '#4169E1',
+            '#32CD32', '#FF4500', '#DA70D6', '#00FA9A', '#FF1493',
+            '#1E90FF', '#ADFF2F', '#FF6347', '#BA55D3', '#00FFFF'
         ];
+
+        // START: Manual Calculation (We trust the DB columns now)
+        console.log('Calculating barData from raw conversations (arrays)');
+        const counts = {};
+        const filteredData = data || [];
+
+        filteredData.forEach(item => {
+            // item.main_topic is an array
+            const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+
+            if (topics.length === 0) return;
+
+            topics.forEach(topic => {
+                const t = topic || 'Other';
+                counts[t] = (counts[t] || 0) + 1;
+            });
+        });
 
         let finalData = Object.keys(counts)
             .map(topic => ({ name: topic, value: counts[topic] }))
-            .filter(item => item.name !== 'Other') // Remove 'Other' as requested
-            .sort((a, b) => b.value - a.value); // Sort descending
+            .filter(item => item.name !== 'Other')
+            .sort((a, b) => b.value - a.value);
 
-        // Assign colors: use colorMap if available, otherwise use defaultColors sequentially
-        // Track which colors have been used to avoid duplicates
         const usedColors = new Set(Object.values(colorMap));
         let defaultColorIndex = 0;
 
         return finalData.map((item) => {
             let assignedColor = colorMap[item.name];
-
-            // If no predefined color, find next unused color from defaultColors
             if (!assignedColor) {
                 while (defaultColorIndex < defaultColors.length && usedColors.has(defaultColors[defaultColorIndex])) {
                     defaultColorIndex++;
                 }
-                assignedColor = defaultColors[defaultColorIndex] || defaultColors[defaultColorIndex % defaultColors.length];
+                assignedColor = defaultColors[defaultColorIndex % defaultColors.length];
                 usedColors.add(assignedColor);
                 defaultColorIndex++;
             }
-
-            return {
-                ...item,
-                color: assignedColor
-            };
+            return { ...item, color: assignedColor };
         });
-    }, [data, availableMainTopics]);
+    }, [data, filters]);
 
     // Derived available topics for the dropdown - MUST match what is shown in the charts
     const chartTopics = useMemo(() => {
@@ -236,14 +238,17 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
     // Aggregate data for Trend Chart (Comparison)
     const trendData = useMemo(() => {
-        if (!selectedTopic || !data) return []; // Guard against undefined data
+        if (!selectedTopic || !data) return [];
 
         const processData = (dataset) => {
             const dailyCounts = {};
             if (!dataset) return dailyCounts;
 
             dataset.forEach(item => {
-                if (item.topic === selectedTopic) {
+                // Check if selectedTopic is in item.topic array
+                const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+
+                if (subTopics.includes(selectedTopic)) {
                     const date = item.created_date_bd;
                     dailyCounts[date] = (dailyCounts[date] || 0) + 1;
                 }
@@ -254,7 +259,6 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         const currentCounts = processData(data);
         const previousCounts = processData(previousData || []);
 
-        // Normalize dates to relative days (Day 1, Day 2, etc.)
         const getSortedDates = (counts) => Object.keys(counts).sort();
         const currentDates = getSortedDates(currentCounts);
         const previousDates = getSortedDates(previousCounts);
@@ -262,7 +266,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         const maxDays = Math.max(currentDates.length, previousDates.length);
         const chartData = [];
 
-        if (maxDays === 0) return []; // Return empty if no data
+        if (maxDays === 0) return [];
 
         for (let i = 0; i < maxDays; i++) {
             let label = `${i + 1}`;
@@ -285,11 +289,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     }, [data, previousData, selectedTopic]);
 
     // Aggregate data for Main Topic Donut Chart
-    // PER USER REQUEST: "Donut data = exact main topics set used in the bar chart"
-    // When "All Main Topics" is selected, we use the barData exactly.
-    // When a specific main topic is selected, we show subtopics (legacy logic) BUT without grouping "Other".
     const mainTopicData = useMemo(() => {
-        const safeData = data || []; // Guard against undefined data
+        const safeData = data || [];
 
         // If All Main Topics, use the exact data/colors from the bar chart
         if (selectedMainTopic === 'All' || selectedMainTopic === 'All Main Topics') {
@@ -298,26 +299,42 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 ...item,
                 fullName: item.name,
                 percentage: total > 0 ? Math.round((item.value / total) * 100) : 0,
-                // Colors are already assigned in barData
             }));
         }
 
-        // If a specific topic is selected, sort and show subtopics (NO aggregation)
-        // We keep the existing logic for subtopics but strictly remove "Other" per guidelines
-        // "When a specific main topic is selected... do not re-introduce Others"
+        // If a specific topic is selected, sort and show subtopics
         const counts = {};
-        const filteredData = safeData.filter(item => item.main_topic === selectedMainTopic);
         let total = 0;
 
-        filteredData.forEach(item => {
-            const topic = item.topic || 'Unknown';
-            counts[topic] = (counts[topic] || 0) + 1;
-            total++;
+        safeData.forEach(item => {
+            const mainTopics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+
+            // Only consider items that match the selected main topic
+            if (mainTopics.includes(selectedMainTopic)) {
+
+                const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+
+                subTopics.forEach(sub => {
+                    // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
+                    // This prevents:
+                    // 1. Cross-contamination (e.g. "Login" subtopic showing under "Account" main topic if a chat has both)
+                    // 2. Main Topic names appearing as sub-topics (unless they self-map, which they shouldn't)
+                    const mappedMain = TOPIC_MAPPING[sub];
+
+                    if (mappedMain === selectedMainTopic) {
+                        const topic = sub || 'Unknown';
+                        counts[topic] = (counts[topic] || 0) + 1;
+                        total++;
+                    }
+                    // If no map found or maps to something else, IGNORE IT.
+                    // This ensures "Login_Issue" (main topic) or "Payout related issue" (other main topic)
+                    // never appear in the breakdown for "Account Related Issue".
+                });
+            }
         });
 
         // Filter out very low frequency items (noise)
-        const NOISE_THRESHOLD = 5; // Use a lower threshold for subtopics to see more detail? Or stick to 20? 
-        // Sticking to 5 for subtopics as they are smaller by definition
+        const NOISE_THRESHOLD = 1; // Explicitly set to 1 to show all valid mapped items
 
         const subtopicData = Object.keys(counts)
             .filter(topic => counts[topic] >= NOISE_THRESHOLD && topic !== 'Other' && topic !== 'Unknown')

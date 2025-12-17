@@ -220,7 +220,6 @@ body {
     font-weight: 500;
     color: var(--text-muted);
     white-space: nowrap;
-    text-transform: uppercase;
     letter-spacing: 0.03em;
 }
 
@@ -397,7 +396,6 @@ body {
 .topic-selector label {
     font-size: 0.75rem;
     color: var(--text-muted);
-    text-transform: uppercase;
     letter-spacing: 0.03em;
 }
 
@@ -513,7 +511,6 @@ body {
     font-size: 0.75rem;
     color: var(--csat-muted);
     font-weight: 500;
-    text-transform: uppercase;
     letter-spacing: 0.04em;
     margin-bottom: 0.5rem;
 }
@@ -583,7 +580,6 @@ body {
     font-size: 0.7rem;
     color: var(--csat-muted);
     font-weight: 500;
-    text-transform: uppercase;
     letter-spacing: 0.03em;
     margin-bottom: 0.5rem;
 }
@@ -793,7 +789,6 @@ body {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--csat-muted);
-    text-transform: uppercase;
     letter-spacing: 0.03em;
     border-bottom: 1px solid var(--csat-border);
 }
@@ -803,6 +798,181 @@ body {
     font-size: 0.875rem;
     color: var(--csat-text);
     border-bottom: 1px solid var(--csat-border);
+}
+
+
+/* Premium Rocket Loader */
+.rocket-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    /* Full viewport height */
+    width: 100%;
+    position: fixed;
+    /* Fixed to cover screen and center perfectly */
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    background-color: var(--app-bg, #0d1117);
+    /* Fallback to dark if var missing */
+}
+
+/* Glowing Orbital Ring */
+.loader-ring {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 2px solid rgba(88, 166, 255, 0.1);
+    border-top: 2px solid #58A6FF;
+    border-right: 2px solid transparent;
+    box-shadow: 0 0 15px rgba(88, 166, 255, 0.15);
+    animation: spin-ring 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loader-ring::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-bottom: 2px solid #A371F7;
+    /* Purple accent */
+    transform: rotate(45deg);
+}
+
+/* Rocket Wrapper for Floating Animation */
+.rocket-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: float-rocket 3s ease-in-out infinite;
+    z-index: 2;
+}
+
+.rocket-icon {
+    filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.4));
+}
+
+/* Exhaust Particles */
+.rocket-exhaust {
+    position: absolute;
+    bottom: -15px;
+    width: 20px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: #3FB950;
+    /* Green ignition/energy */
+    opacity: 0;
+}
+
+.p1 {
+    width: 6px;
+    height: 6px;
+    animation: exhaust-move 1s ease-out infinite;
+    animation-delay: 0.1s;
+    bottom: 10px;
+}
+
+.p2 {
+    width: 4px;
+    height: 4px;
+    animation: exhaust-move 1s ease-out infinite;
+    animation-delay: 0.3s;
+    bottom: 10px;
+}
+
+.p3 {
+    width: 8px;
+    height: 8px;
+    background: #58A6FF;
+    animation: exhaust-move 1.2s ease-out infinite;
+    animation-delay: 0.0s;
+    bottom: 10px;
+}
+
+.p4 {
+    width: 5px;
+    height: 5px;
+    background: #A371F7;
+    animation: exhaust-move 0.8s ease-out infinite;
+    animation-delay: 0.5s;
+    bottom: 10px;
+}
+
+/* Text */
+.loading-text {
+    color: #8B949E;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: text-pulse 2s infinite;
+    margin-top: 1rem;
+    font-family: 'Inter', monospace;
+    /* Tech feel */
+    position: relative;
+    z-index: 5;
+}
+
+/* Animations */
+@keyframes spin-ring {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes float-rocket {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes exhaust-move {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translateY(30px) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes text-pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+        text-shadow: 0 0 10px rgba(139, 148, 158, 0.3);
+    }
 }
 
 .csat-table tr:hover {
