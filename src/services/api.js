@@ -189,7 +189,7 @@ async function getSupabaseData(filters = {}) {
             .not('created_at_bd', 'is', null)
             //.neq('"Topic 1"', '')  // Legacy column check removed
             .order('created_at_bd', { ascending: false })
-            .limit(5000);
+            .limit(100000);
 
         const { data: conversations, error: conversationsError } = await query;
         if (conversationsError) throw conversationsError;

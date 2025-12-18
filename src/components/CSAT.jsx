@@ -90,12 +90,13 @@ const CSAT = () => {
     const prevProdCSAT = calculateCSAT(prevProdHigh, prevProdValid);
     const prodDelta = prodCSAT - prevProdCSAT;
 
-    if (loading) {
+    if (loading && !metrics) {
         return <LoadingSpinner />;
     }
 
     return (
-        <div className="cex-csat">
+        <div className="cex-csat" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+
             {/* Filter Bar */}
             <div className="filters-container">
                 <div className="filter-card">
@@ -240,6 +241,7 @@ const CSAT = () => {
                 <CSATRatingDistributionChart filters={filters} />
             </div>
         </div>
+
     );
 };
 

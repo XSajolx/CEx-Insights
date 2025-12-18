@@ -12,6 +12,7 @@ import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 function App() {
   // State
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState('intercom');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -54,6 +55,7 @@ function App() {
         console.error('Error loading initial data:', error);
       } finally {
         setLoading(false);
+        setIsInitialized(true);
       }
     };
 
@@ -64,6 +66,7 @@ function App() {
   useEffect(() => {
     const loadConversations = async () => {
       try {
+        setLoading(true);
         const data = await fetchConversations(filters);
         setConversations(data);
 
@@ -140,6 +143,8 @@ function App() {
 
       } catch (error) {
         console.error('Error loading conversations:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -182,7 +187,7 @@ function App() {
     return filterOptions.regions;
   }, [filterOptions.regions]);
 
-  if (loading) {
+  if (loading && !isInitialized) {
     return <LoadingSpinner />;
   }
 
@@ -196,8 +201,8 @@ function App() {
       />
 
       <main className="main-content">
-        {activeTab === 'intercom' ? (
-          <>
+        <div style={{ display: activeTab === 'intercom' ? 'block' : 'none' }}>
+          <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
             <Filters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -217,10 +222,14 @@ function App() {
               topicDistribution={topicDistribution}
               filters={filters}
             />
-          </>
-        ) : activeTab === 'csat' ? (
+          </div>
+        </div>
+
+        <div style={{ display: activeTab === 'csat' ? 'block' : 'none' }}>
           <CSAT />
-        ) : (
+        </div>
+
+        {activeTab !== 'intercom' && activeTab !== 'csat' && (
           <div style={{ padding: '2rem', color: '#6B7280' }}>
             {/* Blank page for other tabs as requested */}
           </div>
