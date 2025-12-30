@@ -39,6 +39,21 @@ const Icons = {
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
         </svg>
     ),
+    Sentiment: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+        </svg>
+    ),
+    Feedback: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="7" x2="12" y2="13"></line>
+            <line x1="9" y1="10" x2="15" y2="10"></line>
+        </svg>
+    ),
     ChevronLeft: () => (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -58,6 +73,7 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
     const menuItems = [
         { id: 'intercom', label: 'Conversation Topics', icon: <Icons.Topics /> },
         { id: 'csat', label: 'CSAT', icon: <Icons.CSAT /> },
+        { id: 'feedback', label: 'Feedback and Suggestion', icon: <Icons.Feedback /> },
         { id: 'inflow', label: 'Conversation Inflow', icon: <Icons.Inflow /> },
         { id: 'tickets', label: 'Ticket Inflow', icon: <Icons.Ticket /> },
         { id: 'performance', label: 'Performance Metrics', icon: <Icons.Performance /> },

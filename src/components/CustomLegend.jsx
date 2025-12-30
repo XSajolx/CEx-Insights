@@ -83,9 +83,9 @@ const CustomLegend = ({
                                     ></div>
                                 </div>
 
-                                {/* Percentage */}
+                                {/* Value */}
                                 <span className="legend-percentage">
-                                    {formatPercent(item.percentage)}
+                                    {item.value}
                                 </span>
                             </div>
                         );

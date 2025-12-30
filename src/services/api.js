@@ -149,10 +149,10 @@ async function getSupabaseData(filters = {}) {
         console.log('Fetching Supabase data with filters:', filters);
 
         // 1. Build Query for Conversations
-        // Updated to fetch Main-Topics and Sub-Topics directly
+        // Updated to fetch Main-Topics, Sub-Topics, and Sentiment End
         let query = supabase
             .from('Intercom Topic')
-            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics"');
+            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics","Sentiment End"');
 
         // Apply Server-Side Date Filtering using created_at_bd (ISO Timestamp) to prevent timeouts
         if (filters.dateRangeStart) {
@@ -162,27 +162,8 @@ async function getSupabaseData(filters = {}) {
             query = query.lte('created_at_bd', filters.dateRangeEnd + 'T23:59:59');
         }
 
-        // Apply Country Filter
-        if (filters.country && filters.country !== 'All') {
-            query = query.eq('"Country"', filters.country);
-        }
-
-        // Apply Product Filter
-        if (filters.product && filters.product !== 'All') {
-            query = query.eq('"Product"', filters.product);
-        }
-
-        // Apply Region Filter
-        if (filters.region && filters.region !== 'All') {
-            const countriesInRegion = Object.keys(COUNTRY_TO_REGION)
-                .filter(country => COUNTRY_TO_REGION[country] === filters.region);
-
-            if (countriesInRegion.length > 0) {
-                query = query.in('"Country"', countriesInRegion);
-            } else {
-                console.log('No countries found for region:', filters.region);
-            }
-        }
+        // Note: Server-side filters removed to avoid issues with column names
+        // All filtering is done client-side in applyFilters function
 
         // OPTIMIZATION: Filter out rows without topics
         query = query
@@ -238,7 +219,8 @@ async function getSupabaseData(filters = {}) {
                 assigned_channel_name: row.assigned_channel_name || 'Unknown',
                 cx_score_rating: row['CX Score Rating'] ? parseInt(row['CX Score Rating']) : 0,
                 topic: subTopics,      // Now an array
-                main_topic: mainTopics // Now an array
+                main_topic: mainTopics, // Now an array
+                sentiment: row['Sentiment End'] || null  // Sentiment End column
             });
         });
 
@@ -315,6 +297,16 @@ function applyFilters(data, filters) {
     // Apply product filter
     if (filters.product && filters.product !== 'All') {
         filteredData = filteredData.filter(item => item.product === filters.product);
+    }
+
+    // Apply sentiment filter
+    if (filters.sentiment && filters.sentiment !== 'All') {
+        filteredData = filteredData.filter(item => {
+            if (!item.sentiment) return false;
+            const sentimentLower = item.sentiment.toLowerCase();
+            const filterLower = filters.sentiment.toLowerCase();
+            return sentimentLower === filterLower || sentimentLower.includes(filterLower);
+        });
     }
 
     return filteredData;

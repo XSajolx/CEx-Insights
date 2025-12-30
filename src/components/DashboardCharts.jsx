@@ -6,7 +6,7 @@ import {
 import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 import SearchableSelect from './SearchableSelect';
 import CustomLegend from './CustomLegend';
-import { TOPIC_MAPPING } from '../utils/topicMapping';
+import { TOPIC_MAPPING, QUERY_TOPIC_MAPPING, QUERY_MAIN_TOPICS } from '../utils/topicMapping';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -65,13 +65,22 @@ const TrendTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const DashboardCharts = ({ data, previousData, availableTopics, availableMainTopics = [], topicDistribution = [], filters }) => {
+const DashboardCharts = ({ data, previousData, availableTopics, availableMainTopics = [], topicDistribution = [], filters, subTab = 'issue' }) => {
     const [selectedTopic, setSelectedTopic] = useState('');
     const [selectedMainTopic, setSelectedMainTopic] = useState('All');
+    const [selectedQueryMainTopic, setSelectedQueryMainTopic] = useState('All');
+
+    // Get the active topic mapping based on the current subTab
+    const activeTopicMapping = subTab === 'query' ? QUERY_TOPIC_MAPPING : TOPIC_MAPPING;
+    const activeMainTopics = subTab === 'query' ? QUERY_MAIN_TOPICS : availableMainTopics;
+    const activeSelectedMainTopic = subTab === 'query' ? selectedQueryMainTopic : selectedMainTopic;
+    const setActiveSelectedMainTopic = subTab === 'query' ? setSelectedQueryMainTopic : setSelectedMainTopic;
 
     // Note: availableMainTopics is now passed as a prop from App.jsx
 
     // Compute filtered topics based on selected main topic (for Chart 2 and Dropdown)
+    // For Query Analysis: only show query sub-topics
+    // For Issue Analysis: only show actual sub-topics (not main topics)
     const filteredTopics = useMemo(() => {
         if (!data) return [];
 
@@ -81,23 +90,36 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         data.forEach(item => {
             const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
             subTopics.forEach(t => {
-                if (t) candidates.add(t);
+                // Exclude "Challenge Rule Clarification"
+                if (t && t !== 'Challenge Rule Clarification') {
+                    if (subTab === 'query') {
+                        // For Query Analysis: only include query sub-topics
+                        if (QUERY_TOPIC_MAPPING[t]) {
+                            candidates.add(t);
+                        }
+                    } else {
+                        // For Issue Analysis: only include actual sub-topics (those in TOPIC_MAPPING)
+                        if (TOPIC_MAPPING[t]) {
+                            candidates.add(t);
+                        }
+                    }
+                }
             });
         });
 
         const allAvailableSubTopics = [...candidates];
 
-        if (selectedMainTopic === 'All') {
+        if (activeSelectedMainTopic === 'All') {
             return allAvailableSubTopics.sort();
         }
 
-        // 2. Strict Filtering using TOPIC_MAPPING
+        // 2. Strict Filtering using the active topic mapping (TOPIC_MAPPING or QUERY_TOPIC_MAPPING)
         // Only include sub-topics that officially map to the selected Main Topic
         const strictSubTopics = allAvailableSubTopics.filter(sub => {
-            const mappedMain = TOPIC_MAPPING[sub];
+            const mappedMain = activeTopicMapping[sub];
             // Match strict mapping
             if (mappedMain) {
-                return mappedMain === selectedMainTopic;
+                return mappedMain === activeSelectedMainTopic;
             }
             // Fallback disabled to enforce strictness per user request
             return false;
@@ -108,23 +130,30 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             const associatedSubs = new Set();
             data.forEach(item => {
                 const mainTopics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
-                if (mainTopics.includes(selectedMainTopic)) {
+                if (mainTopics.includes(activeSelectedMainTopic)) {
                     const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
-                    subTopics.forEach(t => associatedSubs.add(t));
+                    subTopics.forEach(t => {
+                        if (subTab === 'query') {
+                            if (QUERY_TOPIC_MAPPING[t]) associatedSubs.add(t);
+                        } else {
+                            // Only add actual sub-topics, not main topics
+                            if (TOPIC_MAPPING[t]) associatedSubs.add(t);
+                        }
+                    });
                 }
             });
             return [...associatedSubs].filter(Boolean).sort();
         }
 
         return strictSubTopics.sort();
-    }, [data, selectedMainTopic]);
+    }, [data, activeSelectedMainTopic, activeTopicMapping, subTab]);
 
     // Reset selectedTopic when main topic changes and current topic is not in filtered list
     useEffect(() => {
         if (filteredTopics.length > 0 && !filteredTopics.includes(selectedTopic)) {
             setSelectedTopic(filteredTopics[0]);
         }
-    }, [selectedMainTopic, filteredTopics]);
+    }, [activeSelectedMainTopic, filteredTopics]);
 
     useEffect(() => {
         if (filteredTopics.length > 0 && !selectedTopic) {
@@ -171,7 +200,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
     // Aggregate data for Bar Chart (Total conversations per topic)
     const barData = useMemo(() => {
-        const colorMap = {
+        // Color map for Issue Analysis
+        const issueColorMap = {
             'Login_Issue': '#58A6FF',                        // Bright Blue
             'Payout related issue': '#3FB950',               // Green
             'Next Phase Button Missing': '#F0883E',          // Orange
@@ -186,28 +216,60 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             'Other': '#FF7B72'                               // Red
         };
 
+        // Color map for Query Analysis
+        const queryColorMap = {
+            'OFFER RELATED QUERY': '#FF6B9D',                // Pink
+            'CHALLENGE SELECTION QUERY': '#58A6FF',          // Blue
+            'PRICING & PAYMENT QUERY': '#3FB950',            // Green
+            'ACCOUNT SETUP QUERY': '#F0883E',                // Orange
+            'CHALLENGE RULES QUERY': '#A371F7',              // Purple
+            'WITHDRAWAL & PAYOUT QUERY': '#FFD700',          // Gold
+            'PERFORMANCE REWARD QUERY': '#00CED1',           // Cyan
+            'PAYOUT CYCLE QUERY': '#DB61A2',                 // Pink
+            'SCALE-UP PLAN QUERY': '#79C0FF',                // Light Blue
+            'STELLAR INSTANT SCALE-UP QUERY': '#F778BA',     // Rose
+            'KYC & VERIFICATION QUERY': '#D2A8FF',           // Light Purple
+            'ACCOUNT RESET QUERY': '#56D4DD'                 // Teal
+        };
+
+        const colorMap = subTab === 'query' ? queryColorMap : issueColorMap;
+
         const defaultColors = [
             '#FF6B9D', '#FF8C00', '#9370DB', '#20B2AA', '#4169E1',
             '#32CD32', '#FF4500', '#DA70D6', '#00FA9A', '#FF1493',
             '#1E90FF', '#ADFF2F', '#FF6347', '#BA55D3', '#00FFFF'
         ];
 
-        // START: Manual Calculation (We trust the DB columns now)
-        console.log('Calculating barData from raw conversations (arrays)');
         const counts = {};
         const filteredData = data || [];
 
-        filteredData.forEach(item => {
-            // item.main_topic is an array
-            const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
-
-            if (topics.length === 0) return;
-
-            topics.forEach(topic => {
-                const t = topic || 'Other';
-                counts[t] = (counts[t] || 0) + 1;
+        if (subTab === 'query') {
+            // For Query Analysis: Count by Query Main Topics using QUERY_TOPIC_MAPPING
+            console.log('Calculating barData for Query Analysis');
+            filteredData.forEach(item => {
+                const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+                
+                subTopics.forEach(subTopic => {
+                    const mainTopic = QUERY_TOPIC_MAPPING[subTopic];
+                    if (mainTopic) {
+                        counts[mainTopic] = (counts[mainTopic] || 0) + 1;
+                    }
+                });
             });
-        });
+        } else {
+            // For Issue Analysis: Use main_topic directly
+            console.log('Calculating barData for Issue Analysis');
+            filteredData.forEach(item => {
+                const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+
+                if (topics.length === 0) return;
+
+                topics.forEach(topic => {
+                    const t = topic || 'Other';
+                    counts[t] = (counts[t] || 0) + 1;
+                });
+            });
+        }
 
         let finalData = Object.keys(counts)
             .map(topic => ({ name: topic, value: counts[topic] }))
@@ -229,16 +291,27 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             }
             return { ...item, color: assignedColor };
         });
-    }, [data, filters]);
+    }, [data, filters, subTab]);
 
     // Derived available topics for the dropdown - MUST match what is shown in the charts
     const chartTopics = useMemo(() => {
+        if (subTab === 'query') {
+            // For query analysis, show main topics that have data
+            const topicsWithData = barData.map(d => d.name);
+            return ['All Main Topics', ...topicsWithData];
+        }
         return ['All Main Topics', ...barData.map(d => d.name)];
-    }, [barData]);
+    }, [barData, subTab]);
 
     // Aggregate data for Trend Chart (Comparison)
+    // For Query Analysis: only count if the topic is a query sub-topic
     const trendData = useMemo(() => {
         if (!selectedTopic || !data) return [];
+
+        // For Query Analysis: verify the selected topic is a query sub-topic
+        if (subTab === 'query' && !QUERY_TOPIC_MAPPING[selectedTopic]) {
+            return [];
+        }
 
         const processData = (dataset) => {
             const dailyCounts = {};
@@ -286,14 +359,14 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         }
 
         return chartData;
-    }, [data, previousData, selectedTopic]);
+    }, [data, previousData, selectedTopic, subTab]);
 
     // Aggregate data for Main Topic Donut Chart
     const mainTopicData = useMemo(() => {
         const safeData = data || [];
 
         // If All Main Topics, use the exact data/colors from the bar chart
-        if (selectedMainTopic === 'All' || selectedMainTopic === 'All Main Topics') {
+        if (activeSelectedMainTopic === 'All' || activeSelectedMainTopic === 'All Main Topics') {
             const total = barData.reduce((sum, item) => sum + item.value, 0);
             return barData.map(item => ({
                 ...item,
@@ -306,32 +379,43 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         const counts = {};
         let total = 0;
 
-        safeData.forEach(item => {
-            const mainTopics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
-
-            // Only consider items that match the selected main topic
-            if (mainTopics.includes(selectedMainTopic)) {
-
+        if (subTab === 'query') {
+            // For Query Analysis: Find subtopics that map to the selected query main topic
+            safeData.forEach(item => {
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
 
                 subTopics.forEach(sub => {
-                    // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
-                    // This prevents:
-                    // 1. Cross-contamination (e.g. "Login" subtopic showing under "Account" main topic if a chat has both)
-                    // 2. Main Topic names appearing as sub-topics (unless they self-map, which they shouldn't)
-                    const mappedMain = TOPIC_MAPPING[sub];
-
-                    if (mappedMain === selectedMainTopic) {
+                    const mappedMain = QUERY_TOPIC_MAPPING[sub];
+                    if (mappedMain === activeSelectedMainTopic) {
                         const topic = sub || 'Unknown';
                         counts[topic] = (counts[topic] || 0) + 1;
                         total++;
                     }
-                    // If no map found or maps to something else, IGNORE IT.
-                    // This ensures "Login_Issue" (main topic) or "Payout related issue" (other main topic)
-                    // never appear in the breakdown for "Account Related Issue".
                 });
-            }
-        });
+            });
+        } else {
+            // For Issue Analysis: Use main_topic matching
+            safeData.forEach(item => {
+                const mainTopics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+
+                // Only consider items that match the selected main topic
+                if (mainTopics.includes(activeSelectedMainTopic)) {
+
+                    const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+
+                    subTopics.forEach(sub => {
+                        // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
+                        const mappedMain = TOPIC_MAPPING[sub];
+
+                        if (mappedMain === activeSelectedMainTopic) {
+                            const topic = sub || 'Unknown';
+                            counts[topic] = (counts[topic] || 0) + 1;
+                            total++;
+                        }
+                    });
+                }
+            });
+        }
 
         // Filter out very low frequency items (noise)
         const NOISE_THRESHOLD = 1; // Explicitly set to 1 to show all valid mapped items
@@ -353,7 +437,63 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             color: defaultColors[index % defaultColors.length]
         }));
 
-    }, [barData, data, selectedMainTopic]);
+    }, [barData, data, activeSelectedMainTopic, subTab]);
+
+    // Aggregate ALL sub-topics data for the standalone scrollable bar chart
+    // For Query Analysis: only show sub-topics that map to query main topics
+    // For Issue Analysis: only show sub-topics that map to issue main topics (exclude main topics themselves)
+    const allSubTopicsData = useMemo(() => {
+        const safeData = data || [];
+        const counts = {};
+        let total = 0;
+
+        // Color palette for sub-topics (matching main topic distribution style)
+        const subTopicColors = [
+            '#58A6FF', '#3FB950', '#A371F7', '#F0883E', '#FF6B9D',
+            '#DB61A2', '#79C0FF', '#56D4DD', '#FFD700', '#00CED1',
+            '#D2A8FF', '#F778BA', '#FF7B72', '#9370DB', '#20B2AA',
+            '#4169E1', '#32CD32', '#FF4500', '#DA70D6', '#00FA9A'
+        ];
+
+        safeData.forEach(item => {
+            const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
+
+            subTopics.forEach(sub => {
+                // Exclude "Other", "Unknown", and "Challenge Rule Clarification"
+                if (sub && !sub.toLowerCase().includes('other') && sub !== 'Unknown' && sub !== 'Challenge Rule Clarification') {
+                    if (subTab === 'query') {
+                        // For Query Analysis: only count sub-topics that are in QUERY_TOPIC_MAPPING
+                        if (QUERY_TOPIC_MAPPING[sub]) {
+                            counts[sub] = (counts[sub] || 0) + 1;
+                            total++;
+                        }
+                    } else {
+                        // For Issue Analysis: only count sub-topics that are in TOPIC_MAPPING
+                        // This excludes main topics like "Login_Issue", "KYC_Issue" etc.
+                        if (TOPIC_MAPPING[sub]) {
+                            counts[sub] = (counts[sub] || 0) + 1;
+                            total++;
+                        }
+                    }
+                }
+            });
+        });
+
+        const subtopicData = Object.keys(counts)
+            .map(topic => ({
+                name: topic,
+                value: counts[topic],
+                fullName: topic,
+                percentage: total > 0 ? Math.round((counts[topic] / total) * 100) : 0
+            }))
+            .sort((a, b) => b.value - a.value)
+            .map((item, index) => ({
+                ...item,
+                color: subTopicColors[index % subTopicColors.length]
+            }));
+
+        return subtopicData;
+    }, [data, subTab]);
 
     // DEBUG: Trace before render
     console.log('DashboardCharts: Ready to render', {
@@ -362,9 +502,27 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         mainTopicDataLen: mainTopicData ? mainTopicData.length : 'null'
     });
 
+    // Aggregated constants/labels for cleaner code
+    const labels = useMemo(() => {
+        if (subTab === 'query') {
+            return {
+                areaTitle: 'Query Area',
+                distributionTitle: 'Query Distribution',
+                topTitle: 'Top Queries',
+                trendTitle: 'Query Trends Over Time'
+            };
+        }
+        return {
+            areaTitle: 'Main Topic Distribution',
+            distributionTitle: 'Overall Breakdown',
+            topTitle: 'Top Issues',
+            trendTitle: 'Issue Trends Over Time'
+        };
+    }, [subTab]);
+
     return (
         <div className="charts-grid">
-            {/* Bar Chart - Topic Distribution */}
+            {/* Chart 1: Issue/Query Area (Vertical Bar) */}
             <div className="card">
                 <div className="card-header">
                     <h3 className="card-title">
@@ -373,43 +531,41 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Main Topic Distribution
+                        {labels.areaTitle}
                     </h3>
                 </div>
-                {/* Scrollable Container for Bars */}
-                <div style={{ height: '350px', overflowY: 'auto', width: '100%', borderBottom: '1px solid #30363D' }}>
+                <div style={{ height: '350px', overflowY: 'auto', width: '100%' }}>
                     {barData.length > 0 ? (
-                        <div style={{ height: Math.max(barData.length * 55, 350), width: '100%', minHeight: '350px' }}>
+                        <div style={{ height: Math.max(barData.length * 45, 350), width: '100%', minHeight: '350px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={barData}
                                     layout="vertical"
-                                    margin={{ top: 5, right: 100, left: 100, bottom: 0 }}
+                                    margin={{ top: 5, right: 60, left: 140, bottom: 5 }}
                                 >
                                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
-                                    <XAxis type="number" hide domain={[0, 'dataMax']} />
+                                    <XAxis type="number" stroke="#30363D" tick={{ fill: '#8B949E', fontSize: 10 }} />
                                     <YAxis
                                         type="category"
                                         dataKey="name"
-                                        width={150}
-                                        tick={{ fontSize: 12, fill: '#C9D1D9' }}
+                                        width={130}
+                                        tick={{ fontSize: 11, fill: '#C9D1D9' }}
                                         interval={0}
                                         stroke="#30363D"
                                         tickLine={false}
                                         axisLine={false}
                                     />
-                                    {/* <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(88, 166, 255, 0.08)' }} /> */}
                                     <Bar
                                         dataKey="value"
                                         radius={[0, 4, 4, 0]}
-                                        barSize={28}
+                                        barSize={24}
                                     >
                                         {
                                             barData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                <Cell key={`cell-${index}`} fill={subTab === 'issue' ? entry.color : '#2563EB'} />
                                             ))
                                         }
-                                        <LabelList dataKey="value" position="right" fill="#58A6FF" fontSize={12} formatter={(value) => `${value}`} />
+                                        <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -420,23 +576,9 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         </div>
                     )}
                 </div>
-                {/* Fixed X-Axis at the bottom */}
-                <div style={{ height: '40px', width: '100%' }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={barData}
-                            layout="vertical"
-                            margin={{ top: 0, right: 100, left: 100, bottom: 0 }}
-                        >
-                            <XAxis type="number" orientation="bottom" domain={[0, 'dataMax']} stroke="#30363D" tick={{ fill: '#8B949E', fontSize: 11 }} />
-                            <YAxis type="category" dataKey="name" width={150} hide />
-                            <Bar dataKey="value" fill="none" barSize={0} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
             </div>
 
-            {/* Main Topic Breakdown - Donut Chart */}
+            {/* Chart 2: Issues/Query Distribution (Pie Chart) */}
             <div className="card">
                 <div className="card-header">
                     <h3 className="card-title">
@@ -444,24 +586,20 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                             <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
                             <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
                         </svg>
-                        {selectedMainTopic === 'All' || selectedMainTopic === 'All Main Topics' ? 'Overall Breakdown' : `${selectedMainTopic} - Subtopics`}
+                        {labels.distributionTitle}
                     </h3>
                     <div className="topic-selector">
-                        <label>Main Topic:</label>
+                        <label>{subTab === 'query' ? 'Query Category:' : 'Main Topic:'}</label>
                         <SearchableSelect
                             options={chartTopics}
-                            value={selectedMainTopic}
-                            onChange={(val) => {
-                                // Map "All Main Topics" back to "All" if needed by internal logic, or handle gracefully
-                                setSelectedMainTopic(val === 'All Main Topics' ? 'All' : val);
-                            }}
-                            label="Main Topic"
-                            showAllOption={false} // We provide "All Main Topics" manually in the options list now
+                            value={activeSelectedMainTopic}
+                            onChange={(val) => setActiveSelectedMainTopic(val === 'All Main Topics' ? 'All' : val)}
+                            label={subTab === 'query' ? 'Query Category' : 'Main Topic'}
+                            showAllOption={false}
                         />
                     </div>
                 </div>
                 <div className="chart-container" style={{ display: 'flex', flexDirection: 'column', height: '360px', padding: '16px' }}>
-                    {/* Upper/Left section: Chart */}
                     <div style={{ flex: '1', minHeight: '200px', display: 'flex', justifyContent: 'center' }}>
                         <div style={{ width: '100%', maxWidth: '300px', height: '100%' }}>
                             {mainTopicData.length > 0 ? (
@@ -495,32 +633,28 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         </div>
                     </div>
 
-                    {/* Lower/Right section: Custom Legend */}
-                    {/* On wider screens (responsive CSS handled via media queries ideally, but here via flex styles) */}
                     <div style={{ flex: '1', minHeight: '0', overflow: 'hidden', marginTop: '16px' }}>
                         <CustomLegend
                             data={mainTopicData}
                             colors={mainTopicData.map(d => d.color)}
-                            maxHeight={150} // Adjust based on available height
+                            maxHeight={150}
                         />
                     </div>
                 </div>
-                {/* Add inline style for wider screens to make it side-by-side */}
                 <style>{`
                     @media (min-width: 768px) {
                         .chart-container {
                             flex-direction: row !important;
                         }
-                        .chart-container > div:first-child { /* Chart */
+                        .chart-container > div:first-child { 
                             flex: 0 0 45% !important;
                             margin-right: 16px; 
                         }
-                        .chart-container > div:last-child { /* Legend */
+                        .chart-container > div:last-child { 
                             flex: 1 !important;
                             margin-top: 0 !important;
                             height: 100%;
                         }
-                        /* Adjust legend list height in side-by-side view */
                         .legend-list {
                             max-height: 280px !important;
                         }
@@ -528,100 +662,145 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 `}</style>
             </div>
 
-            {/* Trend Chart - Topic Trends Over Time */}
-            <div className="card" style={{ gridColumn: '1 / -1' }}>
-                <div className="card-header">
-                    <div>
+            {/* Charts Row: Sub-Topics and Trend Chart Side by Side */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', gridColumn: '1 / -1' }}>
+                {/* Chart 3: All Sub-Topics (Scrollable Bar Chart) */}
+                <div className="card">
+                    <div className="card-header">
                         <h3 className="card-title">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                                <polyline points="17 6 23 6 23 12"></polyline>
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                <line x1="9" y1="21" x2="9" y2="9"></line>
                             </svg>
-                            Topic Trends Over Time
+                            {subTab === 'query' ? 'All Query Sub-Topics' : 'All Issue Sub-Topics'}
                         </h3>
-                        <p style={{ fontSize: '0.75rem', color: '#8B949E', margin: '4px 0 0 0' }}>
-                            {getDateRangeText()}
-                            {previousData && previousData.length > 0
-                                ? ' vs Previous Period'
-                                : ''}
-                        </p>
+                        <span style={{ fontSize: '0.75rem', color: '#8B949E' }}>
+                            {allSubTopicsData.length} sub-topics
+                        </span>
                     </div>
-                    <div className="topic-selector">
-                        <label>Topic:</label>
-                        <SearchableSelect
-                            options={filteredTopics}
-                            value={selectedTopic}
-                            onChange={setSelectedTopic}
-                            label="Topic"
-                            showAllOption={false}
-                        />
+                    <div style={{ height: '400px', overflowY: 'auto', width: '100%' }}>
+                        {allSubTopicsData.length > 0 ? (
+                            <div style={{ height: Math.max(allSubTopicsData.length * 36, 400), width: '100%', minHeight: '400px' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={allSubTopicsData}
+                                        layout="vertical"
+                                        margin={{ top: 5, right: 50, left: 140, bottom: 5 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
+                                        <XAxis type="number" stroke="#30363D" tick={{ fill: '#8B949E', fontSize: 10 }} />
+                                        <YAxis
+                                            type="category"
+                                            dataKey="name"
+                                            width={130}
+                                            tick={{ fontSize: 11, fill: '#C9D1D9' }}
+                                            interval={0}
+                                            stroke="#30363D"
+                                            tickLine={false}
+                                            axisLine={false}
+                                        />
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: '#1C2128', borderColor: '#30363D', borderRadius: '8px', color: '#F0F6FC' }}
+                                            formatter={(value, name, props) => [`${value} conversations`, props.payload.fullName]}
+                                        />
+                                        <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                                            {allSubTopicsData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                            <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        ) : (
+                            <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
+                                No sub-topic data available
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="chart-container">
-                    {trendData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#58A6FF" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#58A6FF" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorPrevious" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#A371F7" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#A371F7" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis
-                                    dataKey="day"
-                                    stroke="#30363D"
-                                    tick={{ fill: '#8B949E', fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={{ stroke: '#30363D' }}
-                                />
-                                <YAxis
-                                    stroke="#30363D"
-                                    tick={{ fill: '#8B949E', fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <Tooltip content={<TrendTooltip />} />
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" vertical={false} />
-                                <Legend
-                                    wrapperStyle={{ paddingTop: '10px' }}
-                                    iconType="circle"
-                                    formatter={(value) => <span style={{ color: '#C9D1D9', fontSize: '0.8125rem' }}>{value}</span>}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="Current"
-                                    stroke="#58A6FF"
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorCurrent)"
-                                    label={{ position: 'top', fill: '#F0F6FC', fontSize: 11 }}
-                                />
-                                {previousData && previousData.length > 0 && (
+                {/* Chart 4: Trend Chart */}
+                <div className="card">
+                    <div className="card-header">
+                        <div>
+                            <h3 className="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                                {labels.trendTitle}
+                            </h3>
+                            <p style={{ fontSize: '0.75rem', color: '#8B949E', margin: '4px 0 0 0' }}>
+                                {getDateRangeText()}
+                            </p>
+                        </div>
+                        <div className="topic-selector">
+                            <label>Topic:</label>
+                            <SearchableSelect
+                                options={filteredTopics}
+                                value={selectedTopic}
+                                onChange={setSelectedTopic}
+                                label="Topic"
+                                showAllOption={false}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ height: '400px', padding: '16px 0' }}>
+                        {trendData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis
+                                        dataKey="day"
+                                        stroke="#30363D"
+                                        tick={{ fill: '#8B949E', fontSize: 10 }}
+                                        tickLine={false}
+                                        axisLine={{ stroke: '#30363D' }}
+                                    />
+                                    <YAxis
+                                        stroke="#30363D"
+                                        tick={{ fill: '#8B949E', fontSize: 10 }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                    />
+                                    <Tooltip content={<TrendTooltip />} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" vertical={false} />
                                     <Area
                                         type="monotone"
-                                        dataKey="Previous"
-                                        stroke="#A371F7"
-                                        strokeWidth={2}
-                                        strokeDasharray="5 5"
-                                        fillOpacity={0.5}
-                                        fill="url(#colorPrevious)"
-                                    />
-                                )}
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
-                            No trend data available
-                        </div>
-                    )}
+                                        dataKey="Current"
+                                        stroke="#38BDF8"
+                                        strokeWidth={3}
+                                        fillOpacity={1}
+                                        fill="url(#colorCurrent)"
+                                    >
+                                        <LabelList 
+                                            dataKey="Current" 
+                                            position="top" 
+                                            fill="#38BDF8" 
+                                            fontSize={11} 
+                                            fontWeight={600}
+                                            offset={8}
+                                        />
+                                    </Area>
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
+                                No trend data available
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 };
 

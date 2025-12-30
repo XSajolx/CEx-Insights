@@ -1,8 +1,19 @@
-{
+﻿{
 	"servers": {
 		"my-mcp-server-6f3f5a2c": {
 			"url": "https://mcp.supabase.com/mcp?project_ref=iktqpjwoahqycvlmstvx",
 			"type": "http"
+		},
+		"vercel-mcp": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@modelcontextprotocol/server-vercel"
+			],
+			"env": {
+				"VERCEL_TOKEN": "1h4dt7W7oly1ibE0l2wYWnkM"
+			},
+			"type": "stdio"
 		}
 	},
 	"inputs": []

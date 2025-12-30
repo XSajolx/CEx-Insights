@@ -6,6 +6,7 @@ import DashboardHeader from './components/DashboardHeader';
 import KPIStats from './components/KPIStats';
 import CSAT from './components/CSAT';
 import LoadingSpinner from './components/LoadingSpinner';
+import FeedbackSuggestions from './components/FeedbackSuggestions';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
 import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
@@ -14,6 +15,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState('intercom');
+  const [subTab, setSubTab] = useState('issue'); // 'issue', 'query'
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [previousConversations, setPreviousConversations] = useState([]);
@@ -32,7 +34,8 @@ function App() {
     dateRange: 'last_3_months',
     region: 'All',
     country: 'All',
-    product: 'All'
+    product: 'All',
+    sentiment: 'All'
   });
 
   // Load initial data
@@ -209,9 +212,46 @@ function App() {
               options={{ ...filterOptions, countries: availableCountries, regions: availableRegions }}
             />
 
+            {/* Horizontal Sub-Tabs */}
+            <div className="sub-tabs-bar" style={{
+              display: 'flex',
+              gap: '2px',
+              marginBottom: '1.5rem',
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '4px',
+              borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              width: 'fit-content'
+            }}>
+              {[
+                { id: 'issue', label: 'Issue Analysis' },
+                { id: 'query', label: 'Query Analysis' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSubTab(tab.id)}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: subTab === tab.id ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
+                    color: subTab === tab.id ? '#38BDF8' : '#94A3B8',
+                    fontSize: '0.875rem',
+                    fontWeight: subTab === tab.id ? '600' : '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'var(--font-sans)'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <KPIStats
               conversations={conversations}
               previousConversations={previousConversations}
+              subTab={subTab}
             />
 
             <DashboardCharts
@@ -221,6 +261,7 @@ function App() {
               availableMainTopics={availableMainTopics}
               topicDistribution={topicDistribution}
               filters={filters}
+              subTab={subTab}
             />
           </div>
         </div>
@@ -229,7 +270,11 @@ function App() {
           <CSAT />
         </div>
 
-        {activeTab !== 'intercom' && activeTab !== 'csat' && (
+        <div style={{ display: activeTab === 'feedback' ? 'block' : 'none' }}>
+          <FeedbackSuggestions />
+        </div>
+
+        {activeTab !== 'intercom' && activeTab !== 'csat' && activeTab !== 'feedback' && (
           <div style={{ padding: '2rem', color: '#6B7280' }}>
             {/* Blank page for other tabs as requested */}
           </div>

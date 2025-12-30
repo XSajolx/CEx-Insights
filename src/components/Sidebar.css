@@ -1,6 +1,6 @@
 /* Sidebar - CEx Insights Rounded Panel Style */
 .sidebar {
-    width: 240px;
+    width: 270px;
     background-color: #161B22;
     border: 1px solid #30363D;
     border-radius: 20px;
@@ -118,7 +118,7 @@
 .nav-label {
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    /* text-overflow: ellipsis; Removed to allow full text visibility or handle wrapping if width allows */
 }
 
 .sidebar-footer {

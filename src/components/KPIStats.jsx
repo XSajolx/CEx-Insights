@@ -1,56 +1,64 @@
 import React, { useMemo } from 'react';
+import { QUERY_TOPIC_MAPPING } from '../utils/topicMapping';
 
-const KPIStats = ({ conversations, previousConversations }) => {
+const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) => {
     const stats = useMemo(() => {
         // Filter conversations: Must have a topic (check for non-empty array)
-        // Note: conversations are coming from api.js which ensures main_topic/topic are arrays
         const validConversations = conversations.filter(c => {
-            // Check if main_topic or topic has elements
             const hasMain = Array.isArray(c.main_topic) && c.main_topic.length > 0;
             const hasSub = Array.isArray(c.topic) && c.topic.length > 0;
             return hasMain || hasSub;
         });
 
         // 1. Total Conversations
-        const total = validConversations.length;
+        const totalConversations = validConversations.length;
 
-        // 2. Top Topic (using main_topic, excluding "Other")
-        const topicCounts = {};
+        // 2. Total Issues (count all issues/topics across all conversations)
+        let totalIssues = 0;
         validConversations.forEach(c => {
-            // Prefer main_topic, fallback to topic
-            let topicsToCount = [];
-            if (Array.isArray(c.main_topic) && c.main_topic.length > 0) {
-                topicsToCount = c.main_topic;
-            } else if (Array.isArray(c.topic) && c.topic.length > 0) {
-                topicsToCount = c.topic;
-            } else if (c.topic && !Array.isArray(c.topic)) {
-                // Fallback for legacy data if any
-                topicsToCount = [c.topic];
+            if (Array.isArray(c.topic)) {
+                totalIssues += c.topic.filter(t => t && !t.toLowerCase().includes('other')).length;
             }
-
-            topicsToCount.forEach(t => {
-                if (t) {
-                    topicCounts[t] = (topicCounts[t] || 0) + 1;
-                }
-            });
         });
 
-        // Sort topics by count and exclude "Other" variations
-        const sortedTopics = Object.entries(topicCounts)
-            .sort((a, b) => b[1] - a[1]) // Sort by count descending
-            .filter(([topic]) => !topic.toLowerCase().includes('other')); // Exclude "Other"
+        // 3. Total Queries (count sub-topics that map to query main topics)
+        let totalQueries = 0;
+        validConversations.forEach(c => {
+            if (Array.isArray(c.topic)) {
+                c.topic.forEach(t => {
+                    if (t && QUERY_TOPIC_MAPPING[t]) {
+                        totalQueries++;
+                    }
+                });
+            }
+        });
 
-        let topTopic = 'N/A';
-        let topTopicCount = 0;
+        // 4. Conversation to Issue Ratio
+        const convToIssueRatio = totalIssues > 0 
+            ? (totalConversations / totalIssues).toFixed(2) 
+            : totalConversations > 0 ? '1.00' : '0.00';
 
-        if (sortedTopics.length > 0) {
-            [topTopic, topTopicCount] = sortedTopics[0];
+        // 5. Conversation to Query Ratio (as percentage - what % of conversations have queries)
+        const convToQueryPercentage = totalConversations > 0 
+            ? ((totalQueries / totalConversations) * 100).toFixed(1)
+            : '0.0';
+
+        // 6. Query to Issue Ratio (as fraction like 1/27)
+        // Find simplified fraction
+        const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+        let queryToIssueFraction = '0/0';
+        if (totalQueries > 0 && totalIssues > 0) {
+            const divisor = gcd(totalQueries, totalIssues);
+            const simplifiedQueries = totalQueries / divisor;
+            const simplifiedIssues = totalIssues / divisor;
+            queryToIssueFraction = `${simplifiedQueries}/${simplifiedIssues}`;
+        } else if (totalQueries > 0) {
+            queryToIssueFraction = `${totalQueries}/0`;
+        } else {
+            queryToIssueFraction = `0/${totalIssues || 0}`;
         }
 
-        const topTopicPercentage = total > 0 ? Math.round((topTopicCount / total) * 100) : 0;
-
-        // 3. Trend
-        // Apply same filter to previous conversations for consistency
+        // Calculate trends for comparison
         const validPreviousConversations = previousConversations
             ? previousConversations.filter(c => {
                 const hasMain = Array.isArray(c.main_topic) && c.main_topic.length > 0;
@@ -59,24 +67,120 @@ const KPIStats = ({ conversations, previousConversations }) => {
             })
             : [];
 
-        const prevTotal = validPreviousConversations.length;
-        let trend = 0;
-        if (prevTotal > 0) {
-            trend = Math.round(((total - prevTotal) / prevTotal) * 100);
-        }
+        const prevTotalConversations = validPreviousConversations.length;
+        
+        let prevTotalIssues = 0;
+        let prevTotalQueries = 0;
+        validPreviousConversations.forEach(c => {
+            if (Array.isArray(c.topic)) {
+                prevTotalIssues += c.topic.filter(t => t && !t.toLowerCase().includes('other')).length;
+                c.topic.forEach(t => {
+                    if (t && QUERY_TOPIC_MAPPING[t]) {
+                        prevTotalQueries++;
+                    }
+                });
+            }
+        });
 
-        return { total, topTopic, topTopicPercentage, trend, prevTotal };
+        // Trends
+        const convTrend = prevTotalConversations > 0 
+            ? Math.round(((totalConversations - prevTotalConversations) / prevTotalConversations) * 100) 
+            : 0;
+        
+        const issueTrend = prevTotalIssues > 0 
+            ? Math.round(((totalIssues - prevTotalIssues) / prevTotalIssues) * 100) 
+            : 0;
+
+        const queryTrend = prevTotalQueries > 0 
+            ? Math.round(((totalQueries - prevTotalQueries) / prevTotalQueries) * 100) 
+            : 0;
+
+        return { 
+            totalConversations, 
+            totalIssues, 
+            totalQueries,
+            convToIssueRatio,
+            convToQueryPercentage,
+            queryToIssueFraction,
+            convTrend,
+            issueTrend,
+            queryTrend,
+            prevTotalConversations,
+            prevTotalIssues,
+            prevTotalQueries
+        };
     }, [conversations, previousConversations]);
 
+    // Query Analysis Scorecards
+    if (subTab === 'query') {
+        return (
+            <div className="kpi-row">
+                {/* Total Number of Conversations */}
+                <div className="kpi-card">
+                    <div className="kpi-label">Total Conversations</div>
+                    <div className="kpi-value">{stats.totalConversations.toLocaleString()}</div>
+                    <div className={`kpi-trend ${stats.convTrend >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        {stats.prevTotalConversations > 0 ? (
+                            <>
+                                {stats.convTrend > 0 ? '↑' : stats.convTrend < 0 ? '↓' : '→'} {Math.abs(stats.convTrend)}% <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>vs previous</span>
+                            </>
+                        ) : (
+                            <span className="neutral" style={{ color: 'var(--text-muted)' }}>No previous data</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Total Number of Queries */}
+                <div className="kpi-card">
+                    <div className="kpi-label">Total Queries</div>
+                    <div className="kpi-value">{stats.totalQueries.toLocaleString()}</div>
+                    <div className={`kpi-trend ${stats.queryTrend >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        {stats.prevTotalQueries > 0 ? (
+                            <>
+                                {stats.queryTrend > 0 ? '↑' : stats.queryTrend < 0 ? '↓' : '→'} {Math.abs(stats.queryTrend)}% <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>vs previous</span>
+                            </>
+                        ) : (
+                            <span className="neutral" style={{ color: 'var(--text-muted)' }}>No previous data</span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Conversation to Query Ratio (Percentage) */}
+                <div className="kpi-card">
+                    <div className="kpi-label">Conversation to Query Ratio</div>
+                    <div className="kpi-value">{stats.convToQueryPercentage}%</div>
+                    <div className="kpi-trend neutral" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                            {stats.totalQueries} queries in {stats.totalConversations} conversations
+                        </span>
+                    </div>
+                </div>
+
+                {/* Query to Issue Ratio (Fraction) */}
+                <div className="kpi-card">
+                    <div className="kpi-label">Query to Issue Ratio</div>
+                    <div className="kpi-value">{stats.queryToIssueFraction}</div>
+                    <div className="kpi-trend neutral" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                            {stats.totalQueries} queries / {stats.totalIssues} issues
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Issue Analysis Scorecards (default)
     return (
         <div className="kpi-row">
+            {/* Total Number of Conversations */}
             <div className="kpi-card">
                 <div className="kpi-label">Total Conversations</div>
-                <div className="kpi-value">{stats.total.toLocaleString()}</div>
-                <div className={`kpi-trend ${stats.trend >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                    {stats.prevTotal > 0 ? (
+                <div className="kpi-value">{stats.totalConversations.toLocaleString()}</div>
+                <div className={`kpi-trend ${stats.convTrend >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                    {stats.prevTotalConversations > 0 ? (
                         <>
-                            {stats.trend > 0 ? '↑' : '↓'} {Math.abs(stats.trend)}% <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>vs previous</span>
+                            {stats.convTrend > 0 ? '↑' : stats.convTrend < 0 ? '↓' : '→'} {Math.abs(stats.convTrend)}% <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>vs previous</span>
                         </>
                     ) : (
                         <span className="neutral" style={{ color: 'var(--text-muted)' }}>No previous data</span>
@@ -84,25 +188,32 @@ const KPIStats = ({ conversations, previousConversations }) => {
                 </div>
             </div>
 
+            {/* Total Number of Issues */}
             <div className="kpi-card">
-                <div className="kpi-label">Top Topic</div>
-                <div className="kpi-value" style={{ fontSize: '1.5rem' }}>
-                    {stats.topTopic}
-                </div>
-                <div className="kpi-trend neutral">
-                    {stats.topTopicPercentage}% of total volume
+                <div className="kpi-label">Total Issues</div>
+                <div className="kpi-value">{stats.totalIssues.toLocaleString()}</div>
+                <div className={`kpi-trend ${stats.issueTrend >= 0 ? 'positive' : 'negative'}`} style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                    {stats.prevTotalIssues > 0 ? (
+                        <>
+                            {stats.issueTrend > 0 ? '↑' : stats.issueTrend < 0 ? '↓' : '→'} {Math.abs(stats.issueTrend)}% <span style={{ color: 'var(--text-muted)', marginLeft: '4px' }}>vs previous</span>
+                        </>
+                    ) : (
+                        <span className="neutral" style={{ color: 'var(--text-muted)' }}>No previous data</span>
+                    )}
                 </div>
             </div>
 
+            {/* Conversation to Issue Ratio */}
             <div className="kpi-card">
-                <div className="kpi-label">Avg. Daily Volume</div>
-                <div className="kpi-value">
-                    {conversations.length > 0
-                        ? Math.round(conversations.length / 7) // Assuming 7 days for now, or calculate based on date range
-                        : 0}
-                </div>
-                <div className="kpi-trend neutral">
-                    Conversations per day
+                <div className="kpi-label">Conversation to Issue Ratio</div>
+                <div className="kpi-value">{stats.convToIssueRatio}</div>
+                <div className="kpi-trend neutral" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                        {stats.totalIssues > stats.totalConversations 
+                            ? `~${(stats.totalIssues / stats.totalConversations).toFixed(1)} issues per conversation`
+                            : 'Conversations per issue'
+                        }
+                    </span>
                 </div>
             </div>
         </div>

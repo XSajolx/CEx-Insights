@@ -166,6 +166,106 @@ export const TOPIC_MAPPING = {
     "Challenge Rule Clarification": "Competition Issue"
 };
 
+// Query Topic Mapping - Maps sub-topics to main topics for Query Analysis
+// Based on: https://docs.google.com/spreadsheets/d/1n5JXji1xyTwVriysmsQOopMlDM9hfhu7jVAI-q8fzWQ
+export const QUERY_TOPIC_MAPPING = {
+    // OFFER RELATED QUERY
+    "Halloween Offer": "OFFER RELATED QUERY",
+    "Black Friday Offer": "OFFER RELATED QUERY",
+    "Christmas Offer": "OFFER RELATED QUERY",
+    "New Year Offer": "OFFER RELATED QUERY",
+    "Discount Code": "OFFER RELATED QUERY",
+    "Promotional Campaign": "OFFER RELATED QUERY",
+    "Limited Time Deal": "OFFER RELATED QUERY",
+    "Referral Discount": "OFFER RELATED QUERY",
+
+    // CHALLENGE SELECTION QUERY
+    "Stellar Instant": "CHALLENGE SELECTION QUERY",
+    "CFD vs Futures Challenge": "CHALLENGE SELECTION QUERY",
+    "Rapid vs Legacy Challenge": "CHALLENGE SELECTION QUERY",
+
+    // PRICING & PAYMENT QUERY
+    "Payment Method": "PRICING & PAYMENT QUERY",
+    "Registration Fee Refund": "PRICING & PAYMENT QUERY",
+    "Refund Policy": "PRICING & PAYMENT QUERY",
+
+    // ACCOUNT SETUP QUERY
+    "MT5 Access": "ACCOUNT SETUP QUERY",
+    "Login Details Not Received": "ACCOUNT SETUP QUERY",
+    "Password Reset": "ACCOUNT SETUP QUERY",
+    "Platform Download": "ACCOUNT SETUP QUERY",
+
+    // CHALLENGE RULES QUERY
+    "Profit Target": "CHALLENGE RULES QUERY",
+    "Phase 1 Profit Target": "CHALLENGE RULES QUERY",
+    "Phase 2 Profit Target": "CHALLENGE RULES QUERY",
+    "Funded Account Profit": "CHALLENGE RULES QUERY",
+    "Daily Loss Limit": "CHALLENGE RULES QUERY",
+    "Maximum Loss Limit": "CHALLENGE RULES QUERY",
+    "Daily Loss Reset Time": "CHALLENGE RULES QUERY",
+    "Minimum Trading Days": "CHALLENGE RULES QUERY",
+    "Trading Day Definition": "CHALLENGE RULES QUERY",
+    "Weekend Trading": "CHALLENGE RULES QUERY",
+    "Overnight Trade Holding": "CHALLENGE RULES QUERY",
+
+    // WITHDRAWAL & PAYOUT QUERY
+    "Consistency Rule for Withdrawal": "WITHDRAWAL & PAYOUT QUERY",
+    "Withdrawal Delay": "WITHDRAWAL & PAYOUT QUERY",
+    "Withdrawal Rejection": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Not Received": "WITHDRAWAL & PAYOUT QUERY",
+    "Payment Method Issue": "WITHDRAWAL & PAYOUT QUERY",
+
+    // PERFORMANCE REWARD QUERY
+    "Minimum Performance Reward": "PERFORMANCE REWARD QUERY",
+    "Maximum Performance Reward": "PERFORMANCE REWARD QUERY",
+
+    // PAYOUT CYCLE QUERY
+    "First Payout Timeline": "PAYOUT CYCLE QUERY",
+    "Subsequent Payout Timing": "PAYOUT CYCLE QUERY",
+    "Bi-Weekly Payout": "PAYOUT CYCLE QUERY",
+    "On-Demand Payout": "PAYOUT CYCLE QUERY",
+
+    // SCALE-UP PLAN QUERY
+    "Scale-Up Requirements": "SCALE-UP PLAN QUERY",
+    "Tier Upgrade Criteria": "SCALE-UP PLAN QUERY",
+
+    // STELLAR INSTANT SCALE-UP QUERY
+    "Stellar Instant Scale-Up Rules": "STELLAR INSTANT SCALE-UP QUERY",
+    "Tier 1/2/3+ Progression": "STELLAR INSTANT SCALE-UP QUERY",
+    "Balance Increase Calculation": "STELLAR INSTANT SCALE-UP QUERY",
+    "Trailing Loss Limit Update": "STELLAR INSTANT SCALE-UP QUERY",
+
+    // KYC & VERIFICATION QUERY
+    "KYC Submission Timing": "KYC & VERIFICATION QUERY",
+    "Required Documents": "KYC & VERIFICATION QUERY",
+    "Document Upload Process": "KYC & VERIFICATION QUERY",
+    "KYC Approval Duration": "KYC & VERIFICATION QUERY",
+    "KYC Rejection Reason": "KYC & VERIFICATION QUERY",
+    "Swift KYC": "KYC & VERIFICATION QUERY",
+
+    // ACCOUNT RESET QUERY
+    "Reset Cost": "ACCOUNT RESET QUERY",
+    "Reset vs New Purchase": "ACCOUNT RESET QUERY",
+    "Reset Discount": "ACCOUNT RESET QUERY",
+    "Reset Account Timeline": "ACCOUNT RESET QUERY"
+};
+
+// List of all Query Main Topics for dropdowns
+export const QUERY_MAIN_TOPICS = [
+    "OFFER RELATED QUERY",
+    "CHALLENGE SELECTION QUERY",
+    "PRICING & PAYMENT QUERY",
+    "ACCOUNT SETUP QUERY",
+    "CHALLENGE RULES QUERY",
+    "WITHDRAWAL & PAYOUT QUERY",
+    "PERFORMANCE REWARD QUERY",
+    "PAYOUT CYCLE QUERY",
+    "SCALE-UP PLAN QUERY",
+    "STELLAR INSTANT SCALE-UP QUERY",
+    "KYC & VERIFICATION QUERY",
+    "ACCOUNT RESET QUERY"
+];
+
 // Utilities for chart calculations
 export const topNWithOther = (data, topN = 5) => {
     // ... logic if needed, or keeping it strictly for export
