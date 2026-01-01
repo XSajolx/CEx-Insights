@@ -107,7 +107,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     const [selectedMainTopic, setSelectedMainTopic] = useState('All');
     const [selectedQueryMainTopic, setSelectedQueryMainTopic] = useState('All');
     const [showDrillIn, setShowDrillIn] = useState(false);
-    const [drillInData, setDrillInData] = useState({ conversations: [], title: '' });
+    const [drillInData, setDrillInData] = useState({ conversations: [], title: '', filterMainTopic: null, filterSubTopic: null });
 
     // Handle drill-in for Main Topic
     const handleMainTopicDrillIn = (mainTopic) => {
@@ -117,7 +117,9 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         });
         setDrillInData({ 
             conversations: filtered, 
-            title: `${mainTopic} (${filtered.length} conversations)` 
+            title: `${mainTopic} (${filtered.length} conversations)`,
+            filterMainTopic: mainTopic,
+            filterSubTopic: null
         });
         setShowDrillIn(true);
     };
@@ -130,7 +132,9 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         });
         setDrillInData({ 
             conversations: filtered, 
-            title: `${subTopic} (${filtered.length} conversations)` 
+            title: `${subTopic} (${filtered.length} conversations)`,
+            filterMainTopic: null,
+            filterSubTopic: subTopic
         });
         setShowDrillIn(true);
     };
@@ -913,6 +917,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                     conversations={drillInData.conversations}
                     title={drillInData.title}
                     onClose={() => setShowDrillIn(false)}
+                    filterMainTopic={drillInData.filterMainTopic}
+                    filterSubTopic={drillInData.filterSubTopic}
                 />
             )}
         </div>

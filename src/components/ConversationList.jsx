@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import TranscriptModal from './TranscriptModal';
 
-const ConversationList = ({ conversations, title = "Conversations", onClose }) => {
+const ConversationList = ({ conversations, title = "Conversations", onClose, filterMainTopic = null, filterSubTopic = null }) => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [sortField, setSortField] = useState('created_date_bd');
     const [sortDirection, setSortDirection] = useState('desc');
@@ -318,17 +318,30 @@ const ConversationList = ({ conversations, title = "Conversations", onClose }) =
                                         borderBottom: '1px solid #21262D'
                                     }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                            {Array.isArray(conv.main_topic) && conv.main_topic.slice(0, 2).map((t, i) => (
-                                                <span key={i} style={{
+                                            {/* If filterMainTopic is set, only show that main topic; otherwise show first 2 */}
+                                            {filterMainTopic ? (
+                                                <span style={{
                                                     padding: '2px 8px',
                                                     backgroundColor: 'rgba(163, 113, 247, 0.15)',
                                                     color: '#A371F7',
                                                     borderRadius: '10px',
                                                     fontSize: '0.75rem'
                                                 }}>
-                                                    {t}
+                                                    {filterMainTopic}
                                                 </span>
-                                            ))}
+                                            ) : (
+                                                Array.isArray(conv.main_topic) && conv.main_topic.slice(0, 2).map((t, i) => (
+                                                    <span key={i} style={{
+                                                        padding: '2px 8px',
+                                                        backgroundColor: 'rgba(163, 113, 247, 0.15)',
+                                                        color: '#A371F7',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.75rem'
+                                                    }}>
+                                                        {t}
+                                                    </span>
+                                                ))
+                                            )}
                                         </div>
                                     </td>
                                     <td style={{
@@ -336,17 +349,30 @@ const ConversationList = ({ conversations, title = "Conversations", onClose }) =
                                         borderBottom: '1px solid #21262D'
                                     }}>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                            {Array.isArray(conv.topic) && conv.topic.slice(0, 2).map((t, i) => (
-                                                <span key={i} style={{
+                                            {/* If filterSubTopic is set, only show that sub-topic; otherwise show first 2 */}
+                                            {filterSubTopic ? (
+                                                <span style={{
                                                     padding: '2px 8px',
                                                     backgroundColor: 'rgba(88, 166, 255, 0.15)',
                                                     color: '#58A6FF',
                                                     borderRadius: '10px',
                                                     fontSize: '0.75rem'
                                                 }}>
-                                                    {t.length > 25 ? t.substring(0, 25) + '...' : t}
+                                                    {filterSubTopic.length > 25 ? filterSubTopic.substring(0, 25) + '...' : filterSubTopic}
                                                 </span>
-                                            ))}
+                                            ) : (
+                                                Array.isArray(conv.topic) && conv.topic.slice(0, 2).map((t, i) => (
+                                                    <span key={i} style={{
+                                                        padding: '2px 8px',
+                                                        backgroundColor: 'rgba(88, 166, 255, 0.15)',
+                                                        color: '#58A6FF',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.75rem'
+                                                    }}>
+                                                        {t.length > 25 ? t.substring(0, 25) + '...' : t}
+                                                    </span>
+                                                ))
+                                            )}
                                         </div>
                                     </td>
                                     <td style={{
