@@ -135,7 +135,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         }
                     } else {
                         // For Issue Analysis: only include actual sub-topics (those in TOPIC_MAPPING)
-                        if (findMapping(t, TOPIC_MAPPING)) {
+                        // BUT exclude any sub-topics that are also in QUERY_TOPIC_MAPPING
+                        if (findMapping(t, TOPIC_MAPPING) && !findMapping(t, QUERY_TOPIC_MAPPING)) {
                             candidates.add(t);
                         }
                     }
@@ -172,8 +173,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         if (subTab === 'query') {
                             if (findMapping(t, QUERY_TOPIC_MAPPING)) associatedSubs.add(t);
                         } else {
-                            // Only add actual sub-topics, not main topics
-                            if (findMapping(t, TOPIC_MAPPING)) associatedSubs.add(t);
+                            // Only add actual sub-topics, not main topics, and exclude query sub-topics
+                            if (findMapping(t, TOPIC_MAPPING) && !findMapping(t, QUERY_TOPIC_MAPPING)) associatedSubs.add(t);
                         }
                     });
                 }
@@ -447,9 +448,11 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
                     subTopics.forEach(sub => {
                         // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
+                        // Also exclude query sub-topics from Issue Analysis
                         const mappedMain = findMapping(sub, TOPIC_MAPPING);
+                        const isQuerySubTopic = findMapping(sub, QUERY_TOPIC_MAPPING);
 
-                        if (mappedMain === activeSelectedMainTopic) {
+                        if (mappedMain === activeSelectedMainTopic && !isQuerySubTopic) {
                             const topic = sub || 'Unknown';
                             counts[topic] = (counts[topic] || 0) + 1;
                             total++;
@@ -511,8 +514,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         }
                     } else {
                         // For Issue Analysis: only count sub-topics that are in TOPIC_MAPPING
-                        // This excludes main topics like "Login_Issue", "KYC_Issue" etc.
-                        if (findMapping(sub, TOPIC_MAPPING)) {
+                        // BUT exclude any sub-topics that are also in QUERY_TOPIC_MAPPING
+                        if (findMapping(sub, TOPIC_MAPPING) && !findMapping(sub, QUERY_TOPIC_MAPPING)) {
                             counts[sub] = (counts[sub] || 0) + 1;
                             total++;
                         }
