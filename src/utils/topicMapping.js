@@ -185,6 +185,7 @@ export const TOPIC_MAPPING = {
 
 // Query Topic Mapping - Maps sub-topics to main topics for Query Analysis
 // Based on: https://docs.google.com/spreadsheets/d/1n5JXji1xyTwVriysmsQOopMlDM9hfhu7jVAI-q8fzWQ
+// Plus additional mappings from actual database sub-topics
 export const QUERY_TOPIC_MAPPING = {
     // OFFER RELATED QUERY
     "Halloween Offer": "OFFER RELATED QUERY",
@@ -195,6 +196,11 @@ export const QUERY_TOPIC_MAPPING = {
     "Promotional Campaign": "OFFER RELATED QUERY",
     "Limited Time Deal": "OFFER RELATED QUERY",
     "Referral Discount": "OFFER RELATED QUERY",
+    "Offer Related Query": "OFFER RELATED QUERY",
+    "Offer related confusion": "OFFER RELATED QUERY",
+    "Halloween Offer Query": "OFFER RELATED QUERY",
+    "Giveaway Query": "OFFER RELATED QUERY",
+    "Giveaway Claim": "OFFER RELATED QUERY",
 
     // CHALLENGE SELECTION QUERY
     "Stellar Instant": "CHALLENGE SELECTION QUERY",
@@ -205,12 +211,16 @@ export const QUERY_TOPIC_MAPPING = {
     "Payment Method": "PRICING & PAYMENT QUERY",
     "Registration Fee Refund": "PRICING & PAYMENT QUERY",
     "Refund Policy": "PRICING & PAYMENT QUERY",
+    "Facing Payment Error": "PRICING & PAYMENT QUERY",
+    "Payment Method Not Available": "PRICING & PAYMENT QUERY",
 
     // ACCOUNT SETUP QUERY
     "MT5 Access": "ACCOUNT SETUP QUERY",
     "Login Details Not Received": "ACCOUNT SETUP QUERY",
     "Password Reset": "ACCOUNT SETUP QUERY",
     "Platform Download": "ACCOUNT SETUP QUERY",
+    "Fundednext Account Query": "ACCOUNT SETUP QUERY",
+    "Challenge Account Query": "ACCOUNT SETUP QUERY",
 
     // CHALLENGE RULES QUERY
     "Profit Target": "CHALLENGE RULES QUERY",
@@ -224,6 +234,12 @@ export const QUERY_TOPIC_MAPPING = {
     "Trading Day Definition": "CHALLENGE RULES QUERY",
     "Weekend Trading": "CHALLENGE RULES QUERY",
     "Overnight Trade Holding": "CHALLENGE RULES QUERY",
+    "Funded Account Rules": "CHALLENGE RULES QUERY",
+    "News Trading Allowed": "CHALLENGE RULES QUERY",
+    "News Trading Query": "CHALLENGE RULES QUERY",
+    "Minimum Trading Days Confusion": "CHALLENGE RULES QUERY",
+    "Challenge Rule Clarification": "CHALLENGE RULES QUERY",
+    "Competition Rule Clarification": "CHALLENGE RULES QUERY",
 
     // WITHDRAWAL & PAYOUT QUERY
     "Consistency Rule for Withdrawal": "WITHDRAWAL & PAYOUT QUERY",
@@ -231,6 +247,12 @@ export const QUERY_TOPIC_MAPPING = {
     "Withdrawal Rejection": "WITHDRAWAL & PAYOUT QUERY",
     "Payout Not Received": "WITHDRAWAL & PAYOUT QUERY",
     "Payment Method Issue": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Method": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Related Query": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Delay Issue": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Discrepancy": "WITHDRAWAL & PAYOUT QUERY",
+    "Payout Rejected": "WITHDRAWAL & PAYOUT QUERY",
+    "Not Eligible for Payout": "WITHDRAWAL & PAYOUT QUERY",
 
     // PERFORMANCE REWARD QUERY
     "Minimum Performance Reward": "PERFORMANCE REWARD QUERY",
@@ -245,6 +267,7 @@ export const QUERY_TOPIC_MAPPING = {
     // SCALE-UP PLAN QUERY
     "Scale-Up Requirements": "SCALE-UP PLAN QUERY",
     "Tier Upgrade Criteria": "SCALE-UP PLAN QUERY",
+    "Scale-Up Eligibility Inquiry": "SCALE-UP PLAN QUERY",
 
     // STELLAR INSTANT SCALE-UP QUERY
     "Stellar Instant Scale-Up Rules": "STELLAR INSTANT SCALE-UP QUERY",
@@ -259,12 +282,27 @@ export const QUERY_TOPIC_MAPPING = {
     "KYC Approval Duration": "KYC & VERIFICATION QUERY",
     "KYC Rejection Reason": "KYC & VERIFICATION QUERY",
     "Swift KYC": "KYC & VERIFICATION QUERY",
+    "KYC Eligibility Inquiry": "KYC & VERIFICATION QUERY",
 
     // ACCOUNT RESET QUERY
     "Reset Cost": "ACCOUNT RESET QUERY",
     "Reset vs New Purchase": "ACCOUNT RESET QUERY",
     "Reset Discount": "ACCOUNT RESET QUERY",
-    "Reset Account Timeline": "ACCOUNT RESET QUERY"
+    "Reset Account Timeline": "ACCOUNT RESET QUERY",
+    "Reset Eligibility": "ACCOUNT RESET QUERY",
+
+    // REFUND RELATED QUERY
+    "Refund Delay": "REFUND RELATED QUERY",
+    "Confirmo Refund Issue": "REFUND RELATED QUERY",
+
+    // COUPON & DISCOUNT QUERY
+    "Coupon Code Not Working": "COUPON & DISCOUNT QUERY",
+    "Coupon Not Available": "COUPON & DISCOUNT QUERY",
+    "Forgot to Apply Coupon": "COUPON & DISCOUNT QUERY",
+    "Looking for coupon code": "COUPON & DISCOUNT QUERY",
+    "No Personal Coupon": "COUPON & DISCOUNT QUERY",
+    "Unhappy with Coupon Perks": "COUPON & DISCOUNT QUERY",
+    "Unsatisfied with Discount": "COUPON & DISCOUNT QUERY"
 };
 
 // List of all Query Main Topics for dropdowns
@@ -272,6 +310,8 @@ export const QUERY_MAIN_TOPICS = [
     "OFFER RELATED QUERY",
     "CHALLENGE SELECTION QUERY",
     "PRICING & PAYMENT QUERY",
+    "REFUND RELATED QUERY",
+    "COUPON & DISCOUNT QUERY",
     "ACCOUNT SETUP QUERY",
     "CHALLENGE RULES QUERY",
     "WITHDRAWAL & PAYOUT QUERY",
