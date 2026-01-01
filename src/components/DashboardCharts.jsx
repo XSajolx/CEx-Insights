@@ -163,9 +163,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                             candidates.add(t);
                         }
                     } else {
-                        // For Issue Analysis: only include actual sub-topics (those in TOPIC_MAPPING)
-                        // BUT exclude any sub-topics that are also in QUERY_TOPIC_MAPPING
-                        if (findMapping(t, TOPIC_MAPPING) && !findMapping(t, QUERY_TOPIC_MAPPING)) {
+                        // For Issue Analysis: include all sub-topics that are in TOPIC_MAPPING
+                        if (findMapping(t, TOPIC_MAPPING)) {
                             candidates.add(t);
                         }
                     }
@@ -176,6 +175,10 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         const allAvailableSubTopics = [...candidates];
 
         if (activeSelectedMainTopic === 'All') {
+            // When showing "All", exclude query-only sub-topics from issue analysis
+            if (subTab !== 'query') {
+                return allAvailableSubTopics.filter(t => !findMapping(t, QUERY_TOPIC_MAPPING)).sort();
+            }
             return allAvailableSubTopics.sort();
         }
 
@@ -191,7 +194,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             return false;
         });
 
-        // 3. Fallback: If strict list empty, check data associations (legacy behavior, likely not hit if mapping is good)
+        // 3. Fallback: If strict list empty, check data associations (legacy behavior)
         if (strictSubTopics.length === 0) {
             const associatedSubs = new Set();
             data.forEach(item => {
@@ -202,8 +205,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         if (subTab === 'query') {
                             if (findMapping(t, QUERY_TOPIC_MAPPING)) associatedSubs.add(t);
                         } else {
-                            // Only add actual sub-topics, not main topics, and exclude query sub-topics
-                            if (findMapping(t, TOPIC_MAPPING) && !findMapping(t, QUERY_TOPIC_MAPPING)) associatedSubs.add(t);
+                            // Include all sub-topics that belong to this main topic
+                            if (findMapping(t, TOPIC_MAPPING)) associatedSubs.add(t);
                         }
                     });
                 }
@@ -477,11 +480,11 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
                     subTopics.forEach(sub => {
                         // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
-                        // Also exclude query sub-topics from Issue Analysis
+                        // When drilling into a specific main topic, show ALL its sub-topics
+                        // (don't exclude query sub-topics here - that's only for the main topic list)
                         const mappedMain = findMapping(sub, TOPIC_MAPPING);
-                        const isQuerySubTopic = findMapping(sub, QUERY_TOPIC_MAPPING);
 
-                        if (mappedMain === activeSelectedMainTopic && !isQuerySubTopic) {
+                        if (mappedMain === activeSelectedMainTopic) {
                             const topic = sub || 'Unknown';
                             counts[topic] = (counts[topic] || 0) + 1;
                             total++;
