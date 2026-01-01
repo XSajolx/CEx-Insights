@@ -7,6 +7,7 @@ import KPIStats from './components/KPIStats';
 import CSAT from './components/CSAT';
 import LoadingSpinner from './components/LoadingSpinner';
 import FeedbackSuggestions from './components/FeedbackSuggestions';
+import SentimentAnalysis from './components/SentimentAnalysis';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
 import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
@@ -274,7 +275,21 @@ function App() {
           <FeedbackSuggestions />
         </div>
 
-        {activeTab !== 'intercom' && activeTab !== 'csat' && activeTab !== 'feedback' && (
+        <div style={{ display: activeTab === 'sentiment' ? 'block' : 'none' }}>
+          <div style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+            <Filters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              options={{ ...filterOptions, countries: availableCountries, regions: availableRegions }}
+            />
+            <SentimentAnalysis 
+              data={conversations}
+              filters={filters}
+            />
+          </div>
+        </div>
+
+        {activeTab !== 'intercom' && activeTab !== 'csat' && activeTab !== 'feedback' && activeTab !== 'sentiment' && (
           <div style={{ padding: '2rem', color: '#6B7280' }}>
             {/* Blank page for other tabs as requested */}
           </div>
