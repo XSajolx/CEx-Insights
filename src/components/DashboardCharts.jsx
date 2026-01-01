@@ -107,7 +107,33 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     const [selectedMainTopic, setSelectedMainTopic] = useState('All');
     const [selectedQueryMainTopic, setSelectedQueryMainTopic] = useState('All');
     const [showDrillIn, setShowDrillIn] = useState(false);
-    const [drillInFilter, setDrillInFilter] = useState({ type: null, value: null });
+    const [drillInData, setDrillInData] = useState({ conversations: [], title: '' });
+
+    // Handle drill-in for Main Topic
+    const handleMainTopicDrillIn = (mainTopic) => {
+        const filtered = (data || []).filter(conv => {
+            const mainTopics = Array.isArray(conv.main_topic) ? conv.main_topic : [conv.main_topic];
+            return mainTopics.includes(mainTopic);
+        });
+        setDrillInData({ 
+            conversations: filtered, 
+            title: `${mainTopic} (${filtered.length} conversations)` 
+        });
+        setShowDrillIn(true);
+    };
+
+    // Handle drill-in for Sub-Topic
+    const handleSubTopicDrillIn = (subTopic) => {
+        const filtered = (data || []).filter(conv => {
+            const topics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
+            return topics.includes(subTopic);
+        });
+        setDrillInData({ 
+            conversations: filtered, 
+            title: `${subTopic} (${filtered.length} conversations)` 
+        });
+        setShowDrillIn(true);
+    };
 
     // Get the active topic mapping based on the current subTab
     const activeTopicMapping = subTab === 'query' ? QUERY_TOPIC_MAPPING : TOPIC_MAPPING;
@@ -581,6 +607,9 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         </svg>
                         {labels.areaTitle}
                     </h3>
+                    <span style={{ fontSize: '0.6875rem', color: '#6E7681', fontStyle: 'italic' }}>
+                        Click bar to drill-in
+                    </span>
                 </div>
                 <div style={{ height: '350px', overflowY: 'auto', width: '100%' }}>
                     {barData.length > 0 ? (
@@ -607,10 +636,16 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                         dataKey="value"
                                         radius={[0, 4, 4, 0]}
                                         barSize={24}
+                                        onClick={(data) => handleMainTopicDrillIn(data.name)}
+                                        style={{ cursor: 'pointer' }}
                                     >
                                         {
                                             barData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={subTab === 'issue' ? entry.color : '#2563EB'} />
+                                                <Cell 
+                                                    key={`cell-${index}`} 
+                                                    fill={subTab === 'issue' ? entry.color : '#2563EB'} 
+                                                    style={{ cursor: 'pointer' }}
+                                                />
                                             ))
                                         }
                                         <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
@@ -629,13 +664,18 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             {/* Chart 2: Issues/Query Distribution (Pie Chart) */}
             <div className="card">
                 <div className="card-header">
-                    <h3 className="card-title">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                        </svg>
-                        {labels.distributionTitle}
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <h3 className="card-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                            </svg>
+                            {labels.distributionTitle}
+                        </h3>
+                        <span style={{ fontSize: '0.6875rem', color: '#6E7681', fontStyle: 'italic' }}>
+                            Click slice to drill-in
+                        </span>
+                    </div>
                     <div className="topic-selector">
                         <label>{subTab === 'query' ? 'Query Category:' : 'Main Topic:'}</label>
                         <SearchableSelect
@@ -661,9 +701,17 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                             outerRadius={80}
                                             paddingAngle={2}
                                             dataKey="value"
+                                            onClick={(data) => {
+                                                if (activeSelectedMainTopic === 'All') {
+                                                    handleMainTopicDrillIn(data.name);
+                                                } else {
+                                                    handleSubTopicDrillIn(data.name);
+                                                }
+                                            }}
+                                            style={{ cursor: 'pointer' }}
                                         >
                                             {mainTopicData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="#1C2128" strokeWidth={2} />
+                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="#1C2128" strokeWidth={2} style={{ cursor: 'pointer' }} />
                                             ))}
                                         </Pie>
                                         <Tooltip
@@ -715,14 +763,19 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 {/* Chart 3: All Sub-Topics (Scrollable Bar Chart) */}
                 <div className="card">
                     <div className="card-header">
-                        <h3 className="card-title">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="3" y1="9" x2="21" y2="9"></line>
-                                <line x1="9" y1="21" x2="9" y2="9"></line>
-                            </svg>
-                            {subTab === 'query' ? 'All Query Sub-Topics' : 'All Issue Sub-Topics'}
-                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <h3 className="card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                                </svg>
+                                {subTab === 'query' ? 'All Query Sub-Topics' : 'All Issue Sub-Topics'}
+                            </h3>
+                            <span style={{ fontSize: '0.6875rem', color: '#6E7681', fontStyle: 'italic' }}>
+                                Click bar to drill-in
+                            </span>
+                        </div>
                         <span style={{ fontSize: '0.75rem', color: '#8B949E' }}>
                             {allSubTopicsData.length} sub-topics
                         </span>
@@ -752,9 +805,15 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                             contentStyle={{ backgroundColor: '#1C2128', borderColor: '#30363D', borderRadius: '8px', color: '#F0F6FC' }}
                                             formatter={(value, name, props) => [`${value} conversations`, props.payload.fullName]}
                                         />
-                                        <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                                        <Bar 
+                                            dataKey="value" 
+                                            radius={[0, 4, 4, 0]} 
+                                            barSize={24}
+                                            onClick={(data) => handleSubTopicDrillIn(data.name)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             {allSubTopicsData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                                <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: 'pointer' }} />
                                             ))}
                                             <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
                                         </Bar>
@@ -849,53 +908,11 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 </div>
             </div>
 
-            {/* Drill-in Button */}
-            <div style={{ 
-                gridColumn: '1 / -1', 
-                display: 'flex', 
-                justifyContent: 'flex-end',
-                marginTop: '-0.5rem'
-            }}>
-                <button
-                    onClick={() => {
-                        setDrillInFilter({ type: 'all', value: null });
-                        setShowDrillIn(true);
-                    }}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: 'rgba(88, 166, 255, 0.1)',
-                        border: '1px solid rgba(88, 166, 255, 0.3)',
-                        borderRadius: '8px',
-                        color: '#58A6FF',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        transition: 'all 0.15s ease'
-                    }}
-                    onMouseEnter={e => {
-                        e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.2)';
-                        e.target.style.borderColor = '#58A6FF';
-                    }}
-                    onMouseLeave={e => {
-                        e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
-                        e.target.style.borderColor = 'rgba(88, 166, 255, 0.3)';
-                    }}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
-                    Drill-in: View Conversations
-                </button>
-            </div>
-
-            {/* Conversation List Modal */}
+            {/* Conversation List Modal - Opens when clicking on chart elements */}
             {showDrillIn && (
                 <ConversationList
-                    conversations={data || []}
-                    title={subTab === 'query' ? 'Query Conversations' : 'Issue Conversations'}
+                    conversations={drillInData.conversations}
+                    title={drillInData.title}
                     onClose={() => setShowDrillIn(false)}
                 />
             )}
