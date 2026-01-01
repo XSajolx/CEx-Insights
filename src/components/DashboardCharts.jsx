@@ -281,11 +281,13 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
         if (subTab === 'query') {
             // For Query Analysis: Count by Query Main Topics using QUERY_TOPIC_MAPPING
+            // Exclude "Challenge Rule Clarification" to be consistent
             console.log('Calculating barData for Query Analysis');
             filteredData.forEach(item => {
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
                 
                 subTopics.forEach(subTopic => {
+                    if (subTopic === 'Challenge Rule Clarification') return;
                     const mainTopic = findMapping(subTopic, QUERY_TOPIC_MAPPING);
                     if (mainTopic) {
                         counts[mainTopic] = (counts[mainTopic] || 0) + 1;
@@ -419,10 +421,12 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
         if (subTab === 'query') {
             // For Query Analysis: Find subtopics that map to the selected query main topic
+            // Exclude "Challenge Rule Clarification" to be consistent
             safeData.forEach(item => {
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
 
                 subTopics.forEach(sub => {
+                    if (sub === 'Challenge Rule Clarification') return;
                     const mappedMain = findMapping(sub, QUERY_TOPIC_MAPPING);
                     if (mappedMain === activeSelectedMainTopic) {
                         const topic = sub || 'Unknown';

@@ -41,11 +41,12 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
         });
 
         // 3. Total Queries (count sub-topics that map to query main topics)
+        // Exclude "Challenge Rule Clarification" to match the charts
         let totalQueries = 0;
         validConversations.forEach(c => {
             if (Array.isArray(c.topic)) {
                 c.topic.forEach(t => {
-                    if (t && findMapping(t, QUERY_TOPIC_MAPPING)) {
+                    if (t && t !== 'Challenge Rule Clarification' && findMapping(t, QUERY_TOPIC_MAPPING)) {
                         totalQueries++;
                     }
                 });
@@ -99,7 +100,7 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
                     return true;
                 }).length;
                 c.topic.forEach(t => {
-                    if (t && findMapping(t, QUERY_TOPIC_MAPPING)) {
+                    if (t && t !== 'Challenge Rule Clarification' && findMapping(t, QUERY_TOPIC_MAPPING)) {
                         prevTotalQueries++;
                     }
                 });
