@@ -224,11 +224,22 @@ async function getSupabaseData(filters = {}) {
             });
         });
 
-        if (transformedData.length > 0) {
-            console.log('API Transformed Data [0]:', JSON.stringify(transformedData[0]));
+        // Deduplicate by conversation_id (keep first occurrence)
+        const seen = new Set();
+        const deduplicatedData = transformedData.filter(item => {
+            if (!item.conversation_id || seen.has(item.conversation_id)) {
+                return false;
+            }
+            seen.add(item.conversation_id);
+            return true;
+        });
+
+        if (deduplicatedData.length > 0) {
+            console.log('API Transformed Data [0]:', JSON.stringify(deduplicatedData[0]));
+            console.log(`Deduplicated: ${transformedData.length} rows -> ${deduplicatedData.length} unique conversations`);
         }
 
-        return transformedData;
+        return deduplicatedData;
 
     } catch (error) {
         console.error('Error fetching Supabase data:', error);
