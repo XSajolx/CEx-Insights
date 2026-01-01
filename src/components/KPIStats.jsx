@@ -27,11 +27,16 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
         // 1. Total Conversations
         const totalConversations = validConversations.length;
 
-        // 2. Total Issues (count all issues/topics across all conversations)
+        // 2. Total Issues (count all issues/topics across all conversations, excluding query sub-topics)
         let totalIssues = 0;
         validConversations.forEach(c => {
             if (Array.isArray(c.topic)) {
-                totalIssues += c.topic.filter(t => t && !t.toLowerCase().includes('other')).length;
+                totalIssues += c.topic.filter(t => {
+                    if (!t || t.toLowerCase().includes('other')) return false;
+                    // Exclude query sub-topics from issue count
+                    if (findMapping(t, QUERY_TOPIC_MAPPING)) return false;
+                    return true;
+                }).length;
             }
         });
 
@@ -87,7 +92,12 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
         let prevTotalQueries = 0;
         validPreviousConversations.forEach(c => {
             if (Array.isArray(c.topic)) {
-                prevTotalIssues += c.topic.filter(t => t && !t.toLowerCase().includes('other')).length;
+                prevTotalIssues += c.topic.filter(t => {
+                    if (!t || t.toLowerCase().includes('other')) return false;
+                    // Exclude query sub-topics from issue count
+                    if (findMapping(t, QUERY_TOPIC_MAPPING)) return false;
+                    return true;
+                }).length;
                 c.topic.forEach(t => {
                     if (t && findMapping(t, QUERY_TOPIC_MAPPING)) {
                         prevTotalQueries++;

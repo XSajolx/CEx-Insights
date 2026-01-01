@@ -8,6 +8,25 @@ import SearchableSelect from './SearchableSelect';
 import CustomLegend from './CustomLegend';
 import { TOPIC_MAPPING, QUERY_TOPIC_MAPPING, QUERY_MAIN_TOPICS, normalizeApostrophe } from '../utils/topicMapping';
 
+// Main topics that should ONLY appear in Query Analysis, not Issue Analysis
+const QUERY_ONLY_MAIN_TOPICS = new Set([
+    "Offer Related Query",
+    "OFFER RELATED QUERY",
+    "CHALLENGE SELECTION QUERY",
+    "PRICING & PAYMENT QUERY",
+    "ACCOUNT SETUP QUERY",
+    "CHALLENGE RULES QUERY",
+    "WITHDRAWAL & PAYOUT QUERY",
+    "PERFORMANCE REWARD QUERY",
+    "PAYOUT CYCLE QUERY",
+    "SCALE-UP PLAN QUERY",
+    "STELLAR INSTANT SCALE-UP QUERY",
+    "KYC & VERIFICATION QUERY",
+    "ACCOUNT RESET QUERY",
+    "REFUND RELATED QUERY",
+    "COUPON & DISCOUNT QUERY"
+]);
+
 // Helper to find mapping with normalized apostrophe
 const findMapping = (topic, mapping) => {
     if (!topic) return null;
@@ -274,7 +293,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 });
             });
         } else {
-            // For Issue Analysis: Use main_topic directly
+            // For Issue Analysis: Use main_topic directly, but exclude query-only topics
             console.log('Calculating barData for Issue Analysis');
             filteredData.forEach(item => {
                 const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
@@ -283,6 +302,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
                 topics.forEach(topic => {
                     const t = topic || 'Other';
+                    // Skip query-only main topics in Issue Analysis
+                    if (QUERY_ONLY_MAIN_TOPICS.has(t)) return;
                     counts[t] = (counts[t] || 0) + 1;
                 });
             });
