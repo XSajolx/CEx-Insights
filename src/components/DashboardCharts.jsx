@@ -6,6 +6,7 @@ import {
 import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 import SearchableSelect from './SearchableSelect';
 import CustomLegend from './CustomLegend';
+import ConversationList from './ConversationList';
 import { TOPIC_MAPPING, QUERY_TOPIC_MAPPING, QUERY_MAIN_TOPICS, normalizeApostrophe } from '../utils/topicMapping';
 
 // Main topics that should ONLY appear in Query Analysis, not Issue Analysis
@@ -105,6 +106,8 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     const [selectedTopic, setSelectedTopic] = useState('');
     const [selectedMainTopic, setSelectedMainTopic] = useState('All');
     const [selectedQueryMainTopic, setSelectedQueryMainTopic] = useState('All');
+    const [showDrillIn, setShowDrillIn] = useState(false);
+    const [drillInFilter, setDrillInFilter] = useState({ type: null, value: null });
 
     // Get the active topic mapping based on the current subTab
     const activeTopicMapping = subTab === 'query' ? QUERY_TOPIC_MAPPING : TOPIC_MAPPING;
@@ -845,6 +848,57 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                     </div>
                 </div>
             </div>
+
+            {/* Drill-in Button */}
+            <div style={{ 
+                gridColumn: '1 / -1', 
+                display: 'flex', 
+                justifyContent: 'flex-end',
+                marginTop: '-0.5rem'
+            }}>
+                <button
+                    onClick={() => {
+                        setDrillInFilter({ type: 'all', value: null });
+                        setShowDrillIn(true);
+                    }}
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: 'rgba(88, 166, 255, 0.1)',
+                        border: '1px solid rgba(88, 166, 255, 0.3)',
+                        borderRadius: '8px',
+                        color: '#58A6FF',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => {
+                        e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.2)';
+                        e.target.style.borderColor = '#58A6FF';
+                    }}
+                    onMouseLeave={e => {
+                        e.target.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
+                        e.target.style.borderColor = 'rgba(88, 166, 255, 0.3)';
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Drill-in: View Conversations
+                </button>
+            </div>
+
+            {/* Conversation List Modal */}
+            {showDrillIn && (
+                <ConversationList
+                    conversations={data || []}
+                    title={subTab === 'query' ? 'Query Conversations' : 'Issue Conversations'}
+                    onClose={() => setShowDrillIn(false)}
+                />
+            )}
         </div>
     );
 };
