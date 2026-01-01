@@ -109,15 +109,28 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
     const [showDrillIn, setShowDrillIn] = useState(false);
     const [drillInData, setDrillInData] = useState({ conversations: [], title: '' });
 
+    // Helper to deduplicate conversations by ID
+    const deduplicateByConversationId = (conversations) => {
+        const seen = new Set();
+        return conversations.filter(conv => {
+            if (!conv.conversation_id || seen.has(conv.conversation_id)) {
+                return false;
+            }
+            seen.add(conv.conversation_id);
+            return true;
+        });
+    };
+
     // Handle drill-in for Main Topic
     const handleMainTopicDrillIn = (mainTopic) => {
         const filtered = (data || []).filter(conv => {
             const mainTopics = Array.isArray(conv.main_topic) ? conv.main_topic : [conv.main_topic];
             return mainTopics.includes(mainTopic);
         });
+        const unique = deduplicateByConversationId(filtered);
         setDrillInData({ 
-            conversations: filtered, 
-            title: `${mainTopic} (${filtered.length} conversations)` 
+            conversations: unique, 
+            title: `${mainTopic} (${unique.length} conversations)` 
         });
         setShowDrillIn(true);
     };
@@ -128,9 +141,10 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             const topics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
             return topics.includes(subTopic);
         });
+        const unique = deduplicateByConversationId(filtered);
         setDrillInData({ 
-            conversations: filtered, 
-            title: `${subTopic} (${filtered.length} conversations)` 
+            conversations: unique, 
+            title: `${subTopic} (${unique.length} conversations)` 
         });
         setShowDrillIn(true);
     };
