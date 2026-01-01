@@ -175,7 +175,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
         return { negative, positive };
     }, [data]);
 
-    // Handle drill-in
+    // Handle drill-in by sentiment only
     const handleSentimentDrillIn = (sentiment) => {
         const filtered = data.filter(conv => {
             const s = conv.sentiment?.toLowerCase() || '';
@@ -186,6 +186,62 @@ const SentimentAnalysis = ({ data = [], filters }) => {
         setDrillInData({
             conversations: filtered,
             title: `${sentiment} Sentiment (${filtered.length} conversations)`
+        });
+        setShowDrillIn(true);
+    };
+
+    // Handle drill-in by region + sentiment
+    const handleRegionDrillIn = (region, sentiment) => {
+        const filtered = data.filter(conv => {
+            const convRegion = conv.region || 'Unknown';
+            const s = conv.sentiment?.toLowerCase() || '';
+            const matchRegion = convRegion === region;
+            
+            if (sentiment === 'Positive') return matchRegion && s === 'positive';
+            if (sentiment === 'Negative') return matchRegion && s === 'negative';
+            if (sentiment === 'Neutral') return matchRegion && s !== 'positive' && s !== 'negative';
+            return matchRegion;
+        });
+        setDrillInData({
+            conversations: filtered,
+            title: `${sentiment} Sentiment in ${region} (${filtered.length} conversations)`
+        });
+        setShowDrillIn(true);
+    };
+
+    // Handle drill-in by product + sentiment
+    const handleProductDrillIn = (product, sentiment) => {
+        const filtered = data.filter(conv => {
+            const convProduct = conv.product || 'Unknown';
+            const s = conv.sentiment?.toLowerCase() || '';
+            const matchProduct = convProduct === product;
+            
+            if (sentiment === 'Positive') return matchProduct && s === 'positive';
+            if (sentiment === 'Negative') return matchProduct && s === 'negative';
+            if (sentiment === 'Neutral') return matchProduct && s !== 'positive' && s !== 'negative';
+            return matchProduct;
+        });
+        setDrillInData({
+            conversations: filtered,
+            title: `${sentiment} Sentiment for ${product} (${filtered.length} conversations)`
+        });
+        setShowDrillIn(true);
+    };
+
+    // Handle drill-in by topic + sentiment
+    const handleTopicDrillIn = (topic, sentiment) => {
+        const filtered = data.filter(conv => {
+            const topics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
+            const s = conv.sentiment?.toLowerCase() || '';
+            const matchTopic = topics.includes(topic);
+            
+            if (sentiment === 'Positive') return matchTopic && s === 'positive';
+            if (sentiment === 'Negative') return matchTopic && s === 'negative';
+            return matchTopic;
+        });
+        setDrillInData({
+            conversations: filtered,
+            title: `${topic} - ${sentiment} (${filtered.length} conversations)`
         });
         setShowDrillIn(true);
     };
@@ -467,6 +523,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         <span style={{ opacity: 0.6 }}>🌍</span>
                         Sentiment by Region
                     </h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '0 0 8px 0' }}>Click bar to drill-in</p>
                     <ResponsiveContainer width="100%" height={280}>
                         <BarChart data={regionData} layout="vertical">
                             <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} axisLine={{ stroke: '#30363D' }} />
@@ -483,9 +540,30 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                 height={36}
                                 formatter={(value) => <span style={{ color: '#C9D1D9', fontSize: '0.75rem' }}>{value}</span>}
                             />
-                            <Bar dataKey="Positive" stackId="a" fill="#10B981" radius={[0, 0, 0, 0]} />
-                            <Bar dataKey="Neutral" stackId="a" fill="#6B7280" radius={[0, 0, 0, 0]} />
-                            <Bar dataKey="Negative" stackId="a" fill="#EF4444" radius={[0, 4, 4, 0]} />
+                            <Bar 
+                                dataKey="Positive" 
+                                stackId="a" 
+                                fill="#10B981" 
+                                radius={[0, 0, 0, 0]}
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleRegionDrillIn(data.region, 'Positive')}
+                            />
+                            <Bar 
+                                dataKey="Neutral" 
+                                stackId="a" 
+                                fill="#6B7280" 
+                                radius={[0, 0, 0, 0]}
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleRegionDrillIn(data.region, 'Neutral')}
+                            />
+                            <Bar 
+                                dataKey="Negative" 
+                                stackId="a" 
+                                fill="#EF4444" 
+                                radius={[0, 4, 4, 0]}
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleRegionDrillIn(data.region, 'Negative')}
+                            />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -509,6 +587,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         <span style={{ opacity: 0.6 }}>📦</span>
                         Sentiment by Product
                     </h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '0 0 8px 0' }}>Click bar to drill-in</p>
                     <ResponsiveContainer width="100%" height={280}>
                         <BarChart data={productData}>
                             <XAxis 
@@ -526,9 +605,28 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                 height={36}
                                 formatter={(value) => <span style={{ color: '#C9D1D9', fontSize: '0.75rem' }}>{value}</span>}
                             />
-                            <Bar dataKey="Positive" stackId="a" fill="#10B981" />
-                            <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
-                            <Bar dataKey="Negative" stackId="a" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                            <Bar 
+                                dataKey="Positive" 
+                                stackId="a" 
+                                fill="#10B981"
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleProductDrillIn(data.product, 'Positive')}
+                            />
+                            <Bar 
+                                dataKey="Neutral" 
+                                stackId="a" 
+                                fill="#6B7280"
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleProductDrillIn(data.product, 'Neutral')}
+                            />
+                            <Bar 
+                                dataKey="Negative" 
+                                stackId="a" 
+                                fill="#EF4444" 
+                                radius={[4, 4, 0, 0]}
+                                style={{ cursor: 'pointer' }}
+                                onClick={(data) => handleProductDrillIn(data.product, 'Negative')}
+                            />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -548,7 +646,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                     padding: '1.25rem'
                 }}>
                     <h3 style={{ 
-                        margin: '0 0 1rem 0', 
+                        margin: '0 0 0.5rem 0', 
                         fontSize: '0.875rem', 
                         fontWeight: '600', 
                         color: '#EF4444',
@@ -559,20 +657,29 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         <span>😞</span>
                         Top Topics with Negative Sentiment
                     </h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '0 0 8px 0' }}>Click topic to drill-in</p>
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                         {topicsBySentiment.negative.length === 0 ? (
                             <p style={{ color: '#8B949E', fontSize: '0.875rem' }}>No negative sentiment data</p>
                         ) : (
                             topicsBySentiment.negative.map((topic, index) => (
-                                <div key={topic.name} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '10px 12px',
-                                    background: index % 2 === 0 ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
-                                    borderRadius: '6px',
-                                    marginBottom: '4px'
-                                }}>
+                                <div 
+                                    key={topic.name} 
+                                    onClick={() => handleTopicDrillIn(topic.name, 'Negative')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '10px 12px',
+                                        background: index % 2 === 0 ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
+                                        borderRadius: '6px',
+                                        marginBottom: '4px',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? 'rgba(239, 68, 68, 0.05)' : 'transparent'}
+                                >
                                     <span style={{ 
                                         color: '#C9D1D9', 
                                         fontSize: '0.875rem',
@@ -608,7 +715,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                     padding: '1.25rem'
                 }}>
                     <h3 style={{ 
-                        margin: '0 0 1rem 0', 
+                        margin: '0 0 0.5rem 0', 
                         fontSize: '0.875rem', 
                         fontWeight: '600', 
                         color: '#10B981',
@@ -619,20 +726,29 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         <span>😊</span>
                         Top Topics with Positive Sentiment
                     </h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '0 0 8px 0' }}>Click topic to drill-in</p>
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                         {topicsBySentiment.positive.length === 0 ? (
                             <p style={{ color: '#8B949E', fontSize: '0.875rem' }}>No positive sentiment data</p>
                         ) : (
                             topicsBySentiment.positive.map((topic, index) => (
-                                <div key={topic.name} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '10px 12px',
-                                    background: index % 2 === 0 ? 'rgba(16, 185, 129, 0.05)' : 'transparent',
-                                    borderRadius: '6px',
-                                    marginBottom: '4px'
-                                }}>
+                                <div 
+                                    key={topic.name} 
+                                    onClick={() => handleTopicDrillIn(topic.name, 'Positive')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '10px 12px',
+                                        background: index % 2 === 0 ? 'rgba(16, 185, 129, 0.05)' : 'transparent',
+                                        borderRadius: '6px',
+                                        marginBottom: '4px',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.15s ease'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? 'rgba(16, 185, 129, 0.05)' : 'transparent'}
+                                >
                                     <span style={{ 
                                         color: '#C9D1D9', 
                                         fontSize: '0.875rem',
