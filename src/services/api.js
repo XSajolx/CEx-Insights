@@ -224,22 +224,47 @@ async function getSupabaseData(filters = {}) {
             });
         });
 
-        // Deduplicate by conversation_id (keep first occurrence)
-        const seen = new Set();
-        const deduplicatedData = transformedData.filter(item => {
-            if (!item.conversation_id || seen.has(item.conversation_id)) {
-                return false;
+        // Merge rows with the same conversation_id, combining their topics
+        const conversationMap = new Map();
+        
+        transformedData.forEach(item => {
+            if (!item.conversation_id) return;
+            
+            if (conversationMap.has(item.conversation_id)) {
+                // Merge topics into existing entry
+                const existing = conversationMap.get(item.conversation_id);
+                
+                // Add unique sub-topics
+                item.topic.forEach(t => {
+                    if (!existing.topic.includes(t)) {
+                        existing.topic.push(t);
+                    }
+                });
+                
+                // Add unique main-topics
+                item.main_topic.forEach(t => {
+                    if (!existing.main_topic.includes(t)) {
+                        existing.main_topic.push(t);
+                    }
+                });
+            } else {
+                // First occurrence - add to map
+                conversationMap.set(item.conversation_id, {
+                    ...item,
+                    topic: [...item.topic],
+                    main_topic: [...item.main_topic]
+                });
             }
-            seen.add(item.conversation_id);
-            return true;
         });
+        
+        const mergedData = Array.from(conversationMap.values());
 
-        if (deduplicatedData.length > 0) {
-            console.log('API Transformed Data [0]:', JSON.stringify(deduplicatedData[0]));
-            console.log(`Deduplicated: ${transformedData.length} rows -> ${deduplicatedData.length} unique conversations`);
+        if (mergedData.length > 0) {
+            console.log('API Transformed Data [0]:', JSON.stringify(mergedData[0]));
+            console.log(`Merged: ${transformedData.length} rows -> ${mergedData.length} unique conversations`);
         }
 
-        return deduplicatedData;
+        return mergedData;
 
     } catch (error) {
         console.error('Error fetching Supabase data:', error);
