@@ -1,5 +1,19 @@
 import React, { useMemo } from 'react';
-import { QUERY_TOPIC_MAPPING } from '../utils/topicMapping';
+import { QUERY_TOPIC_MAPPING, normalizeApostrophe } from '../utils/topicMapping';
+
+// Helper to find mapping with normalized apostrophe
+const findMapping = (topic, mapping) => {
+    if (!topic) return null;
+    if (mapping[topic]) return mapping[topic];
+    const normalized = normalizeApostrophe(topic);
+    if (mapping[normalized]) return mapping[normalized];
+    for (const key of Object.keys(mapping)) {
+        if (normalizeApostrophe(key) === normalized) {
+            return mapping[key];
+        }
+    }
+    return null;
+};
 
 const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) => {
     const stats = useMemo(() => {
@@ -26,7 +40,7 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
         validConversations.forEach(c => {
             if (Array.isArray(c.topic)) {
                 c.topic.forEach(t => {
-                    if (t && QUERY_TOPIC_MAPPING[t]) {
+                    if (t && findMapping(t, QUERY_TOPIC_MAPPING)) {
                         totalQueries++;
                     }
                 });
@@ -75,7 +89,7 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
             if (Array.isArray(c.topic)) {
                 prevTotalIssues += c.topic.filter(t => t && !t.toLowerCase().includes('other')).length;
                 c.topic.forEach(t => {
-                    if (t && QUERY_TOPIC_MAPPING[t]) {
+                    if (t && findMapping(t, QUERY_TOPIC_MAPPING)) {
                         prevTotalQueries++;
                     }
                 });

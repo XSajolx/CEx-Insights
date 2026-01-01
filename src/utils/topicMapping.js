@@ -1,7 +1,13 @@
+// Helper to normalize apostrophes (database uses curly ', code uses straight ')
+export const normalizeApostrophe = (str) => {
+    if (!str) return str;
+    return str.replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'");
+};
 
 // Helper for Topic Mapping (Extracted from SQL)
 // Used to strictly filter sub-topics based on main topic selection
 export const TOPIC_MAPPING = {
+    // Using straight apostrophe for code, but normalize when matching
     "Veriff Doesn't Accept KYC Documents": "KYC_Issue",
     "Waiting For KYC Verification": "KYC_Issue",
     "KYC Verification Delay Issue": "KYC_Issue",
@@ -163,7 +169,18 @@ export const TOPIC_MAPPING = {
     "Other": "Random Issues",
     "VPS Usage and Replacement Inquiry": "Platform Issue",
     "VPS Change Inquiry": "Platform Issue",
-    "Challenge Rule Clarification": "Competition Issue"
+    "Challenge Rule Clarification": "Competition Issue",
+    
+    // Additional mappings found in database
+    "Funded Account Rules": "Trade Issue",
+    "News Trading Allowed": "Trade Issue",
+    "News Trading Query": "Trade Issue",
+    "Payout Rejected": "Payout related issue",
+    "Payout Method": "Payout related issue",
+    "Reset Eligibility": "Account Related Issue",
+    "Scale-Up Eligibility Inquiry": "Account Related Issue",
+    "Maximum Loss Limit": "Trade Issue",
+    "Trading Disabled": "Trade Issue"
 };
 
 // Query Topic Mapping - Maps sub-topics to main topics for Query Analysis

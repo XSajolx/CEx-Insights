@@ -6,7 +6,24 @@ import {
 import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 import SearchableSelect from './SearchableSelect';
 import CustomLegend from './CustomLegend';
-import { TOPIC_MAPPING, QUERY_TOPIC_MAPPING, QUERY_MAIN_TOPICS } from '../utils/topicMapping';
+import { TOPIC_MAPPING, QUERY_TOPIC_MAPPING, QUERY_MAIN_TOPICS, normalizeApostrophe } from '../utils/topicMapping';
+
+// Helper to find mapping with normalized apostrophe
+const findMapping = (topic, mapping) => {
+    if (!topic) return null;
+    // Try direct match first
+    if (mapping[topic]) return mapping[topic];
+    // Try normalized match
+    const normalized = normalizeApostrophe(topic);
+    if (mapping[normalized]) return mapping[normalized];
+    // Try finding a key that matches when normalized
+    for (const key of Object.keys(mapping)) {
+        if (normalizeApostrophe(key) === normalized) {
+            return mapping[key];
+        }
+    }
+    return null;
+};
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -94,12 +111,12 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 if (t && t !== 'Challenge Rule Clarification') {
                     if (subTab === 'query') {
                         // For Query Analysis: only include query sub-topics
-                        if (QUERY_TOPIC_MAPPING[t]) {
+                        if (findMapping(t, QUERY_TOPIC_MAPPING)) {
                             candidates.add(t);
                         }
                     } else {
                         // For Issue Analysis: only include actual sub-topics (those in TOPIC_MAPPING)
-                        if (TOPIC_MAPPING[t]) {
+                        if (findMapping(t, TOPIC_MAPPING)) {
                             candidates.add(t);
                         }
                     }
@@ -116,7 +133,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         // 2. Strict Filtering using the active topic mapping (TOPIC_MAPPING or QUERY_TOPIC_MAPPING)
         // Only include sub-topics that officially map to the selected Main Topic
         const strictSubTopics = allAvailableSubTopics.filter(sub => {
-            const mappedMain = activeTopicMapping[sub];
+            const mappedMain = findMapping(sub, activeTopicMapping);
             // Match strict mapping
             if (mappedMain) {
                 return mappedMain === activeSelectedMainTopic;
@@ -134,10 +151,10 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                     const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
                     subTopics.forEach(t => {
                         if (subTab === 'query') {
-                            if (QUERY_TOPIC_MAPPING[t]) associatedSubs.add(t);
+                            if (findMapping(t, QUERY_TOPIC_MAPPING)) associatedSubs.add(t);
                         } else {
                             // Only add actual sub-topics, not main topics
-                            if (TOPIC_MAPPING[t]) associatedSubs.add(t);
+                            if (findMapping(t, TOPIC_MAPPING)) associatedSubs.add(t);
                         }
                     });
                 }
@@ -250,7 +267,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
                 
                 subTopics.forEach(subTopic => {
-                    const mainTopic = QUERY_TOPIC_MAPPING[subTopic];
+                    const mainTopic = findMapping(subTopic, QUERY_TOPIC_MAPPING);
                     if (mainTopic) {
                         counts[mainTopic] = (counts[mainTopic] || 0) + 1;
                     }
@@ -309,7 +326,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         if (!selectedTopic || !data) return [];
 
         // For Query Analysis: verify the selected topic is a query sub-topic
-        if (subTab === 'query' && !QUERY_TOPIC_MAPPING[selectedTopic]) {
+        if (subTab === 'query' && !findMapping(selectedTopic, QUERY_TOPIC_MAPPING)) {
             return [];
         }
 
@@ -385,7 +402,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
 
                 subTopics.forEach(sub => {
-                    const mappedMain = QUERY_TOPIC_MAPPING[sub];
+                    const mappedMain = findMapping(sub, QUERY_TOPIC_MAPPING);
                     if (mappedMain === activeSelectedMainTopic) {
                         const topic = sub || 'Unknown';
                         counts[topic] = (counts[topic] || 0) + 1;
@@ -405,7 +422,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
 
                     subTopics.forEach(sub => {
                         // STRICT FILTERING: Only count sub-topics that officially map to this Main Topic.
-                        const mappedMain = TOPIC_MAPPING[sub];
+                        const mappedMain = findMapping(sub, TOPIC_MAPPING);
 
                         if (mappedMain === activeSelectedMainTopic) {
                             const topic = sub || 'Unknown';
@@ -463,14 +480,14 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 if (sub && !sub.toLowerCase().includes('other') && sub !== 'Unknown' && sub !== 'Challenge Rule Clarification') {
                     if (subTab === 'query') {
                         // For Query Analysis: only count sub-topics that are in QUERY_TOPIC_MAPPING
-                        if (QUERY_TOPIC_MAPPING[sub]) {
+                        if (findMapping(sub, QUERY_TOPIC_MAPPING)) {
                             counts[sub] = (counts[sub] || 0) + 1;
                             total++;
                         }
                     } else {
                         // For Issue Analysis: only count sub-topics that are in TOPIC_MAPPING
                         // This excludes main topics like "Login_Issue", "KYC_Issue" etc.
-                        if (TOPIC_MAPPING[sub]) {
+                        if (findMapping(sub, TOPIC_MAPPING)) {
                             counts[sub] = (counts[sub] || 0) + 1;
                             total++;
                         }
