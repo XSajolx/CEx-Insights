@@ -253,18 +253,18 @@ const TranscriptModal = ({ isOpen, onClose, conversationId, conversationData }) 
                             key={index}
                             style={{
                                 display: 'flex',
-                                justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start'
+                                justifyContent: msg.type === 'agent' ? 'flex-end' : 'flex-start'
                             }}
                         >
                             <div style={{
                                 maxWidth: '75%',
                                 padding: '10px 14px',
-                                borderRadius: msg.type === 'user' 
+                                borderRadius: msg.type === 'agent' 
                                     ? '16px 16px 4px 16px' 
                                     : '16px 16px 16px 4px',
-                                backgroundColor: msg.type === 'user' 
-                                    ? '#238636' 
-                                    : msg.type === 'agent'
+                                backgroundColor: msg.type === 'agent' 
+                                    ? '#1F6FEB' 
+                                    : msg.type === 'user'
                                     ? '#21262D'
                                     : '#30363D',
                                 color: '#F0F6FC',
@@ -275,7 +275,7 @@ const TranscriptModal = ({ isOpen, onClose, conversationId, conversationData }) 
                                     fontSize: '0.6875rem',
                                     fontWeight: '600',
                                     marginBottom: '4px',
-                                    color: msg.type === 'user' ? '#7EE787' : '#58A6FF',
+                                    color: msg.type === 'agent' ? '#79C0FF' : '#8B949E',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.03em'
                                 }}>
