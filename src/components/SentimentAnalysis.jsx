@@ -783,6 +783,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                     conversations={drillInData.conversations}
                     title={drillInData.title}
                     onClose={() => setShowDrillIn(false)}
+                    mode="sentiment"
                 />
             )}
         </div>

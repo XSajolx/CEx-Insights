@@ -1,7 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import TranscriptModal from './TranscriptModal';
 
-const ConversationList = ({ conversations, title = "Conversations", onClose, filterMainTopic = null, filterSubTopic = null }) => {
+// Sentiment colors
+const SENTIMENT_COLORS = {
+    'positive': { bg: 'rgba(16, 185, 129, 0.15)', text: '#10B981' },
+    'neutral': { bg: 'rgba(107, 114, 128, 0.15)', text: '#9CA3AF' },
+    'negative': { bg: 'rgba(239, 68, 68, 0.15)', text: '#EF4444' }
+};
+
+const ConversationList = ({ conversations, title = "Conversations", onClose, filterMainTopic = null, filterSubTopic = null, mode = 'topic' }) => {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [sortField, setSortField] = useState('created_date_bd');
     const [sortDirection, setSortDirection] = useState('desc');
@@ -218,30 +225,65 @@ const ConversationList = ({ conversations, title = "Conversations", onClose, fil
                                 >
                                     Date <SortIcon field="created_date_bd" />
                                 </th>
-                                <th style={{
-                                    padding: '12px 16px',
-                                    textAlign: 'left',
-                                    color: '#8B949E',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '600',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '1px solid #30363D'
-                                }}>
-                                    Main Topic
-                                </th>
-                                <th style={{
-                                    padding: '12px 16px',
-                                    textAlign: 'left',
-                                    color: '#8B949E',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '600',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                    borderBottom: '1px solid #30363D'
-                                }}>
-                                    Sub-Topic
-                                </th>
+                                {mode === 'sentiment' ? (
+                                    <>
+                                        <th 
+                                            onClick={() => handleSort('sentiment')}
+                                            style={{
+                                                padding: '12px 16px',
+                                                textAlign: 'left',
+                                                color: '#8B949E',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '600',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid #30363D'
+                                            }}
+                                        >
+                                            Sentiment <SortIcon field="sentiment" />
+                                        </th>
+                                        <th style={{
+                                            padding: '12px 16px',
+                                            textAlign: 'left',
+                                            color: '#8B949E',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            borderBottom: '1px solid #30363D'
+                                        }}>
+                                            Topics
+                                        </th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th style={{
+                                            padding: '12px 16px',
+                                            textAlign: 'left',
+                                            color: '#8B949E',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            borderBottom: '1px solid #30363D'
+                                        }}>
+                                            Main Topic
+                                        </th>
+                                        <th style={{
+                                            padding: '12px 16px',
+                                            textAlign: 'left',
+                                            color: '#8B949E',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            borderBottom: '1px solid #30363D'
+                                        }}>
+                                            Sub-Topic
+                                        </th>
+                                    </>
+                                )}
                                 <th 
                                     onClick={() => handleSort('country')}
                                     style={{
@@ -313,68 +355,131 @@ const ConversationList = ({ conversations, title = "Conversations", onClose, fil
                                     }}>
                                         {conv.created_date_bd}
                                     </td>
-                                    <td style={{
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #21262D'
-                                    }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                            {/* If filterMainTopic is set, only show that main topic; otherwise show first 2 */}
-                                            {filterMainTopic ? (
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    backgroundColor: 'rgba(163, 113, 247, 0.15)',
-                                                    color: '#A371F7',
-                                                    borderRadius: '10px',
-                                                    fontSize: '0.75rem'
-                                                }}>
-                                                    {filterMainTopic}
-                                                </span>
-                                            ) : (
-                                                Array.isArray(conv.main_topic) && conv.main_topic.slice(0, 2).map((t, i) => (
-                                                    <span key={i} style={{
-                                                        padding: '2px 8px',
-                                                        backgroundColor: 'rgba(163, 113, 247, 0.15)',
-                                                        color: '#A371F7',
-                                                        borderRadius: '10px',
-                                                        fontSize: '0.75rem'
-                                                    }}>
-                                                        {t}
-                                                    </span>
-                                                ))
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td style={{
-                                        padding: '12px 16px',
-                                        borderBottom: '1px solid #21262D'
-                                    }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                                            {/* If filterSubTopic is set, only show that sub-topic; otherwise show first 2 */}
-                                            {filterSubTopic ? (
-                                                <span style={{
-                                                    padding: '2px 8px',
-                                                    backgroundColor: 'rgba(88, 166, 255, 0.15)',
-                                                    color: '#58A6FF',
-                                                    borderRadius: '10px',
-                                                    fontSize: '0.75rem'
-                                                }}>
-                                                    {filterSubTopic.length > 25 ? filterSubTopic.substring(0, 25) + '...' : filterSubTopic}
-                                                </span>
-                                            ) : (
-                                                Array.isArray(conv.topic) && conv.topic.slice(0, 2).map((t, i) => (
-                                                    <span key={i} style={{
-                                                        padding: '2px 8px',
-                                                        backgroundColor: 'rgba(88, 166, 255, 0.15)',
-                                                        color: '#58A6FF',
-                                                        borderRadius: '10px',
-                                                        fontSize: '0.75rem'
-                                                    }}>
-                                                        {t.length > 25 ? t.substring(0, 25) + '...' : t}
-                                                    </span>
-                                                ))
-                                            )}
-                                        </div>
-                                    </td>
+                                    {mode === 'sentiment' ? (
+                                        <>
+                                            {/* Sentiment Column */}
+                                            <td style={{
+                                                padding: '12px 16px',
+                                                borderBottom: '1px solid #21262D'
+                                            }}>
+                                                {(() => {
+                                                    const sentiment = conv.sentiment?.toLowerCase() || 'neutral';
+                                                    const colors = SENTIMENT_COLORS[sentiment] || SENTIMENT_COLORS.neutral;
+                                                    const emoji = sentiment === 'positive' ? '😊' : sentiment === 'negative' ? '😞' : '😐';
+                                                    return (
+                                                        <span style={{
+                                                            padding: '4px 10px',
+                                                            backgroundColor: colors.bg,
+                                                            color: colors.text,
+                                                            borderRadius: '12px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: '600',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px'
+                                                        }}>
+                                                            {emoji} {sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </td>
+                                            {/* Combined Topics Column */}
+                                            <td style={{
+                                                padding: '12px 16px',
+                                                borderBottom: '1px solid #21262D'
+                                            }}>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                    {Array.isArray(conv.topic) && conv.topic.slice(0, 3).map((t, i) => (
+                                                        <span key={i} style={{
+                                                            padding: '2px 8px',
+                                                            backgroundColor: 'rgba(88, 166, 255, 0.15)',
+                                                            color: '#58A6FF',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.75rem'
+                                                        }}>
+                                                            {t.length > 20 ? t.substring(0, 20) + '...' : t}
+                                                        </span>
+                                                    ))}
+                                                    {Array.isArray(conv.topic) && conv.topic.length > 3 && (
+                                                        <span style={{
+                                                            padding: '2px 8px',
+                                                            backgroundColor: 'rgba(139, 148, 158, 0.15)',
+                                                            color: '#8B949E',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.75rem'
+                                                        }}>
+                                                            +{conv.topic.length - 3}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Main Topic Column */}
+                                            <td style={{
+                                                padding: '12px 16px',
+                                                borderBottom: '1px solid #21262D'
+                                            }}>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                    {filterMainTopic ? (
+                                                        <span style={{
+                                                            padding: '2px 8px',
+                                                            backgroundColor: 'rgba(163, 113, 247, 0.15)',
+                                                            color: '#A371F7',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.75rem'
+                                                        }}>
+                                                            {filterMainTopic}
+                                                        </span>
+                                                    ) : (
+                                                        Array.isArray(conv.main_topic) && conv.main_topic.slice(0, 2).map((t, i) => (
+                                                            <span key={i} style={{
+                                                                padding: '2px 8px',
+                                                                backgroundColor: 'rgba(163, 113, 247, 0.15)',
+                                                                color: '#A371F7',
+                                                                borderRadius: '10px',
+                                                                fontSize: '0.75rem'
+                                                            }}>
+                                                                {t}
+                                                            </span>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </td>
+                                            {/* Sub-Topic Column */}
+                                            <td style={{
+                                                padding: '12px 16px',
+                                                borderBottom: '1px solid #21262D'
+                                            }}>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                                    {filterSubTopic ? (
+                                                        <span style={{
+                                                            padding: '2px 8px',
+                                                            backgroundColor: 'rgba(88, 166, 255, 0.15)',
+                                                            color: '#58A6FF',
+                                                            borderRadius: '10px',
+                                                            fontSize: '0.75rem'
+                                                        }}>
+                                                            {filterSubTopic.length > 25 ? filterSubTopic.substring(0, 25) + '...' : filterSubTopic}
+                                                        </span>
+                                                    ) : (
+                                                        Array.isArray(conv.topic) && conv.topic.slice(0, 2).map((t, i) => (
+                                                            <span key={i} style={{
+                                                                padding: '2px 8px',
+                                                                backgroundColor: 'rgba(88, 166, 255, 0.15)',
+                                                                color: '#58A6FF',
+                                                                borderRadius: '10px',
+                                                                fontSize: '0.75rem'
+                                                            }}>
+                                                                {t.length > 25 ? t.substring(0, 25) + '...' : t}
+                                                            </span>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </>
+                                    )}
                                     <td style={{
                                         padding: '12px 16px',
                                         borderBottom: '1px solid #21262D',
