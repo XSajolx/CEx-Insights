@@ -804,10 +804,6 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                             tickLine={false}
                                             axisLine={false}
                                         />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#1C2128', borderColor: '#30363D', borderRadius: '8px', color: '#F0F6FC' }}
-                                            formatter={(value, name, props) => [`${value} conversations`, props.payload.fullName]}
-                                        />
                                         <Bar 
                                             dataKey="value" 
                                             radius={[0, 4, 4, 0]} 
