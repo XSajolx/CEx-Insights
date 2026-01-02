@@ -600,29 +600,27 @@ const SentimentAnalysis = ({ data = [], filters }) => {
 
             {/* Row 5: Channel x Sentiment + Country x Sentiment */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Channel x Sentiment (Pie Chart) */}
+                {/* Channel x Sentiment (Horizontal Bar Chart) */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>📱</span> Channel x Sentiment</h3>
-                    <ResponsiveContainer width="100%" height={280}>
-                        <PieChart>
-                            <Pie
-                                data={channelData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={50}
-                                outerRadius={80}
-                                dataKey="total"
-                                nameKey="name"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                labelLine={false}
-                            >
-                                {channelData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={['#58A6FF', '#A371F7', '#F97316', '#10B981', '#EF4444'][index % 5]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                        <ResponsiveContainer width="100%" height={Math.max(280, channelData.length * 35)}>
+                            <BarChart data={channelData} layout="vertical">
+                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
+                                <YAxis 
+                                    type="category" 
+                                    dataKey="name" 
+                                    tick={{ fill: '#C9D1D9', fontSize: 9 }} 
+                                    width={100}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="top" height={30} />
+                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
+                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
+                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
                 {/* Country x Sentiment (Bar Chart) */}
