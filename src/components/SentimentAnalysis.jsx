@@ -650,15 +650,15 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px 12px',
-                        padding: '1rem',
-                        minHeight: '320px',
-                        background: 'rgba(0, 0, 0, 0.2)',
+                        gap: '2px 6px',
+                        padding: '1.5rem',
+                        minHeight: '340px',
+                        background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)',
                         borderRadius: '8px'
                     }}>
                         {(() => {
-                            // Shuffle words to mix big and small together
-                            const shuffled = [...wordCloudData.slice(0, 60)];
+                            // Shuffle words to mix big and small together for cloud effect
+                            const shuffled = [...wordCloudData.slice(0, 80)];
                             for (let i = shuffled.length - 1; i > 0; i--) {
                                 const j = Math.floor((i * 7 + 3) % (i + 1)); // Deterministic shuffle
                                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -666,25 +666,28 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                             
                             const maxCount = wordCloudData[0]?.count || 1;
                             
-                            // Color palette matching reference image - warm and cool mix
+                            // Color palette exactly matching the reference image
                             const colors = [
-                                '#E07B53', '#7CB87C', '#9B7DC9', '#E8C547', '#5BBFBA', 
-                                '#D4A574', '#8FBC8F', '#DDA0DD', '#F4A460', '#87CEEB',
-                                '#CD853F', '#98FB98', '#DEB887', '#BC8F8F', '#FFB6C1',
-                                '#DAA520', '#20B2AA', '#DB7093', '#BDB76B', '#8B4513',
-                                '#6B8E23', '#FF6347', '#4682B4', '#D2691E', '#9ACD32'
+                                '#C0392B', '#27AE60', '#8E44AD', '#D4AC0D', '#16A085', 
+                                '#E67E22', '#2ECC71', '#9B59B6', '#F39C12', '#1ABC9C',
+                                '#CD6155', '#58D68D', '#AF7AC5', '#F4D03F', '#48C9B0',
+                                '#DC7633', '#82E0AA', '#BB8FCE', '#FAD7A0', '#76D7C4',
+                                '#B03A2E', '#229954', '#6C3483', '#B7950B', '#117864',
+                                '#CA6F1E', '#1E8449', '#7D3C98', '#D68910', '#138D75',
+                                '#A93226', '#1D8348', '#5B2C6F', '#9A7D0A', '#0E6655',
+                                '#BA4A00', '#196F3D', '#512E5F', '#7E5109', '#0B5345'
                             ];
                             
                             return shuffled.map((item, index) => {
-                                // More dramatic size variation
+                                // Dramatic size variation like the reference - huge vs tiny
                                 const ratio = item.count / maxCount;
-                                const minSize = 11;
-                                const maxSize = 52;
-                                // Power curve for more dramatic size differences
-                                const size = minSize + (Math.pow(ratio, 0.5) * (maxSize - minSize));
+                                const minSize = 10;
+                                const maxSize = 72; // Much larger max for "data" sized words
+                                // Steeper power curve for more dramatic differences
+                                const size = minSize + (Math.pow(ratio, 0.45) * (maxSize - minSize));
                                 
                                 const color = colors[index % colors.length];
-                                const fontWeight = size > 35 ? '700' : size > 25 ? '600' : size > 18 ? '500' : '400';
+                                const fontWeight = size > 45 ? '700' : size > 30 ? '600' : size > 20 ? '500' : '400';
                                 
                                 return (
                                     <span
@@ -695,17 +698,16 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                             color: color,
                                             whiteSpace: 'nowrap',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            lineHeight: '1.1',
-                                            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+                                            transition: 'transform 0.15s ease',
+                                            lineHeight: '1.05',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                            padding: size > 40 ? '2px 4px' : '1px 2px'
                                         }}
                                         onMouseEnter={e => {
-                                            e.target.style.transform = 'scale(1.1)';
-                                            e.target.style.opacity = '1';
+                                            e.target.style.transform = 'scale(1.08)';
                                         }}
                                         onMouseLeave={e => {
                                             e.target.style.transform = 'scale(1)';
-                                            e.target.style.opacity = size < 20 ? '0.85' : '1';
                                         }}
                                         title={`${item.word}: ${item.count} occurrences`}
                                     >
@@ -720,7 +722,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
                                 height: '100%',
-                                color: '#6B7280', 
+                                color: '#666', 
                                 fontSize: '0.875rem' 
                             }}>
                                 No transcript data available for word cloud
