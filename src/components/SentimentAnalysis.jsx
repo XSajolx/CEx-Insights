@@ -604,18 +604,21 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>☁️</span> Word Cloud (Top Keywords)</h3>
                     <div style={{ 
-                        position: 'relative',
-                        height: '320px',
-                        width: '100%',
-                        overflow: 'hidden',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px 16px',
+                        padding: '1.5rem',
+                        minHeight: '300px',
                         background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
                         borderRadius: '8px'
                     }}>
-                        {wordCloudData.slice(0, 50).map((item, index) => {
-                            // Calculate size based on frequency (logarithmic scale for better distribution)
+                        {wordCloudData.slice(0, 40).map((item, index) => {
+                            // Calculate size based on frequency (logarithmic scale)
                             const maxCount = wordCloudData[0]?.count || 1;
-                            const minSize = 10;
-                            const maxSize = 48;
+                            const minSize = 12;
+                            const maxSize = 36;
                             const size = minSize + ((Math.log(item.count + 1) / Math.log(maxCount + 1)) * (maxSize - minSize));
                             
                             // Color palette matching reference image
@@ -627,46 +630,26 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                             ];
                             const color = colors[index % colors.length];
                             
-                            // Pseudo-random positioning using seeded random based on word
-                            const seed = item.word.charCodeAt(0) + item.word.charCodeAt(item.word.length - 1) * 7;
-                            const row = Math.floor(index / 7);
-                            const col = index % 7;
-                            
-                            // Grid-based positioning with randomization
-                            const baseX = (col * 14) + 3;
-                            const baseY = (row * 14) + 8;
-                            const offsetX = ((seed * 17) % 10) - 5;
-                            const offsetY = ((seed * 13) % 10) - 5;
-                            const left = Math.max(2, Math.min(85, baseX + offsetX));
-                            const top = Math.max(5, Math.min(85, baseY + offsetY));
-                            
-                            // Some words rotated
-                            const rotation = ((seed % 5) === 0) ? -90 : ((seed % 7) === 0) ? 90 : 0;
-                            
                             return (
                                 <span
                                     key={item.word}
                                     style={{
-                                        position: 'absolute',
-                                        left: `${left}%`,
-                                        top: `${top}%`,
                                         fontSize: `${size}px`,
-                                        fontWeight: size > 24 ? '700' : size > 16 ? '600' : '500',
+                                        fontWeight: size > 24 ? '700' : size > 18 ? '600' : '500',
                                         color: color,
-                                        transform: `rotate(${rotation}deg)`,
                                         whiteSpace: 'nowrap',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
-                                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                        padding: '2px 4px',
                                         fontFamily: 'system-ui, -apple-system, sans-serif'
                                     }}
                                     onMouseEnter={e => {
-                                        e.target.style.transform = `rotate(${rotation}deg) scale(1.15)`;
-                                        e.target.style.zIndex = '10';
+                                        e.target.style.transform = 'scale(1.15)';
+                                        e.target.style.textShadow = '0 0 10px ' + color;
                                     }}
                                     onMouseLeave={e => {
-                                        e.target.style.transform = `rotate(${rotation}deg) scale(1)`;
-                                        e.target.style.zIndex = '1';
+                                        e.target.style.transform = 'scale(1)';
+                                        e.target.style.textShadow = 'none';
                                     }}
                                     title={`${item.word}: ${item.count} occurrences`}
                                 >
@@ -676,9 +659,9 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         })}
                         {wordCloudData.length === 0 && (
                             <div style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                                 height: '100%',
                                 color: '#6B7280', 
                                 fontSize: '0.875rem' 
