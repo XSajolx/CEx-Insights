@@ -650,60 +650,75 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         flexWrap: 'wrap',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '12px 16px',
-                        padding: '1.5rem',
-                        minHeight: '300px',
-                        background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
+                        gap: '8px 12px',
+                        padding: '1rem',
+                        minHeight: '320px',
+                        background: 'rgba(0, 0, 0, 0.2)',
                         borderRadius: '8px'
                     }}>
-                        {wordCloudData.slice(0, 40).map((item, index) => {
-                            // Calculate size based on frequency (logarithmic scale)
+                        {(() => {
+                            // Shuffle words to mix big and small together
+                            const shuffled = [...wordCloudData.slice(0, 60)];
+                            for (let i = shuffled.length - 1; i > 0; i--) {
+                                const j = Math.floor((i * 7 + 3) % (i + 1)); // Deterministic shuffle
+                                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                            }
+                            
                             const maxCount = wordCloudData[0]?.count || 1;
-                            const minSize = 12;
-                            const maxSize = 36;
-                            const size = minSize + ((Math.log(item.count + 1) / Math.log(maxCount + 1)) * (maxSize - minSize));
                             
-                            // Color palette matching reference image
+                            // Color palette matching reference image - warm and cool mix
                             const colors = [
-                                '#E8B86D', '#98D8AA', '#7B68EE', '#FF6B6B', '#4ECDC4', 
-                                '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#87CEEB',
-                                '#F0E68C', '#98FB98', '#DEB887', '#B0C4DE', '#FFB6C1',
-                                '#20B2AA', '#778899', '#BC8F8F', '#DAA520', '#CD853F'
+                                '#E07B53', '#7CB87C', '#9B7DC9', '#E8C547', '#5BBFBA', 
+                                '#D4A574', '#8FBC8F', '#DDA0DD', '#F4A460', '#87CEEB',
+                                '#CD853F', '#98FB98', '#DEB887', '#BC8F8F', '#FFB6C1',
+                                '#DAA520', '#20B2AA', '#DB7093', '#BDB76B', '#8B4513',
+                                '#6B8E23', '#FF6347', '#4682B4', '#D2691E', '#9ACD32'
                             ];
-                            const color = colors[index % colors.length];
                             
-                            return (
-                                <span
-                                    key={item.word}
-                                    style={{
-                                        fontSize: `${size}px`,
-                                        fontWeight: size > 24 ? '700' : size > 18 ? '600' : '500',
-                                        color: color,
-                                        whiteSpace: 'nowrap',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        padding: '2px 4px',
-                                        fontFamily: 'system-ui, -apple-system, sans-serif'
-                                    }}
-                                    onMouseEnter={e => {
-                                        e.target.style.transform = 'scale(1.15)';
-                                        e.target.style.textShadow = '0 0 10px ' + color;
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.target.style.transform = 'scale(1)';
-                                        e.target.style.textShadow = 'none';
-                                    }}
-                                    title={`${item.word}: ${item.count} occurrences`}
-                                >
-                                    {item.word}
-                                </span>
-                            );
-                        })}
+                            return shuffled.map((item, index) => {
+                                // More dramatic size variation
+                                const ratio = item.count / maxCount;
+                                const minSize = 11;
+                                const maxSize = 52;
+                                // Power curve for more dramatic size differences
+                                const size = minSize + (Math.pow(ratio, 0.5) * (maxSize - minSize));
+                                
+                                const color = colors[index % colors.length];
+                                const fontWeight = size > 35 ? '700' : size > 25 ? '600' : size > 18 ? '500' : '400';
+                                
+                                return (
+                                    <span
+                                        key={item.word}
+                                        style={{
+                                            fontSize: `${size}px`,
+                                            fontWeight: fontWeight,
+                                            color: color,
+                                            whiteSpace: 'nowrap',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            lineHeight: '1.1',
+                                            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.target.style.transform = 'scale(1.1)';
+                                            e.target.style.opacity = '1';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.target.style.transform = 'scale(1)';
+                                            e.target.style.opacity = size < 20 ? '0.85' : '1';
+                                        }}
+                                        title={`${item.word}: ${item.count} occurrences`}
+                                    >
+                                        {item.word}
+                                    </span>
+                                );
+                            });
+                        })()}
                         {wordCloudData.length === 0 && (
                             <div style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
                                 height: '100%',
                                 color: '#6B7280', 
                                 fontSize: '0.875rem' 
