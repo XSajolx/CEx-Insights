@@ -489,7 +489,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                 </div>
             </div>
 
-            {/* Row 2: Sentiment Trend */}
+            {/* Row 2: Sentiment Trend (Full Width) */}
             <div style={{ ...cardStyle, marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3 style={{ ...headerStyle, margin: 0 }}>
@@ -516,111 +516,78 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         <Area type="monotone" dataKey="Positive" stroke="#10B981" fill="url(#positiveGrad)" strokeWidth={2} />
                         <Area type="monotone" dataKey="Neutral" stroke="#6B7280" fill="rgba(107, 114, 128, 0.1)" strokeWidth={2} />
                         <Area type="monotone" dataKey="Negative" stroke="#EF4444" fill="rgba(239, 68, 68, 0.1)" strokeWidth={2} />
-                        {/* Trendline for positive rate */}
                         <Line type="monotone" dataKey="positiveRate" stroke="#38BDF8" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Positive %" />
                     </ComposedChart>
                 </ResponsiveContainer>
             </div>
 
-            {/* Row 3: Issue Area x Sentiment + Issues x Sentiment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Issue Area (Sub-Topics) x Sentiment - 100% Stacked */}
+            {/* Row 3: Sentiment Shift + Country (High-level context) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                {/* Sentiment Shift (Sankey Chart) */}
                 <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>📋</span> Issue Area x Sentiment</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Issues) • Click bar to drill-in</p>
-                    <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={issueAreaData} layout="vertical">
-                            <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <h3 style={headerStyle}><span>🔄</span> Sentiment Shift (Start → End)</h3>
+                    {sentimentShiftData.flows.length === 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '280px', color: '#6B7280' }}>
+                            No sentiment transition data available
+                        </div>
+                    ) : (
+                        <div style={{ position: 'relative', height: '280px', padding: '10px' }}>
+                            <svg width="100%" height="100%" viewBox="0 0 400 260">
+                                <text x="30" y="15" fill="#8B949E" fontSize="10" fontWeight="600">START</text>
+                                <text x="340" y="15" fill="#8B949E" fontSize="10" fontWeight="600">END</text>
+                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
+                                    const total = sentimentShiftData.totals.start[sentiment] || 0;
+                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.start), 1);
+                                    const height = Math.max(18, (total / maxTotal) * 70);
+                                    const y = 30 + i * 80;
+                                    const color = SENTIMENT_COLORS[sentiment];
+                                    return (
+                                        <g key={`start-${sentiment}`}>
+                                            <rect x="10" y={y} width="55" height={height} fill={color} rx="4" opacity="0.9" />
+                                            <text x="37" y={y + height / 2 + 4} fill="#fff" fontSize="9" textAnchor="middle" fontWeight="600">{total}</text>
+                                            <text x="70" y={y + height / 2 + 4} fill={color} fontSize="8" fontWeight="500">{sentiment}</text>
+                                        </g>
+                                    );
+                                })}
+                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
+                                    const total = sentimentShiftData.totals.end[sentiment] || 0;
+                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.end), 1);
+                                    const height = Math.max(18, (total / maxTotal) * 70);
+                                    const y = 30 + i * 80;
+                                    const color = SENTIMENT_COLORS[sentiment];
+                                    return (
+                                        <g key={`end-${sentiment}`}>
+                                            <rect x="335" y={y} width="55" height={height} fill={color} rx="4" opacity="0.9" />
+                                            <text x="362" y={y + height / 2 + 4} fill="#fff" fontSize="9" textAnchor="middle" fontWeight="600">{total}</text>
+                                            <text x="328" y={y + height / 2 + 4} fill={color} fontSize="8" textAnchor="end" fontWeight="500">{sentiment}</text>
+                                        </g>
+                                    );
+                                })}
+                                {sentimentShiftData.flows.map((flow, idx) => {
+                                    const fromIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.from);
+                                    const toIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.to);
+                                    if (fromIdx === -1 || toIdx === -1) return null;
+                                    const fromY = 30 + fromIdx * 80 + 20;
+                                    const toY = 30 + toIdx * 80 + 20;
+                                    const maxFlow = Math.max(...sentimentShiftData.flows.map(f => f.value), 1);
+                                    const strokeWidth = Math.max(2, (flow.value / maxFlow) * 18);
+                                    const color = SENTIMENT_COLORS[flow.to];
+                                    const path = `M 65 ${fromY} C 170 ${fromY}, 230 ${toY}, 335 ${toY}`;
+                                    return (
+                                        <g key={`flow-${idx}`}>
+                                            <path d={path} fill="none" stroke={color} strokeWidth={strokeWidth} opacity="0.4" strokeLinecap="round" />
+                                            {flow.value > 0 && strokeWidth > 4 && (
+                                                <text x="200" y={(fromY + toY) / 2 + (fromIdx - toIdx) * 6} fill="#C9D1D9" fontSize="8" textAnchor="middle">{flow.value}</text>
+                                            )}
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+                        </div>
+                    )}
                 </div>
 
-                {/* Issues (Sub-Topics) x Sentiment */}
-                <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>⚠️</span> Issues x Sentiment</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sorted by negative count</p>
-                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                        <ResponsiveContainer width="100%" height={Math.max(300, issuesData.length * 28)}>
-                            <BarChart data={issuesData} layout="vertical">
-                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
-                                <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={140} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
-                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
-                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 4: Query Area x Sentiment + Query x Sentiment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Query Area (Sub-Topics) x Sentiment - 100% Stacked */}
-                <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>❓</span> Query Area x Sentiment</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Queries) • Click bar to drill-in</p>
-                    <ResponsiveContainer width="100%" height={320}>
-                        <BarChart data={queryAreaData} layout="vertical">
-                            <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Query (Sub-Topics) x Sentiment */}
-                <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>💬</span> Query x Sentiment</h3>
-                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                        <ResponsiveContainer width="100%" height={Math.max(250, queryData.length * 25)}>
-                            <BarChart data={queryData} layout="vertical">
-                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
-                                <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={140} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
-                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
-                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 5: Channel x Sentiment + Country x Sentiment */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Channel x Sentiment (Horizontal Bar Chart) */}
-                <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>📱</span> Channel x Sentiment</h3>
-                    <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
-                        <ResponsiveContainer width="100%" height={Math.max(280, channelData.length * 35)}>
-                            <BarChart data={channelData} layout="vertical">
-                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
-                                <YAxis 
-                                    type="category" 
-                                    dataKey="name" 
-                                    tick={{ fill: '#C9D1D9', fontSize: 9 }} 
-                                    width={100}
-                                />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="top" height={30} />
-                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
-                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
-                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Country x Sentiment (Bar Chart) */}
+                {/* Country x Sentiment */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>🌍</span> Country x Sentiment</h3>
                     <ResponsiveContainer width="100%" height={280}>
@@ -637,9 +604,27 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                 </div>
             </div>
 
-            {/* Row 6: Word Cloud + Sentiment Shift */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                {/* Word Cloud (Reference) */}
+            {/* Row 4: Channel + Word Cloud (Communication & Discovery) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                {/* Channel x Sentiment */}
+                <div style={cardStyle}>
+                    <h3 style={headerStyle}><span>📱</span> Channel x Sentiment</h3>
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                        <ResponsiveContainer width="100%" height={Math.max(280, channelData.length * 35)}>
+                            <BarChart data={channelData} layout="vertical">
+                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
+                                <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={100} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Legend verticalAlign="top" height={30} />
+                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
+                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
+                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Word Cloud */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>☁️</span> Word Cloud (Top Keywords)</h3>
                     <div style={{ 
@@ -649,21 +634,17 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                         justifyContent: 'center',
                         gap: '2px 6px',
                         padding: '1.5rem',
-                        minHeight: '340px',
+                        minHeight: '300px',
                         background: 'linear-gradient(145deg, #f5f5f5 0%, #e8e8e8 100%)',
                         borderRadius: '8px'
                     }}>
                         {(() => {
-                            // Shuffle words to mix big and small together for cloud effect
                             const shuffled = [...wordCloudData.slice(0, 80)];
                             for (let i = shuffled.length - 1; i > 0; i--) {
-                                const j = Math.floor((i * 7 + 3) % (i + 1)); // Deterministic shuffle
+                                const j = Math.floor((i * 7 + 3) % (i + 1));
                                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
                             }
-                            
                             const maxCount = wordCloudData[0]?.count || 1;
-                            
-                            // Color palette exactly matching the reference image
                             const colors = [
                                 '#C0392B', '#27AE60', '#8E44AD', '#D4AC0D', '#16A085', 
                                 '#E67E22', '#2ECC71', '#9B59B6', '#F39C12', '#1ABC9C',
@@ -674,18 +655,11 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                 '#A93226', '#1D8348', '#5B2C6F', '#9A7D0A', '#0E6655',
                                 '#BA4A00', '#196F3D', '#512E5F', '#7E5109', '#0B5345'
                             ];
-                            
                             return shuffled.map((item, index) => {
-                                // Dramatic size variation like the reference - huge vs tiny
                                 const ratio = item.count / maxCount;
-                                const minSize = 10;
-                                const maxSize = 72; // Much larger max for "data" sized words
-                                // Steeper power curve for more dramatic differences
-                                const size = minSize + (Math.pow(ratio, 0.45) * (maxSize - minSize));
-                                
+                                const size = 10 + (Math.pow(ratio, 0.45) * 62);
                                 const color = colors[index % colors.length];
                                 const fontWeight = size > 45 ? '700' : size > 30 ? '600' : size > 20 ? '500' : '400';
-                                
                                 return (
                                     <span
                                         key={item.word}
@@ -700,12 +674,8 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                                             padding: size > 40 ? '2px 4px' : '1px 2px'
                                         }}
-                                        onMouseEnter={e => {
-                                            e.target.style.transform = 'scale(1.08)';
-                                        }}
-                                        onMouseLeave={e => {
-                                            e.target.style.transform = 'scale(1)';
-                                        }}
+                                        onMouseEnter={e => { e.target.style.transform = 'scale(1.08)'; }}
+                                        onMouseLeave={e => { e.target.style.transform = 'scale(1)'; }}
                                         title={`${item.word}: ${item.count} occurrences`}
                                     >
                                         {item.word}
@@ -714,142 +684,84 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                             });
                         })()}
                         {wordCloudData.length === 0 && (
-                            <div style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                height: '100%',
-                                color: '#666', 
-                                fontSize: '0.875rem' 
-                            }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#666', fontSize: '0.875rem' }}>
                                 No transcript data available for word cloud
                             </div>
                         )}
                     </div>
                 </div>
+            </div>
 
-                {/* Sentiment Shift (Sankey Chart) */}
+            {/* Row 5: Issue Area x Sentiment (100% stacked + counts) */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                {/* Issue Area x Sentiment - 100% Stacked */}
                 <div style={cardStyle}>
-                    <h3 style={headerStyle}><span>🔄</span> Sentiment Shift</h3>
-                    {sentimentShiftData.flows.length === 0 ? (
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            minHeight: '300px',
-                            color: '#6B7280'
-                        }}>
-                            No sentiment transition data available
-                        </div>
-                    ) : (
-                        <div style={{ position: 'relative', height: '320px', padding: '10px' }}>
-                            <svg width="100%" height="100%" viewBox="0 0 400 300">
-                                {/* Labels */}
-                                <text x="30" y="20" fill="#8B949E" fontSize="11" fontWeight="600">START</text>
-                                <text x="340" y="20" fill="#8B949E" fontSize="11" fontWeight="600">END</text>
-                                
-                                {/* Left side nodes (Start) */}
-                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
-                                    const total = sentimentShiftData.totals.start[sentiment] || 0;
-                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.start), 1);
-                                    const height = Math.max(20, (total / maxTotal) * 80);
-                                    const y = 40 + i * 90;
-                                    const color = SENTIMENT_COLORS[sentiment];
-                                    
-                                    return (
-                                        <g key={`start-${sentiment}`}>
-                                            <rect x="10" y={y} width="60" height={height} fill={color} rx="4" opacity="0.9" />
-                                            <text x="40" y={y + height / 2 + 4} fill="#fff" fontSize="10" textAnchor="middle" fontWeight="600">
-                                                {total}
-                                            </text>
-                                            <text x="75" y={y + height / 2 + 4} fill={color} fontSize="9" fontWeight="500">
-                                                {sentiment}
-                                            </text>
-                                        </g>
-                                    );
-                                })}
-                                
-                                {/* Right side nodes (End) */}
-                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
-                                    const total = sentimentShiftData.totals.end[sentiment] || 0;
-                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.end), 1);
-                                    const height = Math.max(20, (total / maxTotal) * 80);
-                                    const y = 40 + i * 90;
-                                    const color = SENTIMENT_COLORS[sentiment];
-                                    
-                                    return (
-                                        <g key={`end-${sentiment}`}>
-                                            <rect x="330" y={y} width="60" height={height} fill={color} rx="4" opacity="0.9" />
-                                            <text x="360" y={y + height / 2 + 4} fill="#fff" fontSize="10" textAnchor="middle" fontWeight="600">
-                                                {total}
-                                            </text>
-                                            <text x="320" y={y + height / 2 + 4} fill={color} fontSize="9" textAnchor="end" fontWeight="500">
-                                                {sentiment}
-                                            </text>
-                                        </g>
-                                    );
-                                })}
-                                
-                                {/* Flow paths */}
-                                {sentimentShiftData.flows.map((flow, idx) => {
-                                    const fromIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.from);
-                                    const toIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.to);
-                                    if (fromIdx === -1 || toIdx === -1) return null;
-                                    
-                                    const fromY = 40 + fromIdx * 90 + 25;
-                                    const toY = 40 + toIdx * 90 + 25;
-                                    const maxFlow = Math.max(...sentimentShiftData.flows.map(f => f.value), 1);
-                                    const strokeWidth = Math.max(2, (flow.value / maxFlow) * 20);
-                                    const color = SENTIMENT_COLORS[flow.to];
-                                    
-                                    // Bezier curve for smooth flow
-                                    const path = `M 70 ${fromY} C 180 ${fromY}, 220 ${toY}, 330 ${toY}`;
-                                    
-                                    return (
-                                        <g key={`flow-${idx}`}>
-                                            <path
-                                                d={path}
-                                                fill="none"
-                                                stroke={color}
-                                                strokeWidth={strokeWidth}
-                                                opacity="0.4"
-                                                strokeLinecap="round"
-                                            />
-                                            {/* Flow label */}
-                                            {flow.value > 0 && (
-                                                <text 
-                                                    x="200" 
-                                                    y={(fromY + toY) / 2 + (fromIdx - toIdx) * 8}
-                                                    fill="#C9D1D9"
-                                                    fontSize="9"
-                                                    textAnchor="middle"
-                                                    opacity={strokeWidth > 5 ? 1 : 0.7}
-                                                >
-                                                    {flow.value}
-                                                </text>
-                                            )}
-                                        </g>
-                                    );
-                                })}
-                            </svg>
-                            
-                            {/* Legend */}
-                            <div style={{ 
-                                position: 'absolute', 
-                                bottom: '5px', 
-                                left: '50%', 
-                                transform: 'translateX(-50%)',
-                                display: 'flex',
-                                gap: '16px',
-                                fontSize: '0.7rem',
-                                color: '#8B949E'
-                            }}>
-                                <span>🔴 Negative</span>
-                                <span>⚪ Neutral</span>
-                                <span>🟢 Positive</span>
-                            </div>
-                        </div>
-                    )}
+                    <h3 style={headerStyle}><span>📋</span> Issue Area x Sentiment</h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Issues) • Click bar to drill-in</p>
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={issueAreaData} layout="vertical">
+                            <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Issues x Sentiment */}
+                <div style={cardStyle}>
+                    <h3 style={headerStyle}><span>⚠️</span> Issues x Sentiment (by Volume)</h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sorted by negative count</p>
+                    <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                        <ResponsiveContainer width="100%" height={Math.max(350, issuesData.length * 28)}>
+                            <BarChart data={issuesData} layout="vertical">
+                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
+                                <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={150} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
+                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
+                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Row 6: Query Area x Sentiment */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                {/* Query Area x Sentiment - 100% Stacked */}
+                <div style={cardStyle}>
+                    <h3 style={headerStyle}><span>❓</span> Query Area x Sentiment</h3>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Queries) • Click bar to drill-in</p>
+                    <ResponsiveContainer width="100%" height={320}>
+                        <BarChart data={queryAreaData} layout="vertical">
+                            <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Query x Sentiment */}
+                <div style={cardStyle}>
+                    <h3 style={headerStyle}><span>💬</span> Query x Sentiment (by Volume)</h3>
+                    <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                        <ResponsiveContainer width="100%" height={Math.max(320, queryData.length * 25)}>
+                            <BarChart data={queryData} layout="vertical">
+                                <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} />
+                                <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={150} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar dataKey="Positive" stackId="a" fill="#10B981" />
+                                <Bar dataKey="Neutral" stackId="a" fill="#6B7280" />
+                                <Bar dataKey="Negative" stackId="a" fill="#EF4444" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
 
