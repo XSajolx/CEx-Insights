@@ -603,22 +603,71 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                 {/* Word Cloud (Reference) */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>☁️</span> Word Cloud (Top Keywords)</h3>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '1rem', minHeight: '200px', alignContent: 'flex-start' }}>
-                        {wordCloudData.slice(0, 30).map((item, index) => {
-                            const size = Math.max(0.7, Math.min(2, item.count / 20));
-                            const colors = ['#58A6FF', '#10B981', '#A371F7', '#F97316', '#EF4444', '#38BDF8'];
+                    <div style={{ 
+                        position: 'relative',
+                        height: '320px',
+                        width: '100%',
+                        overflow: 'hidden',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
+                        borderRadius: '8px'
+                    }}>
+                        {wordCloudData.slice(0, 50).map((item, index) => {
+                            // Calculate size based on frequency (logarithmic scale for better distribution)
+                            const maxCount = wordCloudData[0]?.count || 1;
+                            const minSize = 10;
+                            const maxSize = 48;
+                            const size = minSize + ((Math.log(item.count + 1) / Math.log(maxCount + 1)) * (maxSize - minSize));
+                            
+                            // Color palette matching reference image
+                            const colors = [
+                                '#E8B86D', '#98D8AA', '#7B68EE', '#FF6B6B', '#4ECDC4', 
+                                '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#87CEEB',
+                                '#F0E68C', '#98FB98', '#DEB887', '#B0C4DE', '#FFB6C1',
+                                '#20B2AA', '#778899', '#BC8F8F', '#DAA520', '#CD853F'
+                            ];
+                            const color = colors[index % colors.length];
+                            
+                            // Pseudo-random positioning using seeded random based on word
+                            const seed = item.word.charCodeAt(0) + item.word.charCodeAt(item.word.length - 1) * 7;
+                            const row = Math.floor(index / 7);
+                            const col = index % 7;
+                            
+                            // Grid-based positioning with randomization
+                            const baseX = (col * 14) + 3;
+                            const baseY = (row * 14) + 8;
+                            const offsetX = ((seed * 17) % 10) - 5;
+                            const offsetY = ((seed * 13) % 10) - 5;
+                            const left = Math.max(2, Math.min(85, baseX + offsetX));
+                            const top = Math.max(5, Math.min(85, baseY + offsetY));
+                            
+                            // Some words rotated
+                            const rotation = ((seed % 5) === 0) ? -90 : ((seed % 7) === 0) ? 90 : 0;
+                            
                             return (
                                 <span
                                     key={item.word}
                                     style={{
-                                        fontSize: `${size}rem`,
-                                        color: colors[index % colors.length],
-                                        opacity: Math.max(0.5, 1 - index * 0.02),
+                                        position: 'absolute',
+                                        left: `${left}%`,
+                                        top: `${top}%`,
+                                        fontSize: `${size}px`,
+                                        fontWeight: size > 24 ? '700' : size > 16 ? '600' : '500',
+                                        color: color,
+                                        transform: `rotate(${rotation}deg)`,
+                                        whiteSpace: 'nowrap',
                                         cursor: 'pointer',
-                                        transition: 'transform 0.2s'
+                                        transition: 'all 0.2s ease',
+                                        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                        fontFamily: 'system-ui, -apple-system, sans-serif'
                                     }}
-                                    onMouseEnter={e => e.target.style.transform = 'scale(1.2)'}
-                                    onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                                    onMouseEnter={e => {
+                                        e.target.style.transform = `rotate(${rotation}deg) scale(1.15)`;
+                                        e.target.style.zIndex = '10';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.target.style.transform = `rotate(${rotation}deg) scale(1)`;
+                                        e.target.style.zIndex = '1';
+                                    }}
                                     title={`${item.word}: ${item.count} occurrences`}
                                 >
                                     {item.word}
@@ -626,7 +675,16 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                             );
                         })}
                         {wordCloudData.length === 0 && (
-                            <p style={{ color: '#6B7280', fontSize: '0.875rem' }}>No transcript data available for word cloud</p>
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                height: '100%',
+                                color: '#6B7280', 
+                                fontSize: '0.875rem' 
+                            }}>
+                                No transcript data available for word cloud
+                            </div>
                         )}
                     </div>
                 </div>
