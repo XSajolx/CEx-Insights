@@ -103,19 +103,19 @@ const SentimentAnalysis = ({ data = [], filters }) => {
         return { current, previous: [] };
     }, [data]);
 
-    // Issue Area (Main Topics from TOPIC_MAPPING) x Sentiment
+    // Issue Area (Sub-Topics from TOPIC_MAPPING) x Sentiment - 100% stacked bar
     const issueAreaData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
         const areaMap = {};
-        const mainTopicSet = new Set(Object.values(TOPIC_MAPPING));
+        const issueSubTopics = new Set(Object.keys(TOPIC_MAPPING)); // Sub-topics that are issues
         
         data.forEach(conv => {
-            const mainTopics = Array.isArray(conv.main_topic) ? conv.main_topic : [conv.main_topic];
+            const subTopics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
             const sentiment = conv.sentiment?.toLowerCase() || 'neutral';
             
-            mainTopics.forEach(topic => {
-                if (!topic || !mainTopicSet.has(topic)) return;
+            subTopics.forEach(topic => {
+                if (!topic || !issueSubTopics.has(topic)) return;
                 
                 if (!areaMap[topic]) {
                     areaMap[topic] = { name: topic, Positive: 0, Neutral: 0, Negative: 0, total: 0 };
@@ -130,7 +130,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
         return Object.values(areaMap)
             .filter(d => d.total > 0)
             .sort((a, b) => b.total - a.total)
-            .slice(0, 10)
+            .slice(0, 12)
             .map(d => ({
                 ...d,
                 PositivePct: ((d.Positive / d.total) * 100).toFixed(0),
@@ -139,11 +139,12 @@ const SentimentAnalysis = ({ data = [], filters }) => {
             }));
     }, [data]);
 
-    // Issues (Sub-Topics) x Sentiment
+    // Issues (Sub-Topics) x Sentiment - stacked bar sorted by negative
     const issuesData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
         const issueMap = {};
+        const issueSubTopics = new Set(Object.keys(TOPIC_MAPPING)); // Sub-topics that are issues
         
         data.forEach(conv => {
             const topics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
@@ -151,10 +152,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
             
             // Only count issue-related sub-topics (not query-related)
             topics.forEach(topic => {
-                if (!topic) return;
-                // Check if it's in TOPIC_MAPPING (issue) not QUERY_TOPIC_MAPPING
-                const isIssue = Object.keys(TOPIC_MAPPING).includes(topic);
-                if (!isIssue) return;
+                if (!topic || !issueSubTopics.has(topic)) return;
                 
                 if (!issueMap[topic]) {
                     issueMap[topic] = { name: topic, Positive: 0, Neutral: 0, Negative: 0, total: 0 };
@@ -172,19 +170,19 @@ const SentimentAnalysis = ({ data = [], filters }) => {
             .slice(0, 15);
     }, [data]);
 
-    // Query Area (Main Topics from QUERY_TOPIC_MAPPING) x Sentiment
+    // Query Area (Sub-Topics from QUERY_TOPIC_MAPPING) x Sentiment - 100% stacked bar
     const queryAreaData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
         const areaMap = {};
-        const queryMainTopics = new Set(Object.values(QUERY_TOPIC_MAPPING));
+        const querySubTopics = new Set(Object.keys(QUERY_TOPIC_MAPPING)); // Sub-topics that are queries
         
         data.forEach(conv => {
-            const mainTopics = Array.isArray(conv.main_topic) ? conv.main_topic : [conv.main_topic];
+            const subTopics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
             const sentiment = conv.sentiment?.toLowerCase() || 'neutral';
             
-            mainTopics.forEach(topic => {
-                if (!topic || !queryMainTopics.has(topic)) return;
+            subTopics.forEach(topic => {
+                if (!topic || !querySubTopics.has(topic)) return;
                 
                 if (!areaMap[topic]) {
                     areaMap[topic] = { name: topic, Positive: 0, Neutral: 0, Negative: 0, total: 0 };
@@ -199,6 +197,7 @@ const SentimentAnalysis = ({ data = [], filters }) => {
         return Object.values(areaMap)
             .filter(d => d.total > 0)
             .sort((a, b) => b.total - a.total)
+            .slice(0, 12)
             .map(d => ({
                 ...d,
                 PositivePct: ((d.Positive / d.total) * 100).toFixed(0),
@@ -207,21 +206,19 @@ const SentimentAnalysis = ({ data = [], filters }) => {
             }));
     }, [data]);
 
-    // Query (Sub-Topics) x Sentiment
+    // Query (Sub-Topics) x Sentiment - stacked bar sorted by total
     const queryData = useMemo(() => {
         if (!data || data.length === 0) return [];
 
         const queryMap = {};
+        const querySubTopics = new Set(Object.keys(QUERY_TOPIC_MAPPING)); // Sub-topics that are queries
         
         data.forEach(conv => {
             const topics = Array.isArray(conv.topic) ? conv.topic : [conv.topic];
             const sentiment = conv.sentiment?.toLowerCase() || 'neutral';
             
             topics.forEach(topic => {
-                if (!topic) return;
-                // Check if it's in QUERY_TOPIC_MAPPING
-                const isQuery = Object.keys(QUERY_TOPIC_MAPPING).includes(topic);
-                if (!isQuery) return;
+                if (!topic || !querySubTopics.has(topic)) return;
                 
                 if (!queryMap[topic]) {
                     queryMap[topic] = { name: topic, Positive: 0, Neutral: 0, Negative: 0, total: 0 };
@@ -527,18 +524,18 @@ const SentimentAnalysis = ({ data = [], filters }) => {
 
             {/* Row 3: Issue Area x Sentiment + Issues x Sentiment */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Issue Area (Main Topics) x Sentiment - 100% Stacked */}
+                {/* Issue Area (Sub-Topics) x Sentiment - 100% Stacked */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>📋</span> Issue Area x Sentiment</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Click bar to drill-in</p>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Issues) • Click bar to drill-in</p>
+                    <ResponsiveContainer width="100%" height={350}>
                         <BarChart data={issueAreaData} layout="vertical">
                             <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 10 }} width={120} />
+                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => c.main_topic?.includes(d.name) && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => c.main_topic?.includes(d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => c.main_topic?.includes(d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -564,18 +561,18 @@ const SentimentAnalysis = ({ data = [], filters }) => {
 
             {/* Row 4: Query Area x Sentiment + Query x Sentiment */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                {/* Query Area (Main Topics) x Sentiment - 100% Stacked */}
+                {/* Query Area (Sub-Topics) x Sentiment - 100% Stacked */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>❓</span> Query Area x Sentiment</h3>
-                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Click bar to drill-in</p>
-                    <ResponsiveContainer width="100%" height={250}>
+                    <p style={{ color: '#6B7280', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>Sub-Topics (Queries) • Click bar to drill-in</p>
+                    <ResponsiveContainer width="100%" height={320}>
                         <BarChart data={queryAreaData} layout="vertical">
                             <XAxis type="number" tick={{ fill: '#8B949E', fontSize: 10 }} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 10 }} width={120} />
+                            <YAxis type="category" dataKey="name" tick={{ fill: '#C9D1D9', fontSize: 9 }} width={160} />
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" style={{ cursor: 'pointer' }} />
-                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="PositivePct" stackId="a" fill="#10B981" name="Positive %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'positive', `${d.name} - Positive`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NeutralPct" stackId="a" fill="#6B7280" name="Neutral %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && !['positive', 'negative'].includes(c.sentiment?.toLowerCase()), `${d.name} - Neutral`)} style={{ cursor: 'pointer' }} />
+                            <Bar dataKey="NegativePct" stackId="a" fill="#EF4444" name="Negative %" onClick={(d) => handleDrillIn(c => (Array.isArray(c.topic) ? c.topic.includes(d.name) : c.topic === d.name) && c.sentiment?.toLowerCase() === 'negative', `${d.name} - Negative`)} style={{ cursor: 'pointer' }} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
