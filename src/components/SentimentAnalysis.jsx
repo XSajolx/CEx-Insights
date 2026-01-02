@@ -313,6 +313,50 @@ const SentimentAnalysis = ({ data = [], filters }) => {
             .slice(0, 50);
     }, [data]);
 
+    // Sentiment Shift (Sankey data) - transitions from Start to End
+    const sentimentShiftData = useMemo(() => {
+        if (!data || data.length === 0) return { flows: [], totals: { start: {}, end: {} } };
+
+        const flows = {
+            'Negative→Negative': 0, 'Negative→Neutral': 0, 'Negative→Positive': 0,
+            'Neutral→Negative': 0, 'Neutral→Neutral': 0, 'Neutral→Positive': 0,
+            'Positive→Negative': 0, 'Positive→Neutral': 0, 'Positive→Positive': 0
+        };
+        
+        const startTotals = { Positive: 0, Neutral: 0, Negative: 0 };
+        const endTotals = { Positive: 0, Neutral: 0, Negative: 0 };
+
+        data.forEach(conv => {
+            let start = conv.sentimentStart?.toLowerCase() || '';
+            let end = conv.sentiment?.toLowerCase() || '';
+            
+            // Normalize
+            if (start === 'positive') start = 'Positive';
+            else if (start === 'negative') start = 'Negative';
+            else if (start) start = 'Neutral';
+            else return; // Skip if no start sentiment
+            
+            if (end === 'positive') end = 'Positive';
+            else if (end === 'negative') end = 'Negative';
+            else end = 'Neutral';
+            
+            const key = `${start}→${end}`;
+            if (flows[key] !== undefined) {
+                flows[key]++;
+                startTotals[start]++;
+                endTotals[end]++;
+            }
+        });
+
+        return {
+            flows: Object.entries(flows).map(([key, value]) => {
+                const [from, to] = key.split('→');
+                return { from, to, value };
+            }).filter(f => f.value > 0),
+            totals: { start: startTotals, end: endTotals }
+        };
+    }, [data]);
+
     // Handle drill-in
     const handleDrillIn = (filterFn, title) => {
         const filtered = data.filter(filterFn);
@@ -672,25 +716,128 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                     </div>
                 </div>
 
-                {/* Sentiment Shift (Placeholder for Sankey) */}
+                {/* Sentiment Shift (Sankey Chart) */}
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>🔄</span> Sentiment Shift</h3>
-                    <div style={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        minHeight: '200px',
-                        color: '#6B7280',
-                        textAlign: 'center'
-                    }}>
-                        <p style={{ fontSize: '0.875rem', margin: '0 0 1rem 0' }}>
-                            Sankey chart showing sentiment transitions requires before/after sentiment data.
-                        </p>
-                        <p style={{ fontSize: '0.75rem', opacity: 0.7 }}>
-                            Coming soon: Track how sentiments change throughout conversation lifecycle.
-                        </p>
-                    </div>
+                    {sentimentShiftData.flows.length === 0 ? (
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            minHeight: '300px',
+                            color: '#6B7280'
+                        }}>
+                            No sentiment transition data available
+                        </div>
+                    ) : (
+                        <div style={{ position: 'relative', height: '320px', padding: '10px' }}>
+                            <svg width="100%" height="100%" viewBox="0 0 400 300">
+                                {/* Labels */}
+                                <text x="30" y="20" fill="#8B949E" fontSize="11" fontWeight="600">START</text>
+                                <text x="340" y="20" fill="#8B949E" fontSize="11" fontWeight="600">END</text>
+                                
+                                {/* Left side nodes (Start) */}
+                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
+                                    const total = sentimentShiftData.totals.start[sentiment] || 0;
+                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.start), 1);
+                                    const height = Math.max(20, (total / maxTotal) * 80);
+                                    const y = 40 + i * 90;
+                                    const color = SENTIMENT_COLORS[sentiment];
+                                    
+                                    return (
+                                        <g key={`start-${sentiment}`}>
+                                            <rect x="10" y={y} width="60" height={height} fill={color} rx="4" opacity="0.9" />
+                                            <text x="40" y={y + height / 2 + 4} fill="#fff" fontSize="10" textAnchor="middle" fontWeight="600">
+                                                {total}
+                                            </text>
+                                            <text x="75" y={y + height / 2 + 4} fill={color} fontSize="9" fontWeight="500">
+                                                {sentiment}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                
+                                {/* Right side nodes (End) */}
+                                {['Negative', 'Neutral', 'Positive'].map((sentiment, i) => {
+                                    const total = sentimentShiftData.totals.end[sentiment] || 0;
+                                    const maxTotal = Math.max(...Object.values(sentimentShiftData.totals.end), 1);
+                                    const height = Math.max(20, (total / maxTotal) * 80);
+                                    const y = 40 + i * 90;
+                                    const color = SENTIMENT_COLORS[sentiment];
+                                    
+                                    return (
+                                        <g key={`end-${sentiment}`}>
+                                            <rect x="330" y={y} width="60" height={height} fill={color} rx="4" opacity="0.9" />
+                                            <text x="360" y={y + height / 2 + 4} fill="#fff" fontSize="10" textAnchor="middle" fontWeight="600">
+                                                {total}
+                                            </text>
+                                            <text x="320" y={y + height / 2 + 4} fill={color} fontSize="9" textAnchor="end" fontWeight="500">
+                                                {sentiment}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                
+                                {/* Flow paths */}
+                                {sentimentShiftData.flows.map((flow, idx) => {
+                                    const fromIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.from);
+                                    const toIdx = ['Negative', 'Neutral', 'Positive'].indexOf(flow.to);
+                                    if (fromIdx === -1 || toIdx === -1) return null;
+                                    
+                                    const fromY = 40 + fromIdx * 90 + 25;
+                                    const toY = 40 + toIdx * 90 + 25;
+                                    const maxFlow = Math.max(...sentimentShiftData.flows.map(f => f.value), 1);
+                                    const strokeWidth = Math.max(2, (flow.value / maxFlow) * 20);
+                                    const color = SENTIMENT_COLORS[flow.to];
+                                    
+                                    // Bezier curve for smooth flow
+                                    const path = `M 70 ${fromY} C 180 ${fromY}, 220 ${toY}, 330 ${toY}`;
+                                    
+                                    return (
+                                        <g key={`flow-${idx}`}>
+                                            <path
+                                                d={path}
+                                                fill="none"
+                                                stroke={color}
+                                                strokeWidth={strokeWidth}
+                                                opacity="0.4"
+                                                strokeLinecap="round"
+                                            />
+                                            {/* Flow label */}
+                                            {flow.value > 0 && (
+                                                <text 
+                                                    x="200" 
+                                                    y={(fromY + toY) / 2 + (fromIdx - toIdx) * 8}
+                                                    fill="#C9D1D9"
+                                                    fontSize="9"
+                                                    textAnchor="middle"
+                                                    opacity={strokeWidth > 5 ? 1 : 0.7}
+                                                >
+                                                    {flow.value}
+                                                </text>
+                                            )}
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+                            
+                            {/* Legend */}
+                            <div style={{ 
+                                position: 'absolute', 
+                                bottom: '5px', 
+                                left: '50%', 
+                                transform: 'translateX(-50%)',
+                                display: 'flex',
+                                gap: '16px',
+                                fontSize: '0.7rem',
+                                color: '#8B949E'
+                            }}>
+                                <span>🔴 Negative</span>
+                                <span>⚪ Neutral</span>
+                                <span>🟢 Positive</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

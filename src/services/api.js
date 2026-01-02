@@ -149,10 +149,10 @@ async function getSupabaseData(filters = {}) {
         console.log('Fetching Supabase data with filters:', filters);
 
         // 1. Build Query for Conversations
-        // Updated to fetch Main-Topics, Sub-Topics, Sentiment End, and Client Favor
+        // Updated to fetch Main-Topics, Sub-Topics, Sentiment Start/End, and Client Favor
         let query = supabase
             .from('Intercom Topic')
-            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics","Sentiment End","Was it in client\'s favor?","Transcript"');
+            .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics","Sentiment Start","Sentiment End","Was it in client\'s favor?","Transcript"');
 
         // Apply Server-Side Date Filtering using created_at_bd (ISO Timestamp) to prevent timeouts
         if (filters.dateRangeStart) {
@@ -220,6 +220,7 @@ async function getSupabaseData(filters = {}) {
                 cx_score_rating: row['CX Score Rating'] ? parseInt(row['CX Score Rating']) : 0,
                 topic: subTopics,      // Now an array
                 main_topic: mainTopics, // Now an array
+                sentimentStart: row['Sentiment Start'] || null, // Sentiment at start
                 sentiment: row['Sentiment End'] || null,  // Sentiment End column
                 clientFavor: row["Was it in client's favor?"] || null, // Client favor outcome
                 transcript: row['Transcript'] || null // For word cloud
