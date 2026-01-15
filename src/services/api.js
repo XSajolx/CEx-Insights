@@ -208,7 +208,8 @@ async function getSupabaseData(filters = {}) {
             mainTopics = mainTopics.filter(t => t && t.trim());
             subTopics = subTopics.filter(t => t && t.trim());
 
-            if (mainTopics.length === 0 && subTopics.length === 0) return; // Skip empty rows
+            // DON'T skip rows without topics - include them so total count is accurate
+            // Topics can be empty arrays, but conversation should still be counted
 
             transformedData.push({
                 created_date_bd: row.created_date_bd || '',
@@ -227,47 +228,15 @@ async function getSupabaseData(filters = {}) {
             });
         });
 
-        // Merge rows with the same conversation_id, combining their topics
-        const conversationMap = new Map();
-        
-        transformedData.forEach(item => {
-            if (!item.conversation_id) return;
-            
-            if (conversationMap.has(item.conversation_id)) {
-                // Merge topics into existing entry
-                const existing = conversationMap.get(item.conversation_id);
-                
-                // Add unique sub-topics
-                item.topic.forEach(t => {
-                    if (!existing.topic.includes(t)) {
-                        existing.topic.push(t);
-                    }
-                });
-                
-                // Add unique main-topics
-                item.main_topic.forEach(t => {
-                    if (!existing.main_topic.includes(t)) {
-                        existing.main_topic.push(t);
-                    }
-                });
-            } else {
-                // First occurrence - add to map
-                conversationMap.set(item.conversation_id, {
-                    ...item,
-                    topic: [...item.topic],
-                    main_topic: [...item.main_topic]
-                });
-            }
-        });
-        
-        const mergedData = Array.from(conversationMap.values());
+        // Don't merge - return all rows as-is (including duplicates)
+        // This shows the actual row count from the database
 
-        if (mergedData.length > 0) {
-            console.log('API Transformed Data [0]:', JSON.stringify(mergedData[0]));
-            console.log(`Merged: ${transformedData.length} rows -> ${mergedData.length} unique conversations`);
+        if (transformedData.length > 0) {
+            console.log('API Transformed Data [0]:', JSON.stringify(transformedData[0]));
+            console.log(`Total rows returned: ${transformedData.length}`);
         }
 
-        return mergedData;
+        return transformedData;
 
     } catch (error) {
         console.error('Error fetching Supabase data:', error);

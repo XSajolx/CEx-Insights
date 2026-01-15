@@ -334,18 +334,18 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         } else {
             // For Issue Analysis: Use main_topic directly, but exclude query-only topics
             console.log('Calculating barData for Issue Analysis');
-            filteredData.forEach(item => {
-                const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
+        filteredData.forEach(item => {
+            const topics = Array.isArray(item.main_topic) ? item.main_topic : [item.main_topic];
 
-                if (topics.length === 0) return;
+            if (topics.length === 0) return;
 
-                topics.forEach(topic => {
-                    const t = topic || 'Other';
+            topics.forEach(topic => {
+                const t = topic || 'Other';
                     // Skip query-only main topics in Issue Analysis
                     if (QUERY_ONLY_MAIN_TOPICS.has(t)) return;
-                    counts[t] = (counts[t] || 0) + 1;
-                });
+                counts[t] = (counts[t] || 0) + 1;
             });
+        });
         }
 
         let finalData = Object.keys(counts)
@@ -459,7 +459,7 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
         if (subTab === 'query') {
             // For Query Analysis: Find subtopics that map to the selected query main topic
             // Exclude "Challenge Rule Clarification" to be consistent
-            safeData.forEach(item => {
+        safeData.forEach(item => {
                 const subTopics = Array.isArray(item.topic) ? item.topic : [item.topic];
 
                 subTopics.forEach(sub => {
@@ -493,9 +493,9 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                             counts[topic] = (counts[topic] || 0) + 1;
                             total++;
                         }
-                    });
-                }
-            });
+                });
+            }
+        });
         }
 
         // Filter out very low frequency items (noise)
@@ -618,48 +618,85 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                         Click bar to drill-in
                     </span>
                 </div>
-                <div style={{ height: '350px', overflowY: 'auto', width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', height: '380px', width: '100%' }}>
                     {barData.length > 0 ? (
-                        <div style={{ height: Math.max(barData.length * 45, 350), width: '100%', minHeight: '350px' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    data={barData}
-                                    layout="vertical"
-                                    margin={{ top: 5, right: 60, left: 140, bottom: 5 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
-                                    <XAxis type="number" stroke="#30363D" tick={{ fill: '#8B949E', fontSize: 10 }} />
-                                    <YAxis
-                                        type="category"
-                                        dataKey="name"
-                                        width={130}
-                                        tick={{ fontSize: 11, fill: '#C9D1D9' }}
-                                        interval={0}
-                                        stroke="#30363D"
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <Bar
-                                        dataKey="value"
-                                        radius={[0, 4, 4, 0]}
-                                        barSize={24}
-                                        onClick={(data) => handleMainTopicDrillIn(data.name)}
-                                        style={{ cursor: 'pointer' }}
+                        (() => {
+                            // Calculate explicit max for perfect alignment
+                            const maxVal = Math.max(...barData.map(d => d.value));
+                            const tickInterval = maxVal <= 5 ? 1 : maxVal <= 10 ? 2 : maxVal <= 20 ? 4 : 5;
+                            const explicitMax = Math.ceil(maxVal / tickInterval) * tickInterval;
+                            const ticks = Array.from({ length: Math.floor(explicitMax / tickInterval) + 1 }, (_, i) => i * tickInterval);
+                            
+                            return (
+                        <>
+                            {/* Scrollable plot area (bars + Y labels) */}
+                            <div style={{ height: 'calc(100% - 64px)', overflowY: 'auto', overflowX: 'hidden', paddingRight: 2 }}>
+                                <div style={{ height: Math.max(barData.length * 40, 340), width: '100%', minHeight: '320px' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            data={barData}
+                                            layout="vertical"
+                                            margin={{ top: 5, right: 50, left: 10, bottom: 0 }}
+                                            barCategoryGap="20%"
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
+                                            <XAxis type="number" hide domain={[0, explicitMax]} ticks={ticks} />
+                                            <YAxis
+                                                type="category"
+                                                dataKey="name"
+                                                width={160}
+                                                tick={{ fontSize: 10, fill: '#C9D1D9' }}
+                                                interval={0}
+                                                stroke="#30363D"
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
+                                            <Bar
+                                                dataKey="value"
+                                                radius={[0, 4, 4, 0]}
+                                                barSize={22}
+                                                onClick={(data) => handleMainTopicDrillIn(data.name)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                {barData.map((entry, index) => (
+                                                    <Cell 
+                                                        key={`cell-${index}`} 
+                                                        fill={subTab === 'issue' ? entry.color : '#2563EB'} 
+                                                        style={{ cursor: 'pointer' }}
+                                                    />
+                                                ))}
+                                                <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                            {/* Sticky X-axis (ticks stay visible) */}
+                            <div style={{ height: '64px', flexShrink: 0, background: 'transparent' }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart
+                                        data={barData}
+                                        layout="vertical"
+                                        margin={{ top: 8, right: 50, left: 10, bottom: 24 }}
+                                        barCategoryGap="20%"
                                     >
-                                        {
-                                            barData.map((entry, index) => (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={subTab === 'issue' ? entry.color : '#2563EB'} 
-                                                    style={{ cursor: 'pointer' }}
-                                                />
-                                            ))
-                                        }
-                                        <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                                        <XAxis
+                                            type="number"
+                                            domain={[0, explicitMax]}
+                                            ticks={ticks}
+                                            stroke="#30363D"
+                                            tick={{ fill: '#8B949E', fontSize: 10 }}
+                                            axisLine={{ stroke: '#30363D' }}
+                                            tickLine={{ stroke: '#30363D' }}
+                                        />
+                                        <YAxis type="category" dataKey="name" width={160} tick={false} axisLine={false} tickLine={false} />
+                                        <Bar dataKey="value" fill="transparent" barSize={0} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </>
+                            );
+                        })()
                     ) : (
                         <div style={{ height: '350px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
                             No data available
@@ -672,13 +709,13 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
             <div className="card">
                 <div className="card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <h3 className="card-title">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                            </svg>
-                            {labels.distributionTitle}
-                        </h3>
+                    <h3 className="card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                        </svg>
+                        {labels.distributionTitle}
+                    </h3>
                         <span style={{ fontSize: '0.6875rem', color: '#6E7681', fontStyle: 'italic' }}>
                             Click slice to drill-in
                         </span>
@@ -771,14 +808,14 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                 <div className="card">
                     <div className="card-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <h3 className="card-title">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                                    <line x1="9" y1="21" x2="9" y2="9"></line>
-                                </svg>
+                        <h3 className="card-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                <line x1="9" y1="21" x2="9" y2="9"></line>
+                            </svg>
                                 {subTab === 'query' ? 'All Query Sub-Topics' : 'All Issue Sub-Topics'}
-                            </h3>
+                        </h3>
                             <span style={{ fontSize: '0.6875rem', color: '#6E7681', fontStyle: 'italic' }}>
                                 Click bar to drill-in
                             </span>
@@ -787,42 +824,81 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                             {allSubTopicsData.length} sub-topics
                         </span>
                     </div>
-                    <div style={{ height: '400px', overflowY: 'auto', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '430px', width: '100%' }}>
                         {allSubTopicsData.length > 0 ? (
-                            <div style={{ height: Math.max(allSubTopicsData.length * 36, 400), width: '100%', minHeight: '400px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={allSubTopicsData}
-                                        layout="vertical"
-                                        margin={{ top: 5, right: 50, left: 140, bottom: 5 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
-                                        <XAxis type="number" stroke="#30363D" tick={{ fill: '#8B949E', fontSize: 10 }} />
-                                        <YAxis
-                                            type="category"
-                                            dataKey="name"
-                                            width={130}
-                                            tick={{ fontSize: 11, fill: '#C9D1D9' }}
-                                            interval={0}
-                                            stroke="#30363D"
-                                            tickLine={false}
-                                            axisLine={false}
-                                        />
-                                        <Bar 
-                                            dataKey="value" 
-                                            radius={[0, 4, 4, 0]} 
-                                            barSize={24}
-                                            onClick={(data) => handleSubTopicDrillIn(data.name)}
-                                            style={{ cursor: 'pointer' }}
+                            (() => {
+                                // Calculate explicit max for perfect alignment
+                                const maxVal = Math.max(...allSubTopicsData.map(d => d.value));
+                                const tickInterval = maxVal <= 5 ? 1 : maxVal <= 10 ? 2 : maxVal <= 20 ? 4 : 5;
+                                const explicitMax = Math.ceil(maxVal / tickInterval) * tickInterval;
+                                const ticks = Array.from({ length: Math.floor(explicitMax / tickInterval) + 1 }, (_, i) => i * tickInterval);
+                                
+                                return (
+                            <>
+                                {/* Scrollable plot area (bars + Y labels) */}
+                                <div style={{ height: 'calc(100% - 64px)', overflowY: 'auto', overflowX: 'hidden', paddingRight: 2 }}>
+                                    <div style={{ height: Math.max(allSubTopicsData.length * 36, 380), width: '100%', minHeight: '360px' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart
+                                                data={allSubTopicsData}
+                                                layout="vertical"
+                                                margin={{ top: 5, right: 40, left: 10, bottom: 0 }}
+                                                barCategoryGap="20%"
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" horizontal={false} />
+                                                <XAxis type="number" hide domain={[0, explicitMax]} ticks={ticks} />
+                                                <YAxis
+                                                    type="category"
+                                                    dataKey="name"
+                                                    width={160}
+                                                    tick={{ fontSize: 10, fill: '#C9D1D9' }}
+                                                    interval={0}
+                                                    stroke="#30363D"
+                                                    tickLine={false}
+                                                    axisLine={false}
+                                                />
+                                                <Bar 
+                                                    dataKey="value" 
+                                                    radius={[0, 4, 4, 0]} 
+                                                    barSize={22}
+                                                    onClick={(data) => handleSubTopicDrillIn(data.name)}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    {allSubTopicsData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: 'pointer' }} />
+                                                    ))}
+                                                    <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={10} />
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                                {/* Sticky X-axis (ticks stay visible) */}
+                                <div style={{ height: '64px', flexShrink: 0, background: 'transparent' }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            data={allSubTopicsData}
+                                            layout="vertical"
+                                            margin={{ top: 8, right: 40, left: 10, bottom: 24 }}
+                                            barCategoryGap="20%"
                                         >
-                                            {allSubTopicsData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: 'pointer' }} />
-                                            ))}
-                                            <LabelList dataKey="value" position="right" fill="#E5E7EB" fontSize={11} />
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                                            <XAxis
+                                                type="number"
+                                                domain={[0, explicitMax]}
+                                                ticks={ticks}
+                                                stroke="#30363D"
+                                                tick={{ fill: '#8B949E', fontSize: 10 }}
+                                                axisLine={{ stroke: '#30363D' }}
+                                                tickLine={{ stroke: '#30363D' }}
+                                            />
+                                            <YAxis type="category" dataKey="name" width={160} tick={false} axisLine={false} tickLine={false} />
+                                            <Bar dataKey="value" fill="transparent" barSize={0} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </>
+                                );
+                            })()
                         ) : (
                             <div style={{ height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
                                 No sub-topic data available
@@ -831,21 +907,21 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                     </div>
                 </div>
 
-                {/* Chart 4: Trend Chart */}
+            {/* Chart 4: Trend Chart */}
                 <div className="card">
-                    <div className="card-header">
-                        <div>
-                            <h3 className="card-title">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
-                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                                    <polyline points="17 6 23 6 23 12"></polyline>
-                                </svg>
-                                {labels.trendTitle}
-                            </h3>
-                            <p style={{ fontSize: '0.75rem', color: '#8B949E', margin: '4px 0 0 0' }}>
-                                {getDateRangeText()}
-                            </p>
-                        </div>
+                <div className="card-header">
+                    <div>
+                        <h3 className="card-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="card-title-icon">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            {labels.trendTitle}
+                        </h3>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', margin: '4px 0 0 0' }}>
+                            {getDateRangeText()}
+                        </p>
+                    </div>
                         <div className="topic-selector">
                             <label>Topic:</label>
                             <SearchableSelect
@@ -855,41 +931,41 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                 label="Topic"
                                 showAllOption={false}
                             />
-                        </div>
                     </div>
+                </div>
 
                     <div style={{ height: '400px', padding: '16px 0' }}>
-                        {trendData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
+                    {trendData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3} />
-                                            <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <XAxis
-                                        dataKey="day"
-                                        stroke="#30363D"
+                                <defs>
+                                    <linearGradient id="colorCurrent" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#38BDF8" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="day"
+                                    stroke="#30363D"
                                         tick={{ fill: '#8B949E', fontSize: 10 }}
-                                        tickLine={false}
-                                        axisLine={{ stroke: '#30363D' }}
-                                    />
-                                    <YAxis
-                                        stroke="#30363D"
+                                    tickLine={false}
+                                    axisLine={{ stroke: '#30363D' }}
+                                />
+                                <YAxis
+                                    stroke="#30363D"
                                         tick={{ fill: '#8B949E', fontSize: 10 }}
-                                        tickLine={false}
-                                        axisLine={false}
-                                    />
-                                    <Tooltip content={<TrendTooltip />} />
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" vertical={false} />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="Current"
-                                        stroke="#38BDF8"
-                                        strokeWidth={3}
-                                        fillOpacity={1}
-                                        fill="url(#colorCurrent)"
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <Tooltip content={<TrendTooltip />} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(139, 148, 158, 0.1)" vertical={false} />
+                                <Area
+                                    type="monotone"
+                                    dataKey="Current"
+                                    stroke="#38BDF8"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorCurrent)"
                                     >
                                         <LabelList 
                                             dataKey="Current" 
@@ -898,17 +974,17 @@ const DashboardCharts = ({ data, previousData, availableTopics, availableMainTop
                                             fontSize={11} 
                                             fontWeight={600}
                                             offset={8}
-                                        />
+                                />
                                     </Area>
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
-                                No trend data available
-                            </div>
-                        )}
-                    </div>
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B949E' }}>
+                            No trend data available
+                        </div>
+                    )}
                 </div>
+            </div>
             </div>
 
             {/* Conversation List Modal - Opens when clicking on chart elements */}

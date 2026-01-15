@@ -1,0 +1,17 @@
+{
+  "name": "intercom-sync",
+  "version": "1.0.0",
+  "description": "Sync Intercom conversations to Supabase for Service Performance Dashboard",
+  "main": "sync.js",
+  "scripts": {
+    "sync": "node sync.js",
+    "sync:full": "node sync.js --full",
+    "test": "node test-connection.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
+

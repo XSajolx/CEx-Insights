@@ -8,6 +8,7 @@ import CSAT from './components/CSAT';
 import LoadingSpinner from './components/LoadingSpinner';
 import FeedbackSuggestions from './components/FeedbackSuggestions';
 import SentimentAnalysis from './components/SentimentAnalysis';
+import ServicePerformanceOverview from './components/ServicePerformanceOverview';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
 import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
@@ -289,7 +290,11 @@ function App() {
           </div>
         </div>
 
-        {activeTab !== 'intercom' && activeTab !== 'csat' && activeTab !== 'feedback' && activeTab !== 'sentiment' && (
+        <div style={{ display: activeTab === 'service-performance' ? 'block' : 'none' }}>
+          <ServicePerformanceOverview />
+        </div>
+
+        {activeTab !== 'intercom' && activeTab !== 'csat' && activeTab !== 'feedback' && activeTab !== 'sentiment' && activeTab !== 'service-performance' && (
           <div style={{ padding: '2rem', color: '#6B7280' }}>
             {/* Blank page for other tabs as requested */}
           </div>

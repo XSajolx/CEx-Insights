@@ -51,6 +51,13 @@ const Icons = {
             <line x1="9" y1="10" x2="15" y2="10"></line>
         </svg>
     ),
+    TopicInsights: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+            <path d="M12 13v2"></path>
+        </svg>
+    ),
     ChevronLeft: () => (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -72,10 +79,11 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
         { id: 'csat', label: 'CSAT', icon: <Icons.CSAT /> },
         { id: 'feedback', label: 'Feedback and Suggestion', icon: <Icons.Feedback /> },
         { id: 'sentiment', label: 'Sentiment Analysis', icon: <Icons.Sentiment /> },
+        { id: 'service-performance', label: 'Service Performance Overview', icon: <Icons.TopicInsights /> },
         { id: 'inflow', label: 'Conversation Inflow', icon: <Icons.Inflow /> },
         { id: 'tickets', label: 'Ticket Inflow', icon: <Icons.Ticket /> },
         { id: 'performance', label: 'Performance Metrics', icon: <Icons.Performance /> },
-        { id: 'country', label: 'Country-wise Performa...', icon: <Icons.Country /> }
+        { id: 'country', label: 'Country-wise Performance', icon: <Icons.Country /> }
     ];
 
     return (
@@ -98,6 +106,7 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
                         key={item.id}
                         className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
                         onClick={() => onTabChange(item.id)}
+                        data-tooltip={item.label}
                     >
                         <span className="nav-icon">{item.icon}</span>
                         <span className="nav-label">{item.label}</span>
@@ -105,9 +114,6 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
                 ))}
             </nav>
 
-            <div className="sidebar-footer">
-                <span>v1.0.0 • Analytics Platform</span>
-            </div>
         </div>
     );
 };

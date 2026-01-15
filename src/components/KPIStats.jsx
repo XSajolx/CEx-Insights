@@ -17,15 +17,16 @@ const findMapping = (topic, mapping) => {
 
 const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) => {
     const stats = useMemo(() => {
+        // Total Conversations: Count all rows (no merging, so all rows are included)
+        const totalConversations = conversations.length;
+        
         // Filter conversations: Must have a topic (check for non-empty array)
+        // This is used for issues/queries calculations, but total count includes all
         const validConversations = conversations.filter(c => {
             const hasMain = Array.isArray(c.main_topic) && c.main_topic.length > 0;
             const hasSub = Array.isArray(c.topic) && c.topic.length > 0;
             return hasMain || hasSub;
         });
-
-        // 1. Total Conversations
-        const totalConversations = validConversations.length;
 
         // 2. Total Issues (count all issues/topics across all conversations, excluding query sub-topics)
         let totalIssues = 0;
@@ -231,13 +232,26 @@ const KPIStats = ({ conversations, previousConversations, subTab = 'issue' }) =>
             {/* Conversation to Issue Ratio */}
             <div className="kpi-card">
                 <div className="kpi-label">Conversation to Issue Ratio</div>
-                <div className="kpi-value">{stats.convToIssueRatio}</div>
+                <div className="kpi-value">
+                    {stats.totalConversations > 0 
+                        ? ((stats.totalIssues / stats.totalConversations) * 100).toFixed(1)
+                        : '0.0'
+                    }%
+                </div>
                 <div className="kpi-trend neutral" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
                     <span style={{ color: 'var(--text-muted)' }}>
-                        {stats.totalIssues > stats.totalConversations 
-                            ? `~${(stats.totalIssues / stats.totalConversations).toFixed(1)} issues per conversation`
-                            : 'Conversations per issue'
-                        }
+                        {stats.totalIssues} issues in {stats.totalConversations} conversations
+                    </span>
+                </div>
+            </div>
+
+            {/* Issue to Query Ratio (Fraction) */}
+            <div className="kpi-card">
+                <div className="kpi-label">Issue to Query Ratio</div>
+                <div className="kpi-value">{stats.totalIssues}/{stats.totalQueries}</div>
+                <div className="kpi-trend neutral" style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                        Issues per query
                     </span>
                 </div>
             </div>
