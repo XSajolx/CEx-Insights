@@ -9,10 +9,13 @@ import LoadingSpinner from './components/LoadingSpinner';
 import FeedbackSuggestions from './components/FeedbackSuggestions';
 import SentimentAnalysis from './components/SentimentAnalysis';
 import ServicePerformanceOverview from './components/ServicePerformanceOverview';
+import LoginPage from './components/LoginPage';
+import { useAuth } from './contexts/AuthContext';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
 import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
 function App() {
+  const { user, loading: authLoading, signOut } = useAuth();
   // State
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -192,6 +195,16 @@ function App() {
     return filterOptions.regions;
   }, [filterOptions.regions]);
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <LoginPage />;
+  }
+
   if (loading && !isInitialized) {
     return <LoadingSpinner />;
   }
@@ -203,6 +216,8 @@ function App() {
         onTabChange={setActiveTab}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onSignOut={signOut}
+        userEmail={user?.email}
       />
 
       <main className="main-content">

@@ -2,6 +2,19 @@ import React from 'react';
 import './Sidebar.css';
 
 const Icons = {
+    Logout: () => (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+    ),
+    User: () => (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+    ),
     Topics: () => (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -73,7 +86,7 @@ const Icons = {
     )
 };
 
-const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
+const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, userEmail }) => {
     const menuItems = [
         { id: 'intercom', label: 'Conversation Topics', icon: <Icons.Topics /> },
         { id: 'csat', label: 'CSAT', icon: <Icons.CSAT /> },
@@ -114,6 +127,27 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle }) => {
                 ))}
             </nav>
 
+            {/* User Section */}
+            {userEmail && (
+                <div className="sidebar-footer">
+                    <div className="user-info">
+                        <div className="user-avatar">
+                            <Icons.User />
+                        </div>
+                        <span className="user-email" title={userEmail}>
+                            {userEmail.split('@')[0]}
+                        </span>
+                    </div>
+                    <button 
+                        className="logout-btn" 
+                        onClick={onSignOut}
+                        title="Sign Out"
+                    >
+                        <Icons.Logout />
+                        <span className="logout-label">Sign Out</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
