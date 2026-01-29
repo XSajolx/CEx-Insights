@@ -63,17 +63,29 @@ export const AuthProvider = ({ children }) => {
       }
     });
     
+    // Check if user already exists
+    // Supabase returns a user with empty identities array if email already exists
+    if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      return {
+        data: null,
+        error: { message: 'This email is already registered. Please sign in instead.' },
+        needsConfirmation: false,
+        alreadyExists: true
+      };
+    }
+    
     // Check if user was created but needs email confirmation
     if (data?.user && !data?.session) {
       // User created but email confirmation required
       return { 
         data, 
         error: null, 
-        needsConfirmation: true 
+        needsConfirmation: true,
+        alreadyExists: false
       };
     }
     
-    return { data, error, needsConfirmation: false };
+    return { data, error, needsConfirmation: false, alreadyExists: false };
   };
 
   const signOut = async () => {

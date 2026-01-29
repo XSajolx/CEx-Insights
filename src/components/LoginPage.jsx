@@ -28,10 +28,15 @@ const LoginPage = () => {
           throw new Error('Sign up is restricted to @nextventures.io email addresses only.');
         }
 
-        const { data, error, needsConfirmation } = await signUp(email, password);
+        const { data, error, needsConfirmation, alreadyExists } = await signUp(email, password);
+        
+        if (alreadyExists) {
+          throw new Error('This email is already registered. Please sign in instead.');
+        }
+        
         if (error) {
           if (error.message.includes('User already registered')) {
-            throw new Error('This email is already registered. Try signing in instead.');
+            throw new Error('This email is already registered. Please sign in instead.');
           }
           throw error;
         }
