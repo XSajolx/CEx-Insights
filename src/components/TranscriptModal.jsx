@@ -12,22 +12,67 @@ const TranscriptModal = ({ isOpen, onClose, conversationId, conversationData }) 
         }
     }, [isOpen, conversationId]);
 
-    const fetchTranscript = async () => {
+    const fetchTranscript = async (retryCount = 0) => {
         setLoading(true);
         setError(null);
         try {
-            const { data, error: fetchError } = await supabase
+            // First try to get the transcript with .single()
+            let { data, error: fetchError } = await supabase
                 .from('Intercom Topic')
                 .select('"Conversation ID","Transcript","Country","Product","Region",created_date_bd,"Main-Topics","Sub-Topics","Sentiment End"')
                 .eq('"Conversation ID"', conversationId)
                 .limit(1)
-                .single();
+                .maybeSingle(); // Use maybeSingle() instead of single() to handle no results gracefully
 
-            if (fetchError) throw fetchError;
+            // If maybeSingle() returns null, try without .maybeSingle() to get first result
+            if (!data && !fetchError) {
+                const { data: dataArray, error: arrayError } = await supabase
+                    .from('Intercom Topic')
+                    .select('"Conversation ID","Transcript","Country","Product","Region",created_date_bd,"Main-Topics","Sub-Topics","Sentiment End"')
+                    .eq('"Conversation ID"', conversationId)
+                    .limit(1);
+                
+                if (arrayError) {
+                    fetchError = arrayError;
+                } else if (dataArray && dataArray.length > 0) {
+                    data = dataArray[0];
+                } else {
+                    throw new Error('No transcript found for this conversation');
+                }
+            }
+
+            if (fetchError) {
+                // Retry on network errors (up to 2 retries)
+                if (retryCount < 2 && (
+                    fetchError.message?.includes('network') || 
+                    fetchError.message?.includes('timeout') ||
+                    fetchError.code === 'PGRST116' ||
+                    fetchError.code === 'PGRST301'
+                )) {
+                    console.warn(`Retrying transcript fetch (attempt ${retryCount + 1})...`);
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+                    return fetchTranscript(retryCount + 1);
+                }
+                throw fetchError;
+            }
+
+            if (!data) {
+                throw new Error('No transcript found for this conversation');
+            }
+
             setTranscript(data);
         } catch (err) {
             console.error('Error fetching transcript:', err);
-            setError('Failed to load transcript');
+            const errorMessage = err.message || err.code || 'Failed to load transcript';
+            
+            // Provide more specific error messages
+            if (errorMessage.includes('No transcript found')) {
+                setError('No transcript available for this conversation');
+            } else if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
+                setError('Network error. Please check your connection and try again.');
+            } else {
+                setError(`Failed to load transcript: ${errorMessage}`);
+            }
         } finally {
             setLoading(false);
         }
@@ -232,9 +277,31 @@ const TranscriptModal = ({ isOpen, onClose, conversationId, conversationData }) 
                             textAlign: 'center', 
                             color: '#F85149',
                             backgroundColor: 'rgba(248, 81, 73, 0.1)',
-                            borderRadius: '8px'
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '12px'
                         }}>
-                            {error}
+                            <div>{error}</div>
+                            <button
+                                onClick={() => fetchTranscript()}
+                                style={{
+                                    padding: '8px 16px',
+                                    backgroundColor: '#21262D',
+                                    border: '1px solid #30363D',
+                                    borderRadius: '6px',
+                                    color: '#C9D1D9',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={e => e.target.style.backgroundColor = '#30363D'}
+                                onMouseLeave={e => e.target.style.backgroundColor = '#21262D'}
+                            >
+                                Retry
+                            </button>
                         </div>
                     )}
 
