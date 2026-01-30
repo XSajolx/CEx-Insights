@@ -54,12 +54,13 @@ export const AuthProvider = ({ children }) => {
     return { data, error };
   };
 
-  // Use production URL for email redirects, fallback to current origin
+  // Use production URL for email redirects
+  const PRODUCTION_URL = 'https://ce-x-insights-main-1.vercel.app';
+  
   const getRedirectUrl = () => {
-    // Check if we're on localhost
+    // Check if we're on localhost - use production URL for email verification
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      // Use your Vercel production URL for email verification
-      return import.meta.env.VITE_SITE_URL || 'https://cex-insights.vercel.app';
+      return PRODUCTION_URL;
     }
     return window.location.origin;
   };
