@@ -156,6 +156,8 @@ body::before {
     overflow-y: auto;
     padding: 1.5rem 2rem;
     background: transparent;
+    margin-left: 280px; /* Account for fixed sidebar */
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Page Headers */
@@ -944,7 +946,10 @@ body::before {
 }
 
 @media (max-width: 768px) {
-    .main-content { padding: 1rem; }
+    .main-content { 
+        padding: 1rem; 
+        margin-left: 240px; /* Smaller sidebar on mobile */
+    }
     .kpi-row { grid-template-columns: repeat(2, 1fr); }
     .csat-kpi-counters { grid-template-columns: repeat(2, 1fr); }
     .csat-charts-grid .card { padding: 1rem; }
