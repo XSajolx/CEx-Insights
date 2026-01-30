@@ -1,82 +1,102 @@
-/* Sidebar - CEx Insights Rounded Panel Style */
+/* ============================================
+   SIDEBAR - MODERN GLASSMORPHISM STYLE
+   ============================================ */
+
 .sidebar {
-    width: 270px;
-    background-color: #161B22;
-    border: 1px solid #30363D;
-    border-radius: 20px;
+    width: 280px;
+    background: rgba(10, 15, 26, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 24px);
-    margin: 12px;
-    box-shadow:
-        0 0 0 1px rgba(48, 54, 61, 0.5),
-        0 8px 24px rgba(0, 0, 0, 0.3),
-        0 0 40px rgba(88, 166, 255, 0.03);
-    overflow: visible;
+    height: 100vh;
+    position: relative;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 100;
+}
+
+/* Subtle gradient overlay */
+.sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, 
+        rgba(6, 182, 212, 0.03) 0%, 
+        transparent 30%,
+        transparent 70%,
+        rgba(168, 85, 247, 0.02) 100%
+    );
+    pointer-events: none;
 }
 
 .sidebar-header {
     padding: 1.5rem 1.25rem;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+    position: relative;
+    z-index: 1;
 }
 
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.875rem;
 }
 
 .brand-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #58A6FF;
-    filter: drop-shadow(0 0 12px rgba(88, 166, 255, 0.3));
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(168, 85, 247, 0.2));
+    border-radius: 12px;
+    color: #06B6D4;
+    filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.4));
 }
 
 .brand-title {
     font-size: 1.125rem;
     font-weight: 700;
-    background: linear-gradient(90deg, #FFFFFF, #94A3B8);
+    background: linear-gradient(135deg, #F8FAFC 0%, #94A3B8 100%);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 .collapse-btn {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #8B949E;
-    font-size: 1.25rem;
+    color: #64748B;
     cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    width: 32px;
-    height: 32px;
+    padding: 0.375rem;
+    border-radius: 10px;
+    transition: all 0.25s ease;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .collapse-btn:hover {
-    background-color: #58A6FF;
-    border-color: #58A6FF;
-    color: #FFFFFF;
-    box-shadow: 0 0 12px rgba(88, 166, 255, 0.3);
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.3);
+    color: #06B6D4;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
 }
 
 .sidebar-nav {
-    padding: 0.75rem;
+    padding: 1rem 0.75rem;
     flex: 1;
     overflow-y: auto;
     overflow-x: visible;
+    position: relative;
+    z-index: 1;
 }
 
 .sidebar.collapsed .sidebar-nav {
@@ -86,83 +106,108 @@
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.625rem 0.875rem;
-    border-radius: 10px;
-    color: #8B949E;
-    font-size: 0.75rem;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color: #94A3B8;
+    font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     margin-bottom: 0.25rem;
     border: 1px solid transparent;
+    position: relative;
 }
 
 .nav-item:hover {
-    color: #F0F6FC;
-    background-color: #21262D;
+    color: #F8FAFC;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active {
-    color: #58A6FF;
-    background-color: rgba(88, 166, 255, 0.15);
-    border-color: rgba(88, 166, 255, 0.25);
+    color: #06B6D4;
+    background: rgba(6, 182, 212, 0.1);
+    border-color: rgba(6, 182, 212, 0.2);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: linear-gradient(180deg, #06B6D4, #A855F7);
+    border-radius: 0 3px 3px 0;
 }
 
 .nav-icon {
     font-size: 1rem;
-    width: 20px;
-    text-align: center;
-    opacity: 0.8;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover .nav-icon {
+    opacity: 1;
 }
 
 .nav-item.active .nav-icon {
     opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.5));
 }
 
 .nav-label {
     white-space: nowrap;
     overflow: hidden;
-    /* text-overflow: ellipsis; Removed to allow full text visibility or handle wrapping if width allows */
+    text-overflow: ellipsis;
 }
 
+/* Sidebar Footer - User Section */
 .sidebar-footer {
     padding: 1rem;
-    border-top: 1px solid #30363D;
-    font-size: 0.75rem;
-    color: #6E7681;
-    border-radius: 0 0 20px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    position: relative;
+    z-index: 1;
 }
 
 .user-info {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    padding: 0.5rem 0.625rem;
-    background: rgba(88, 166, 255, 0.08);
-    border-radius: 8px;
-    border: 1px solid rgba(88, 166, 255, 0.15);
+    gap: 0.75rem;
+    padding: 0.625rem 0.875rem;
+    background: rgba(6, 182, 212, 0.08);
+    border-radius: 10px;
+    border: 1px solid rgba(6, 182, 212, 0.15);
 }
 
 .user-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #58A6FF 0%, #A371F7 100%);
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #06B6D4 0%, #A855F7 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
     flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
 }
 
 .user-email {
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #F0F6FC;
+    color: #F8FAFC;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -173,29 +218,33 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.625rem;
-    background: rgba(255, 123, 114, 0.1);
-    border: 1px solid rgba(255, 123, 114, 0.2);
-    border-radius: 8px;
-    color: #FF7B72;
+    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 10px;
+    color: #EF4444;
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
     width: 100%;
+    font-family: inherit;
 }
 
 .logout-btn:hover {
-    background: rgba(255, 123, 114, 0.2);
-    border-color: rgba(255, 123, 114, 0.4);
-    box-shadow: 0 0 12px rgba(255, 123, 114, 0.15);
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
 }
 
 .logout-label {
     white-space: nowrap;
 }
 
-/* Collapsed State */
+/* ============================================
+   COLLAPSED STATE
+   ============================================ */
+
 .sidebar.collapsed {
     width: 80px;
     overflow: visible;
@@ -219,13 +268,16 @@
 
 .sidebar.collapsed .nav-item {
     justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0.75rem;
+}
+
+.sidebar.collapsed .nav-item::before {
+    display: none;
 }
 
 .sidebar.collapsed .nav-icon {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     opacity: 1;
 }
 
@@ -235,7 +287,7 @@
 
 .sidebar.collapsed .user-info {
     justify-content: center;
-    padding: 0.5rem;
+    padding: 0.625rem;
 }
 
 .sidebar.collapsed .user-email {
@@ -250,7 +302,10 @@
     display: none;
 }
 
-/* Tooltip for collapsed sidebar */
+/* ============================================
+   TOOLTIP FOR COLLAPSED SIDEBAR
+   ============================================ */
+
 .sidebar.collapsed .nav-item {
     position: relative;
 }
@@ -261,22 +316,24 @@
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
-    background: #21262D;
-    color: #F0F6FC;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    color: #F8FAFC;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
+    font-size: 0.8125rem;
     font-weight: 500;
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
-    margin-left: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border: 1px solid #30363D;
+    margin-left: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     z-index: 1000;
 }
 
+/* Tooltip arrow */
 .sidebar.collapsed .nav-item::before {
     content: '';
     position: absolute;
@@ -284,11 +341,11 @@
     top: 50%;
     transform: translateY(-50%);
     border: 6px solid transparent;
-    border-right-color: #30363D;
+    border-right-color: rgba(15, 23, 42, 0.95);
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
-    margin-left: -2px;
+    margin-left: 0;
     z-index: 1001;
 }
 
@@ -299,7 +356,21 @@
 }
 
 .sidebar.collapsed .nav-item.active::after {
-    background: rgba(88, 166, 255, 0.15);
-    border-color: rgba(88, 166, 255, 0.25);
-    color: #58A6FF;
+    background: rgba(6, 182, 212, 0.15);
+    border-color: rgba(6, 182, 212, 0.25);
+    color: #06B6D4;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 240px;
+    }
+    
+    .sidebar.collapsed {
+        width: 70px;
+    }
 }
