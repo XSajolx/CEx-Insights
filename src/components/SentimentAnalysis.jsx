@@ -830,65 +830,132 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                 </div>
             </div>
 
-            {/* Row 5: Word Cloud (Full Width) */}
+            {/* Row 5: Word Cloud (Full Width) - Creative Scattered Design */}
             <div style={{ marginBottom: '1.5rem' }}>
                 <div style={cardStyle}>
                     <h3 style={headerStyle}><span>☁️</span> Word Cloud (Top Keywords)</h3>
                     <p style={{ color: '#EF4444', fontSize: '0.7rem', margin: '-8px 0 8px 0' }}>From negative sentiment conversations</p>
                     <div style={{ 
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '2px 6px',
-                        padding: '1.5rem',
-                        minHeight: '200px',
-                        background: 'linear-gradient(145deg, #161B22 0%, #0D1117 100%)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        borderRadius: '8px'
+                        position: 'relative',
+                        height: '400px',
+                        background: 'linear-gradient(145deg, #1a1f2e 0%, #0f1419 50%, #151922 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: '12px',
+                        overflow: 'hidden'
                     }}>
+                        {/* Background texture */}
+                        <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(88, 166, 255, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 30%, rgba(163, 113, 247, 0.03) 0%, transparent 50%), radial-gradient(circle at 50% 80%, rgba(34, 197, 94, 0.02) 0%, transparent 50%)',
+                            pointerEvents: 'none'
+                        }} />
                         {(() => {
-                            const shuffled = [...wordCloudData.slice(0, 80)];
-                            for (let i = shuffled.length - 1; i > 0; i--) {
-                                const j = Math.floor((i * 7 + 3) % (i + 1));
-                                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                            if (wordCloudData.length === 0) {
+                                return (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6B7280', fontSize: '0.875rem' }}>
+                                        No negative sentiment conversations found
+                                    </div>
+                                );
                             }
+                            
                             const maxCount = wordCloudData[0]?.count || 1;
-                            // Red/warm tones for dissatisfied/negative theme
+                            // Vibrant multicolor palette
                             const colors = [
-                                '#EF4444', '#F87171', '#DC2626', '#FB923C', '#F97316', 
-                                '#FBBF24', '#EF4444', '#F59E0B', '#DC2626', '#FB7185',
-                                '#F43F5E', '#E11D48', '#BE123C', '#F87171', '#FDA4AF',
-                                '#FDBA74', '#FCD34D', '#FCA5A5', '#F97316', '#DC2626',
-                                '#EF4444', '#F87171', '#FB923C', '#FBBF24', '#F59E0B',
-                                '#F43F5E', '#E11D48', '#DC2626', '#EF4444', '#FB7185'
+                                '#22C55E', '#10B981', '#14B8A6', // Greens/Teals
+                                '#3B82F6', '#6366F1', '#8B5CF6', // Blues/Purples
+                                '#EC4899', '#F43F5E', '#EF4444', // Pinks/Reds
+                                '#F59E0B', '#FBBF24', '#FCD34D', // Yellows/Ambers
+                                '#06B6D4', '#0EA5E9', '#38BDF8', // Cyans
+                                '#A855F7', '#C084FC', '#E879F9', // Violets
+                                '#84CC16', '#A3E635', '#BEF264', // Limes
+                                '#FB7185', '#FDA4AF', '#FECACA'  // Rose tones
                             ];
-                            return shuffled.map((item, index) => {
+                            
+                            // Predefined positions for artistic layout (percentages)
+                            const positions = [
+                                { x: 50, y: 50, rot: 0 },    // Center - biggest word
+                                { x: 25, y: 35, rot: -15 },
+                                { x: 75, y: 40, rot: 10 },
+                                { x: 40, y: 25, rot: -90 },
+                                { x: 60, y: 70, rot: 0 },
+                                { x: 15, y: 55, rot: -90 },
+                                { x: 85, y: 60, rot: 90 },
+                                { x: 35, y: 75, rot: 0 },
+                                { x: 70, y: 20, rot: -10 },
+                                { x: 20, y: 80, rot: 15 },
+                                { x: 80, y: 80, rot: -5 },
+                                { x: 45, y: 15, rot: 0 },
+                                { x: 10, y: 25, rot: -90 },
+                                { x: 90, y: 35, rot: 90 },
+                                { x: 55, y: 85, rot: 0 },
+                                { x: 30, y: 50, rot: -45 },
+                                { x: 65, y: 55, rot: 45 },
+                                { x: 48, y: 38, rot: 0 },
+                                { x: 22, y: 65, rot: -90 },
+                                { x: 78, y: 25, rot: 0 },
+                                { x: 42, y: 62, rot: -15 },
+                                { x: 58, y: 32, rot: 20 },
+                                { x: 12, y: 45, rot: -90 },
+                                { x: 88, y: 50, rot: 90 },
+                                { x: 35, y: 88, rot: 0 },
+                                { x: 68, y: 75, rot: -10 },
+                                { x: 8, y: 70, rot: -90 },
+                                { x: 92, y: 70, rot: 90 },
+                                { x: 50, y: 8, rot: 0 },
+                                { x: 28, y: 18, rot: -20 },
+                                { x: 72, y: 88, rot: 15 },
+                                { x: 18, y: 12, rot: -45 },
+                                { x: 82, y: 15, rot: 45 },
+                                { x: 38, y: 45, rot: 0 },
+                                { x: 62, y: 48, rot: 0 },
+                                { x: 5, y: 50, rot: -90 },
+                                { x: 95, y: 45, rot: 90 },
+                                { x: 52, y: 92, rot: 0 },
+                                { x: 25, y: 92, rot: 10 },
+                                { x: 75, y: 5, rot: -5 },
+                            ];
+                            
+                            return wordCloudData.slice(0, 40).map((item, index) => {
                                 const ratio = item.count / maxCount;
-                                const size = 10 + (Math.pow(ratio, 0.45) * 62);
+                                const size = 12 + (Math.pow(ratio, 0.4) * 48);
+                                const pos = positions[index] || { 
+                                    x: 10 + (index * 17) % 80, 
+                                    y: 10 + (index * 23) % 80, 
+                                    rot: [-90, -45, 0, 0, 0, 45, 90][index % 7] 
+                                };
                                 const color = colors[index % colors.length];
-                                const fontWeight = size > 45 ? '700' : size > 30 ? '600' : size > 20 ? '500' : '400';
-                                const fontStyle = index % 5 === 0 ? 'italic' : 'normal';
-                                const textTransform = index % 7 === 0 ? 'uppercase' : 'none';
+                                const fontWeight = size > 40 ? '700' : size > 28 ? '600' : size > 18 ? '500' : '400';
+                                
                                 return (
                                     <span
                                         key={item.word}
                                         style={{
+                                            position: 'absolute',
+                                            left: `${pos.x}%`,
+                                            top: `${pos.y}%`,
+                                            transform: `translate(-50%, -50%) rotate(${pos.rot}deg)`,
                                             fontSize: `${size}px`,
                                             fontWeight: fontWeight,
-                                            fontStyle: fontStyle,
-                                            textTransform: textTransform,
                                             color: color,
                                             whiteSpace: 'nowrap',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            lineHeight: '1.1',
-                                            fontFamily: index % 3 === 0 ? 'Georgia, serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                                            padding: '2px 5px',
-                                            textShadow: size > 30 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'
+                                            transition: 'all 0.3s ease',
+                                            fontFamily: "'Segoe UI', 'Roboto', sans-serif",
+                                            textShadow: `0 0 ${size > 30 ? '20px' : '10px'} ${color}33`,
+                                            zIndex: Math.floor(size),
+                                            letterSpacing: size > 35 ? '1px' : '0'
                                         }}
-                                        onMouseEnter={e => { e.target.style.transform = 'scale(1.1)'; e.target.style.textShadow = '0 2px 8px rgba(239,68,68,0.4)'; }}
-                                        onMouseLeave={e => { e.target.style.transform = 'scale(1)'; e.target.style.textShadow = size > 30 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'; }}
+                                        onMouseEnter={e => { 
+                                            e.target.style.transform = `translate(-50%, -50%) rotate(${pos.rot}deg) scale(1.15)`; 
+                                            e.target.style.textShadow = `0 0 30px ${color}66`; 
+                                            e.target.style.zIndex = '1000';
+                                        }}
+                                        onMouseLeave={e => { 
+                                            e.target.style.transform = `translate(-50%, -50%) rotate(${pos.rot}deg) scale(1)`; 
+                                            e.target.style.textShadow = `0 0 ${size > 30 ? '20px' : '10px'} ${color}33`; 
+                                            e.target.style.zIndex = Math.floor(size);
+                                        }}
                                         title={`${item.word}: ${item.count} occurrences`}
                                     >
                                         {item.word}
@@ -896,11 +963,6 @@ const SentimentAnalysis = ({ data = [], filters }) => {
                                 );
                             });
                         })()}
-                        {wordCloudData.length === 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6B7280', fontSize: '0.875rem' }}>
-                                No negative sentiment conversations found
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
