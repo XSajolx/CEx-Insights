@@ -97,10 +97,13 @@
     overflow-x: visible;
     position: relative;
     z-index: 1;
+    /* Add padding at bottom to prevent content being hidden behind fixed footer */
+    padding-bottom: 140px;
 }
 
 .sidebar.collapsed .sidebar-nav {
     overflow: visible;
+    padding-bottom: 120px;
 }
 
 .nav-item {
@@ -170,15 +173,21 @@
     text-overflow: ellipsis;
 }
 
-/* Sidebar Footer - User Section */
+/* Sidebar Footer - User Section - Fixed at Bottom */
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    position: relative;
-    z-index: 1;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(10, 15, 26, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 10;
 }
 
 .user-info {
@@ -283,6 +292,8 @@
 
 .sidebar.collapsed .sidebar-footer {
     padding: 0.75rem 0.5rem;
+    left: 0;
+    right: 0;
 }
 
 .sidebar.collapsed .user-info {
