@@ -54,12 +54,22 @@ export const AuthProvider = ({ children }) => {
     return { data, error };
   };
 
+  // Use production URL for email redirects, fallback to current origin
+  const getRedirectUrl = () => {
+    // Check if we're on localhost
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // Use your Vercel production URL for email verification
+      return import.meta.env.VITE_SITE_URL || 'https://cex-insights.vercel.app';
+    }
+    return window.location.origin;
+  };
+
   const signUp = async (email, password) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: `${getRedirectUrl()}/`,
       }
     });
     
@@ -99,7 +109,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetPassword = async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getRedirectUrl()}/reset-password`,
     });
     return { data, error };
   };
