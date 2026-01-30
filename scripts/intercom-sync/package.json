@@ -4,14 +4,17 @@
   "description": "Sync Intercom conversations to Supabase for Service Performance Dashboard",
   "main": "sync.js",
   "scripts": {
-    "sync": "node sync.js",
-    "sync:full": "node sync.js --full",
+    "sync": "node sync-to-supabase.js",
+    "sync:full": "node sync-to-supabase.js --full",
+    "sync:topics": "node sync-intercom-topics.js",
+    "sync:topics:analyze": "node sync-intercom-topics.js --analyze-only",
     "test": "node test-connection.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "openai": "^4.20.0"
   }
 }
 

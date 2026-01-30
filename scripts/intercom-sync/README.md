@@ -1,12 +1,13 @@
 # Intercom to Supabase Sync
 
-Syncs conversation data from Intercom API to Supabase for the **Service Performance Overview** dashboard.
+Syncs conversation data from Intercom API to Supabase for the **Service Performance Overview** dashboard and **Intercom Topic** analysis.
 
 ## Prerequisites
 
 - Node.js 18+
 - Intercom API Access Token (with `Read conversations` permission)
 - Supabase Project with service role key
+- OpenAI API Key (for topic categorization)
 
 ## Setup
 
@@ -34,6 +35,9 @@ INTERCOM_ACCESS_TOKEN=your_intercom_access_token_here
 # Supabase
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
+
+# OpenAI (required for topic categorization)
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ### 3. Install Dependencies
@@ -52,15 +56,72 @@ This will verify connectivity to both Intercom and Supabase.
 
 ### 5. Run Sync
 
-**Incremental sync (last 7 days):**
+**Service Performance Sync (last 7 days):**
 ```bash
 npm run sync
 ```
 
-**Full sync (last 90 days):**
+**Service Performance Sync (last 90 days):**
 ```bash
 npm run sync:full
 ```
+
+---
+
+## Topic Categorization Sync (Intercom Topic Table)
+
+This script replicates the n8n workflow for AI-powered topic categorization.
+
+### Run Topic Sync
+
+**Sync today's conversations with AI analysis:**
+```bash
+npm run sync:topics
+```
+
+**Sync a specific date:**
+```bash
+node sync-intercom-topics.js --date=2025-11-27
+```
+
+**Sync a date range:**
+```bash
+node sync-intercom-topics.js --from=2025-11-01 --to=2025-11-30
+```
+
+**Analyze existing records (without re-fetching from Intercom):**
+```bash
+npm run sync:topics:analyze
+```
+
+**Limit number of conversations:**
+```bash
+node sync-intercom-topics.js --date=2025-11-27 --limit=50
+```
+
+### Topic Sync Features
+
+- Fetches conversations from Intercom Search API
+- Extracts transcripts from conversation parts
+- Uses OpenAI GPT-4.1 Mini for topic categorization
+- Stores results in `Intercom Topic` Supabase table
+
+### Output Columns
+
+| Column | Description |
+|--------|-------------|
+| `Conversation ID` | Intercom conversation ID |
+| `Created at` | Conversation creation timestamp |
+| `Email` | Customer email |
+| `Transcript` | Full conversation transcript |
+| `Country` | Customer country (from contact) |
+| `Region` | Customer region |
+| `Main-Topics` | AI-detected main categories |
+| `Sub-Topics` | AI-detected sub-categories |
+| `Sentiment Start` | Customer sentiment at start |
+| `Sentiment End` | Customer sentiment at end |
+| `Feedbacks` | AI-suggested improvements |
+| `Was it in client's favor?` | Resolution outcome (Yes/No/Pending) |
 
 ## How It Works
 
