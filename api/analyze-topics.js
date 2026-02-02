@@ -234,7 +234,13 @@ module.exports = async function handler(req, res) {
             });
             
             if (!searchResp.ok) {
-                return res.status(500).json({ error: 'Failed to search conversations' });
+                console.error('Intercom search failed:', searchResp.status, searchResp.data);
+                return res.status(500).json({ 
+                    error: 'Failed to search conversations',
+                    details: searchResp.data,
+                    hasToken: !!process.env.INTERCOM_ACCESS_TOKEN,
+                    tokenStart: process.env.INTERCOM_ACCESS_TOKEN?.substring(0, 10) + '...'
+                });
             }
             
             const conversations = searchResp.data.conversations || [];
