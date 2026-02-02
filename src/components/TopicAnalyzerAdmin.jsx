@@ -13,9 +13,8 @@ const TopicAnalyzerAdmin = () => {
   const [saving, setSaving] = useState(false);
   const [savedIds, setSavedIds] = useState(new Set());
 
-  const API_URL = import.meta.env.PROD 
-    ? '/api/analyze-topics' 
-    : 'http://localhost:3000/api/analyze-topics';
+  // Always use relative URL - works in both dev and prod
+  const API_URL = '/api/analyze-topics';
 
   const handleAnalyze = async () => {
     setLoading(true);
