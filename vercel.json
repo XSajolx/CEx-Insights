@@ -1,11 +1,9 @@
 {
-    "framework": "vite",
     "buildCommand": "vite build",
     "outputDirectory": "dist",
-    "functions": {
-        "api/analyze-topics.js": {
-            "memory": 1024,
-            "maxDuration": 60
-        }
-    }
+    "routes": [
+        { "handle": "filesystem" },
+        { "src": "/api/(.*)", "dest": "/api/$1" },
+        { "src": "/(.*)", "dest": "/index.html" }
+    ]
 }
