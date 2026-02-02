@@ -9,6 +9,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import FeedbackSuggestions from './components/FeedbackSuggestions';
 import SentimentAnalysis from './components/SentimentAnalysis';
 import ServicePerformanceOverview from './components/ServicePerformanceOverview';
+import TopicAnalyzerAdmin from './components/TopicAnalyzerAdmin';
 import LoginPage from './components/LoginPage';
 import { useAuth } from './contexts/AuthContext';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
@@ -568,6 +569,36 @@ function App() {
           <div style={{ padding: '4rem', color: '#64748B', textAlign: 'center', fontSize: '1.1rem' }}>
             Coming soon...
           </div>
+        </div>
+
+        {/* Topic Analyzer Admin Tab */}
+        <div style={{ display: activeTab === 'topic-analyzer' ? 'block' : 'none' }}>
+          <div style={{
+            background: 'rgba(30, 41, 59, 0.6)',
+            borderRadius: '12px',
+            padding: '1rem 2rem',
+            marginBottom: '1.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem'
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <h1 style={{ 
+              color: '#F8FAFC', 
+              fontSize: '1.35rem', 
+              fontWeight: '600', 
+              margin: 0,
+              letterSpacing: '0.02em'
+            }}>
+              Topic Analyzer Admin
+            </h1>
+          </div>
+          <TopicAnalyzerAdmin />
         </div>
       </main>
     </div>
