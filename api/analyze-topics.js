@@ -165,7 +165,7 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
     }
     
-    const { action, conversationId, dateFrom, dateTo, limit = 5 } = req.body || {};
+    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, limit = 5 } = req.body || {};
     
     try {
         if (action === 'fetch-single') {
@@ -216,8 +216,10 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
             
-            const fromTs = Math.floor(new Date(dateFrom + 'T00:00:00Z').getTime() / 1000);
-            const toTs = Math.floor(new Date(dateTo + 'T23:59:59Z').getTime() / 1000);
+            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00Z';
+            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59Z';
+            const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
+            const toTs = Math.floor(new Date(toStr).getTime() / 1000);
             
             const searchResp = await fetchIntercom('/conversations/search', {
                 method: 'POST',
@@ -229,7 +231,7 @@ module.exports = async function handler(req, res) {
                             { field: 'created_at', operator: '<=', value: toTs }
                         ]
                     },
-                    pagination: { per_page: Math.min(parseInt(limit) || 5, 20) }
+                    pagination: { per_page: Math.min(parseInt(limit) || 5, 100) }
                 })
             });
             
@@ -245,7 +247,8 @@ module.exports = async function handler(req, res) {
             
             const conversations = searchResp.data.conversations || [];
             const results = [];
-            const maxProcess = Math.min(parseInt(limit) || 5, conversations.length, 10);
+            const requestedLimit = Math.min(parseInt(limit) || 5, 500);
+            const maxProcess = Math.min(requestedLimit, conversations.length);
             
             for (let i = 0; i < maxProcess; i++) {
                 const convId = conversations[i].id;

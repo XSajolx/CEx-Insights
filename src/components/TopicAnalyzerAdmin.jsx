@@ -6,7 +6,26 @@ const TopicAnalyzerAdmin = () => {
   const [conversationId, setConversationId] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [limit, setLimit] = useState(10);
+  const [timeFrom, setTimeFrom] = useState('00:00');
+  const [timeTo, setTimeTo] = useState('23:59');
+  const [limit, setLimit] = useState(50);
+
+  // Quick date filters: Today, Yesterday, Last 7 days (full days 00:00–23:59)
+  const setQuickRange = (preset) => {
+    const now = new Date();
+    const toDate = new Date(now);
+    let fromDate = new Date(now);
+    if (preset === 'yesterday') {
+      fromDate.setDate(fromDate.getDate() - 1);
+      toDate.setDate(toDate.getDate() - 1);
+    } else if (preset === '7days') {
+      fromDate.setDate(fromDate.getDate() - 6);
+    }
+    setDateFrom(fromDate.toISOString().slice(0, 10));
+    setDateTo(toDate.toISOString().slice(0, 10));
+    setTimeFrom('00:00');
+    setTimeTo('23:59');
+  };
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [error, setError] = useState('');
@@ -25,7 +44,7 @@ const TopicAnalyzerAdmin = () => {
     try {
       const body = mode === 'single' 
         ? { action: 'fetch-single', conversationId }
-        : { action: 'fetch-range', dateFrom, dateTo, limit };
+        : { action: 'fetch-range', dateFrom, dateTo, timeFrom, timeTo, limit };
 
       console.log('Sending request to:', API_URL, body);
 
@@ -231,7 +250,35 @@ const TopicAnalyzerAdmin = () => {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div>
+            {/* Quick date filters */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <span style={{ color: '#94A3B8', fontSize: '0.75rem', alignSelf: 'center', marginRight: '0.25rem' }}>Quick:</span>
+              {[
+                { key: 'today', label: 'Today' },
+                { key: 'yesterday', label: 'Yesterday' },
+                { key: '7days', label: 'Last 7 days' }
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setQuickRange(key)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    color: '#94A3B8',
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div>
               <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
                 From Date
@@ -240,6 +287,25 @@ const TopicAnalyzerAdmin = () => {
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  color: '#F8FAFC',
+                  fontSize: '0.875rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                From Time
+              </label>
+              <input
+                type="time"
+                value={timeFrom}
+                onChange={(e) => setTimeFrom(e.target.value)}
                 style={{
                   padding: '0.75rem 1rem',
                   borderRadius: '8px',
@@ -272,14 +338,33 @@ const TopicAnalyzerAdmin = () => {
             </div>
             <div>
               <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                To Time
+              </label>
+              <input
+                type="time"
+                value={timeTo}
+                onChange={(e) => setTimeTo(e.target.value)}
+                style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  color: '#F8FAFC',
+                  fontSize: '0.875rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
                 Limit
               </label>
               <input
                 type="number"
                 value={limit}
-                onChange={(e) => setLimit(parseInt(e.target.value) || 10)}
+                onChange={(e) => setLimit(parseInt(e.target.value) || 50)}
                 min="1"
-                max="50"
+                max="500"
                 style={{
                   width: '80px',
                   padding: '0.75rem 1rem',
@@ -311,6 +396,7 @@ const TopicAnalyzerAdmin = () => {
             >
               {loading ? '⏳ Analyzing...' : '🔍 Analyze Range'}
             </button>
+            </div>
           </div>
         )}
       </div>
