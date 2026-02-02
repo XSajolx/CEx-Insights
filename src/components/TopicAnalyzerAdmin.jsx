@@ -9,6 +9,7 @@ const TopicAnalyzerAdmin = () => {
   const [timeFrom, setTimeFrom] = useState('00:00');
   const [timeTo, setTimeTo] = useState('23:59');
   const [limit, setLimit] = useState(50);
+  const [skipAI, setSkipAI] = useState(false);
 
   // Quick date filters: Today, Yesterday, Last 7 days (full days 00:00–23:59)
   const setQuickRange = (preset) => {
@@ -44,7 +45,7 @@ const TopicAnalyzerAdmin = () => {
     try {
       const body = mode === 'single' 
         ? { action: 'fetch-single', conversationId }
-        : { action: 'fetch-range', dateFrom, dateTo, timeFrom, timeTo, limit };
+        : { action: 'fetch-range', dateFrom, dateTo, timeFrom, timeTo, limit, skipAI };
 
       console.log('Sending request to:', API_URL, body);
 
@@ -364,9 +365,9 @@ const TopicAnalyzerAdmin = () => {
                 value={limit}
                 onChange={(e) => setLimit(parseInt(e.target.value) || 50)}
                 min="1"
-                max="500"
+                max="5000"
                 style={{
-                  width: '80px',
+                  width: '100px',
                   padding: '0.75rem 1rem',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -376,6 +377,18 @@ const TopicAnalyzerAdmin = () => {
                   outline: 'none'
                 }}
               />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                id="skipAI"
+                checked={skipAI}
+                onChange={(e) => setSkipAI(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="skipAI" style={{ color: '#94A3B8', fontSize: '0.8rem', cursor: 'pointer' }}>
+                Skip AI (faster for bulk)
+              </label>
             </div>
             <button
               onClick={handleAnalyze}

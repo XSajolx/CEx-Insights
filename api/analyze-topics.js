@@ -165,7 +165,7 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
     }
     
-    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, limit = 5 } = req.body || {};
+    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, limit = 5, skipAI = false } = req.body || {};
     
     try {
         if (action === 'fetch-single') {
@@ -221,9 +221,16 @@ module.exports = async function handler(req, res) {
             const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
             const toTs = Math.floor(new Date(toStr).getTime() / 1000);
             
-            const searchResp = await fetchIntercom('/conversations/search', {
-                method: 'POST',
-                body: JSON.stringify({
+            const requestedLimit = Math.min(parseInt(limit) || 5, 5000);
+            const perPage = Math.min(requestedLimit, 150); // Intercom max is 150
+            
+            // Fetch all conversation IDs with pagination
+            let allConversations = [];
+            let startingAfter = null;
+            let totalAvailable = 0;
+            
+            while (allConversations.length < requestedLimit) {
+                const searchBody = {
                     query: {
                         operator: 'AND',
                         value: [
@@ -231,34 +238,65 @@ module.exports = async function handler(req, res) {
                             { field: 'created_at', operator: '<=', value: toTs }
                         ]
                     },
-                    pagination: { per_page: Math.min(parseInt(limit) || 5, 100) }
-                })
-            });
-            
-            if (!searchResp.ok) {
-                console.error('Intercom search failed:', searchResp.status, searchResp.data);
-                return res.status(500).json({ 
-                    error: 'Failed to search conversations',
-                    details: searchResp.data,
-                    hasToken: !!process.env.INTERCOM_ACCESS_TOKEN,
-                    tokenStart: process.env.INTERCOM_ACCESS_TOKEN?.substring(0, 10) + '...'
+                    pagination: { per_page: perPage }
+                };
+                
+                if (startingAfter) {
+                    searchBody.pagination.starting_after = startingAfter;
+                }
+                
+                const searchResp = await fetchIntercom('/conversations/search', {
+                    method: 'POST',
+                    body: JSON.stringify(searchBody)
                 });
+                
+                if (!searchResp.ok) {
+                    console.error('Intercom search failed:', searchResp.status, searchResp.data);
+                    return res.status(500).json({ 
+                        error: 'Failed to search conversations',
+                        details: searchResp.data
+                    });
+                }
+                
+                const pageConversations = searchResp.data.conversations || [];
+                totalAvailable = searchResp.data.total_count || allConversations.length + pageConversations.length;
+                
+                if (pageConversations.length === 0) break;
+                
+                allConversations = allConversations.concat(pageConversations);
+                
+                // Check if there are more pages
+                const pages = searchResp.data.pages;
+                if (pages && pages.next && pages.next.starting_after) {
+                    startingAfter = pages.next.starting_after;
+                } else {
+                    break;
+                }
+                
+                // Safety: don't exceed requested limit
+                if (allConversations.length >= requestedLimit) break;
             }
             
-            const conversations = searchResp.data.conversations || [];
-            const results = [];
-            const requestedLimit = Math.min(parseInt(limit) || 5, 500);
-            const maxProcess = Math.min(requestedLimit, conversations.length);
+            // Trim to requested limit
+            allConversations = allConversations.slice(0, requestedLimit);
             
-            for (let i = 0; i < maxProcess; i++) {
-                const convId = conversations[i].id;
+            const results = [];
+            
+            // Process each conversation (with or without AI)
+            for (let i = 0; i < allConversations.length; i++) {
+                const convId = allConversations[i].id;
                 
                 const convResp = await fetchIntercom(`/conversations/${convId}?display_as=plaintext`);
                 if (!convResp.ok) continue;
                 
                 const conv = convResp.data;
                 const transcript = extractTranscript(conv);
-                const aiResult = await analyzeWithAI(transcript);
+                
+                // Only run AI analysis if skipAI is false
+                let aiResult = null;
+                if (!skipAI) {
+                    aiResult = await analyzeWithAI(transcript);
+                }
                 
                 let country = null;
                 const contactId = conv.contacts?.contacts?.[0]?.id;
@@ -282,7 +320,14 @@ module.exports = async function handler(req, res) {
                 });
             }
             
-            return res.status(200).json({ success: true, data: results, total: conversations.length });
+            return res.status(200).json({ 
+                success: true, 
+                data: results, 
+                total: totalAvailable,
+                fetched: allConversations.length,
+                processed: results.length,
+                skippedAI: skipAI
+            });
             
         } else {
             return res.status(400).json({ error: 'Invalid action' });
