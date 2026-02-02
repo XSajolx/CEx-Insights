@@ -162,23 +162,39 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     
+    console.log('API called:', req.method, req.url);
+    
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
+    }
+    
+    if (req.method === 'GET') {
+        // Health check
+        return res.status(200).json({ 
+            status: 'ok', 
+            hasIntercomToken: !!process.env.INTERCOM_ACCESS_TOKEN,
+            hasOpenAIKey: !!process.env.OPENAI_API_KEY
+        });
     }
     
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    console.log('Request body:', JSON.stringify(req.body));
+
     // Check environment variables
     if (!process.env.INTERCOM_ACCESS_TOKEN) {
-        return res.status(500).json({ error: 'INTERCOM_ACCESS_TOKEN not configured' });
+        console.error('Missing INTERCOM_ACCESS_TOKEN');
+        return res.status(500).json({ error: 'INTERCOM_ACCESS_TOKEN not configured in Vercel' });
     }
     if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+        console.error('Missing OPENAI_API_KEY');
+        return res.status(500).json({ error: 'OPENAI_API_KEY not configured in Vercel' });
     }
     
     const { action, conversationId, dateFrom, dateTo, limit = 10 } = req.body || {};
+    console.log('Action:', action, 'ConversationId:', conversationId, 'DateFrom:', dateFrom, 'DateTo:', dateTo);
     
     try {
         if (action === 'fetch-single') {

@@ -27,16 +27,33 @@ const TopicAnalyzerAdmin = () => {
         ? { action: 'fetch-single', conversationId }
         : { action: 'fetch-range', dateFrom, dateTo, limit };
 
+      console.log('Sending request to:', API_URL, body);
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+
+      // Get response text first to debug
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+
+      if (!responseText) {
+        throw new Error('Empty response from server. Check if environment variables are set in Vercel.');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze');
+        throw new Error(data.error || `Server error: ${response.status}`);
       }
 
       if (mode === 'single') {
@@ -45,6 +62,7 @@ const TopicAnalyzerAdmin = () => {
         setResults(data.data || []);
       }
     } catch (err) {
+      console.error('Analyze error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
