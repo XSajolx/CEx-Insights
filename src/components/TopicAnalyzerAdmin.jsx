@@ -32,6 +32,8 @@ const TopicAnalyzerAdmin = () => {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedIds, setSavedIds] = useState(new Set());
+  const [fetchStats, setFetchStats] = useState(null); // { total, fetched, processed, skippedAI }
+  const [analyzingIds, setAnalyzingIds] = useState(new Set()); // Track IDs being analyzed with AI
 
   // Always use relative URL - works in both dev and prod
   const API_URL = '/api/analyze-topics';
@@ -41,6 +43,7 @@ const TopicAnalyzerAdmin = () => {
     setError('');
     setResults([]);
     setSavedIds(new Set());
+    setFetchStats(null);
 
     try {
       const body = mode === 'single' 
@@ -78,14 +81,49 @@ const TopicAnalyzerAdmin = () => {
 
       if (mode === 'single') {
         setResults([data.data]);
+        setFetchStats(null);
       } else {
         setResults(data.data || []);
+        setFetchStats({
+          total: data.total || 0,
+          fetched: data.fetched || data.data?.length || 0,
+          processed: data.processed || data.data?.length || 0,
+          skippedAI: data.skippedAI || false
+        });
       }
     } catch (err) {
       console.error('Analyze error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Analyze a single conversation with AI (for results fetched without AI)
+  const handleAnalyzeSingle = async (conversationId) => {
+    setAnalyzingIds(prev => new Set([...prev, conversationId]));
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'fetch-single', conversationId })
+      });
+      
+      const data = await response.json();
+      if (data.success && data.data) {
+        // Update the result in the results array
+        setResults(prev => prev.map(r => 
+          r['Conversation ID'] === conversationId ? { ...r, ...data.data } : r
+        ));
+      }
+    } catch (err) {
+      console.error('AI analysis failed:', err);
+    } finally {
+      setAnalyzingIds(prev => {
+        const next = new Set(prev);
+        next.delete(conversationId);
+        return next;
+      });
     }
   };
 
@@ -407,9 +445,28 @@ const TopicAnalyzerAdmin = () => {
                 gap: '0.5rem'
               }}
             >
-              {loading ? '⏳ Analyzing...' : '🔍 Analyze Range'}
+              {loading 
+                ? (skipAI ? '⏳ Fetching...' : '⏳ Analyzing with AI...') 
+                : '🔍 Analyze Range'}
             </button>
             </div>
+            {/* Warning for large limits */}
+            {limit > 100 && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem 1rem',
+                background: limit > 500 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                border: `1px solid ${limit > 500 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                color: limit > 500 ? '#F87171' : '#FBBF24'
+              }}>
+                {limit > 500 
+                  ? `⚠️ Large request (${limit}): May timeout. Enable "Skip AI" for better chances. Consider processing in smaller batches.`
+                  : `⏱️ ${limit} conversations ${skipAI ? 'without' : 'with'} AI will take ~${skipAI ? Math.ceil(limit / 50) : Math.ceil(limit / 3)} minutes`
+                }
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -431,6 +488,43 @@ const TopicAnalyzerAdmin = () => {
       {/* Results */}
       {results.length > 0 && (
         <div>
+          {/* Stats Bar */}
+          {fetchStats && (
+            <div style={{
+              display: 'flex',
+              gap: '1.5rem',
+              marginBottom: '1rem',
+              padding: '1rem',
+              background: 'rgba(37, 99, 235, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(37, 99, 235, 0.2)',
+              flexWrap: 'wrap'
+            }}>
+              <div>
+                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Total Available</span>
+                <div style={{ color: '#38BDF8', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.total.toLocaleString()}</div>
+              </div>
+              <div>
+                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Fetched</span>
+                <div style={{ color: '#22C55E', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.fetched.toLocaleString()}</div>
+              </div>
+              <div>
+                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Processed</span>
+                <div style={{ color: '#A78BFA', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.processed.toLocaleString()}</div>
+              </div>
+              {fetchStats.skippedAI && (
+                <div style={{ 
+                  padding: '0.5rem 1rem', 
+                  background: 'rgba(251, 191, 36, 0.15)', 
+                  borderRadius: '6px',
+                  alignSelf: 'center'
+                }}>
+                  <span style={{ color: '#FBBF24', fontSize: '0.8rem' }}>⚡ AI Analysis Skipped (bulk mode)</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -439,6 +533,11 @@ const TopicAnalyzerAdmin = () => {
           }}>
             <h3 style={{ color: '#F8FAFC', margin: 0 }}>
               📊 Results ({results.length} conversation{results.length > 1 ? 's' : ''})
+              {fetchStats && fetchStats.total > fetchStats.fetched && (
+                <span style={{ color: '#64748B', fontSize: '0.875rem', fontWeight: '400', marginLeft: '0.5rem' }}>
+                  of {fetchStats.total.toLocaleString()} total
+                </span>
+              )}
             </h3>
             {results.length > 1 && (
               <button
@@ -634,8 +733,29 @@ const TopicAnalyzerAdmin = () => {
                   </div>
                 </div>
 
-                {/* Save Button */}
-                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                {/* Action Buttons */}
+                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                  {/* Analyze with AI button - show if no AI data */}
+                  {(!result['Main-Topics'] || result['Main-Topics'].length === 0) && (
+                    <button
+                      onClick={() => handleAnalyzeSingle(result['Conversation ID'])}
+                      disabled={analyzingIds.has(result['Conversation ID'])}
+                      style={{
+                        padding: '0.5rem 1.5rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: analyzingIds.has(result['Conversation ID'])
+                          ? 'rgba(124, 58, 237, 0.3)'
+                          : 'linear-gradient(135deg, #7C3AED, #6366F1)',
+                        color: '#fff',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        cursor: analyzingIds.has(result['Conversation ID']) ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {analyzingIds.has(result['Conversation ID']) ? '⏳ Analyzing...' : '🤖 Analyze with AI'}
+                    </button>
+                  )}
                   <button
                     onClick={() => handleSaveToSupabase(result)}
                     disabled={saving || isSaved}
