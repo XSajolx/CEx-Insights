@@ -1,17 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
+
+// Only these emails can access this component
+const ALLOWED_EMAILS = ['sajol@nextventures.io'];
 
 const TopicAnalyzerAdmin = () => {
-  const [mode, setMode] = useState('single'); // 'single' or 'range'
+  const { user } = useAuth();
+  const [mode, setMode] = useState('range'); // 'single' or 'range'
   const [conversationId, setConversationId] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [timeFrom, setTimeFrom] = useState('00:00');
   const [timeTo, setTimeTo] = useState('23:59');
-  const [limit, setLimit] = useState(50);
-  const [skipAI, setSkipAI] = useState(false);
+  
+  // Progress states
+  const [isFetching, setIsFetching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Progress tracking
+  const [progress, setProgress] = useState({
+    totalAvailable: 0,
+    fetched: 0,
+    saved: 0,
+    currentPage: 0,
+    analyzed: 0,
+    toAnalyze: 0
+  });
+  
+  // Stop flag using ref (persists across renders without causing re-render)
+  const stopRequestedRef = useRef(false);
+  
+  // API URL
+  const API_URL = '/api/analyze-topics';
 
-  // Quick date filters: Today, Yesterday, Last 7 days (full days 00:00–23:59)
+  // Quick date filters
   const setQuickRange = (preset) => {
     const now = new Date();
     const toDate = new Date(now);
@@ -27,170 +51,264 @@ const TopicAnalyzerAdmin = () => {
     setTimeFrom('00:00');
     setTimeTo('23:59');
   };
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [savedIds, setSavedIds] = useState(new Set());
-  const [fetchStats, setFetchStats] = useState(null); // { total, fetched, processed, skippedAI }
-  const [analyzingIds, setAnalyzingIds] = useState(new Set()); // Track IDs being analyzed with AI
 
-  // Always use relative URL - works in both dev and prod
-  const API_URL = '/api/analyze-topics';
+  // Check access permission
+  const userEmail = user?.email?.toLowerCase() || '';
+  const hasAccess = ALLOWED_EMAILS.some(email => email.toLowerCase() === userEmail);
 
-  const handleAnalyze = async () => {
-    setLoading(true);
+  // If no access, show access denied
+  if (!hasAccess) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '12px',
+          padding: '2rem',
+          maxWidth: '400px',
+          margin: '0 auto'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+          <h3 style={{ color: '#F87171', margin: '0 0 0.5rem 0' }}>Access Denied</h3>
+          <p style={{ color: '#94A3B8', margin: 0, fontSize: '0.875rem' }}>
+            This feature is restricted to authorized administrators only.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Save a batch of records to Supabase
+  const saveBatchToSupabase = async (records) => {
+    let savedCount = 0;
+    for (const record of records) {
+      if (stopRequestedRef.current) break;
+      
+      try {
+        // Check if exists
+        const { data: existing } = await supabase
+          .from('Intercom Topic')
+          .select('Conversation ID')
+          .eq('Conversation ID', record['Conversation ID'])
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          // Update
+          const { error } = await supabase
+            .from('Intercom Topic')
+            .update(record)
+            .eq('Conversation ID', record['Conversation ID']);
+          if (!error) savedCount++;
+        } else {
+          // Insert
+          const { error } = await supabase
+            .from('Intercom Topic')
+            .insert(record);
+          if (!error) savedCount++;
+        }
+      } catch (err) {
+        console.error('Save error:', err);
+      }
+    }
+    return savedCount;
+  };
+
+  // Main fetch and save function
+  const handleFetchAndSave = async () => {
+    if (!dateFrom || !dateTo) {
+      setError('Please select a date range');
+      return;
+    }
+
+    setIsFetching(true);
     setError('');
-    setResults([]);
-    setSavedIds(new Set());
-    setFetchStats(null);
+    stopRequestedRef.current = false;
+    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0 });
+
+    let startingAfter = null;
+    let pageNum = 0;
+    let totalFetched = 0;
+    let totalSaved = 0;
+    let totalAvailable = 0;
 
     try {
-      const body = mode === 'single' 
-        ? { action: 'fetch-single', conversationId }
-        : { action: 'fetch-range', dateFrom, dateTo, timeFrom, timeTo, limit, skipAI };
+      while (!stopRequestedRef.current) {
+        pageNum++;
+        setProgress(prev => ({ ...prev, currentPage: pageNum }));
 
-      console.log('Sending request to:', API_URL, body);
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      console.log('Response status:', response.status);
-
-      // Get response text first to debug
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-
-      if (!responseText) {
-        throw new Error('Empty response from server. Check if environment variables are set in Vercel.');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `Server error: ${response.status}`);
-      }
-
-      if (mode === 'single') {
-        setResults([data.data]);
-        setFetchStats(null);
-      } else {
-        setResults(data.data || []);
-        setFetchStats({
-          total: data.total || 0,
-          fetched: data.fetched || data.data?.length || 0,
-          processed: data.processed || data.data?.length || 0,
-          skippedAI: data.skippedAI || false
+        // Fetch one page from Intercom
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'fetch-page',
+            dateFrom,
+            dateTo,
+            timeFrom,
+            timeTo,
+            startingAfter
+          })
         });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Failed to fetch page');
+        }
+
+        const data = await response.json();
+        totalAvailable = data.totalCount || totalAvailable;
+        
+        if (!data.data || data.data.length === 0) {
+          break;
+        }
+
+        totalFetched += data.data.length;
+        setProgress(prev => ({ 
+          ...prev, 
+          totalAvailable, 
+          fetched: totalFetched 
+        }));
+
+        // Save this batch to Supabase immediately
+        const savedCount = await saveBatchToSupabase(data.data);
+        totalSaved += savedCount;
+        setProgress(prev => ({ ...prev, saved: totalSaved }));
+
+        // Check if there are more pages
+        if (!data.hasMore || !data.nextStartingAfter) {
+          break;
+        }
+        startingAfter = data.nextStartingAfter;
+      }
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err.message);
+    } finally {
+      setIsFetching(false);
+      stopRequestedRef.current = false;
+    }
+  };
+
+  // Analyze unanalyzed conversations
+  const handleAnalyzeUnanalyzed = async () => {
+    setIsAnalyzing(true);
+    setError('');
+    stopRequestedRef.current = false;
+    
+    try {
+      // Fetch unanalyzed records from Supabase
+      // Records where AI Analyzed is false or Main-Topics is empty
+      const { data: unanalyzed, error: fetchError } = await supabase
+        .from('Intercom Topic')
+        .select('*')
+        .or('AI Analyzed.is.null,AI Analyzed.eq.false')
+        .order('created_at', { ascending: true })
+        .limit(500);
+
+      if (fetchError) throw fetchError;
+
+      if (!unanalyzed || unanalyzed.length === 0) {
+        setError('No unanalyzed conversations found');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      setProgress(prev => ({ ...prev, toAnalyze: unanalyzed.length, analyzed: 0 }));
+
+      for (let i = 0; i < unanalyzed.length; i++) {
+        if (stopRequestedRef.current) break;
+
+        const record = unanalyzed[i];
+        const convId = record['Conversation ID'];
+
+        try {
+          // Call API to analyze with AI
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'analyze-single',
+              conversationId: convId
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              // Update Supabase with AI results
+              await supabase
+                .from('Intercom Topic')
+                .update({
+                  'Main-Topics': result.data['Main-Topics'],
+                  'Sub-Topics': result.data['Sub-Topics'],
+                  'Sentiment Start': result.data['Sentiment Start'],
+                  'Sentiment End': result.data['Sentiment End'],
+                  'Feedbacks': result.data['Feedbacks'],
+                  'Was it in client\'s favor?': result.data['Was it in client\'s favor?'],
+                  'AI Analyzed': true
+                })
+                .eq('Conversation ID', convId);
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to analyze ${convId}:`, err);
+        }
+
+        setProgress(prev => ({ ...prev, analyzed: i + 1 }));
       }
     } catch (err) {
       console.error('Analyze error:', err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      setIsAnalyzing(false);
+      stopRequestedRef.current = false;
     }
   };
 
-  // Analyze a single conversation with AI (for results fetched without AI)
-  const handleAnalyzeSingle = async (conversationId) => {
-    setAnalyzingIds(prev => new Set([...prev, conversationId]));
+  // Handle single conversation
+  const handleAnalyzeSingle = async () => {
+    if (!conversationId) {
+      setError('Please enter a conversation ID');
+      return;
+    }
+
+    setIsFetching(true);
+    setError('');
+
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'fetch-single', conversationId })
+        body: JSON.stringify({
+          action: 'fetch-single',
+          conversationId
+        })
       });
-      
+
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch conversation');
+      }
+
       if (data.success && data.data) {
-        // Update the result in the results array
-        setResults(prev => prev.map(r => 
-          r['Conversation ID'] === conversationId ? { ...r, ...data.data } : r
-        ));
+        // Save to Supabase
+        await saveBatchToSupabase([data.data]);
+        setProgress(prev => ({ ...prev, saved: 1, fetched: 1 }));
       }
     } catch (err) {
-      console.error('AI analysis failed:', err);
+      console.error('Single fetch error:', err);
+      setError(err.message);
     } finally {
-      setAnalyzingIds(prev => {
-        const next = new Set(prev);
-        next.delete(conversationId);
-        return next;
-      });
+      setIsFetching(false);
     }
   };
 
-  const handleSaveToSupabase = async (record) => {
-    setSaving(true);
-    try {
-      // Check if exists
-      const { data: existing } = await supabase
-        .from('Intercom Topic')
-        .select('Conversation ID')
-        .eq('Conversation ID', record['Conversation ID'])
-        .limit(1);
-
-      if (existing && existing.length > 0) {
-        // Update
-        const { error } = await supabase
-          .from('Intercom Topic')
-          .update(record)
-          .eq('Conversation ID', record['Conversation ID']);
-        
-        if (error) throw error;
-      } else {
-        // Insert
-        const { error } = await supabase
-          .from('Intercom Topic')
-          .insert(record);
-        
-        if (error) throw error;
-      }
-
-      setSavedIds(prev => new Set([...prev, record['Conversation ID']]));
-    } catch (err) {
-      setError(`Save failed: ${err.message}`);
-    } finally {
-      setSaving(false);
-    }
+  // Stop any running process
+  const handleStop = () => {
+    stopRequestedRef.current = true;
   };
 
-  const handleSaveAll = async () => {
-    setSaving(true);
-    for (const record of results) {
-      if (!savedIds.has(record['Conversation ID'])) {
-        await handleSaveToSupabase(record);
-      }
-    }
-    setSaving(false);
-  };
-
-  const getSentimentColor = (sentiment) => {
-    const colors = {
-      'Very Positive': '#22C55E',
-      'Positive': '#4ADE80',
-      'Neutral': '#94A3B8',
-      'Negative': '#F87171',
-      'Very Negative': '#EF4444'
-    };
-    return colors[sentiment] || '#94A3B8';
-  };
-
-  const getResolutionBadge = (outcome) => {
-    const styles = {
-      'Yes': { bg: 'rgba(34, 197, 94, 0.2)', color: '#22C55E', text: '✓ Resolved' },
-      'No': { bg: 'rgba(239, 68, 68, 0.2)', color: '#EF4444', text: '✗ Not Resolved' },
-      'Pending': { bg: 'rgba(251, 191, 36, 0.2)', color: '#FBBF24', text: '⏳ Pending' }
-    };
-    return styles[outcome] || styles['Pending'];
-  };
+  const isProcessing = isFetching || isAnalyzing;
 
   return (
     <div style={{ padding: '1.5rem' }}>
@@ -203,10 +321,10 @@ const TopicAnalyzerAdmin = () => {
         border: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
         <h2 style={{ color: '#F8FAFC', margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
-          🔍 Topic Analyzer Admin
+          ⚙️ Topic Analyzer Admin
         </h2>
         <p style={{ color: '#94A3B8', margin: 0, fontSize: '0.875rem' }}>
-          Fetch conversations from Intercom, analyze with AI, and save to Supabase
+          Fetch conversations from Intercom and save to Supabase. Analyze with AI separately.
         </p>
       </div>
 
@@ -220,6 +338,7 @@ const TopicAnalyzerAdmin = () => {
           <button
             key={m}
             onClick={() => setMode(m)}
+            disabled={isProcessing}
             style={{
               padding: '0.75rem 1.5rem',
               borderRadius: '8px',
@@ -228,8 +347,9 @@ const TopicAnalyzerAdmin = () => {
               color: mode === m ? '#38BDF8' : '#94A3B8',
               fontSize: '0.875rem',
               fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
+              cursor: isProcessing ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              opacity: isProcessing ? 0.6 : 1
             }}
           >
             {m === 'single' ? '🎯 Single Conversation' : '📅 Date Range'}
@@ -256,6 +376,7 @@ const TopicAnalyzerAdmin = () => {
                 value={conversationId}
                 onChange={(e) => setConversationId(e.target.value)}
                 placeholder="e.g., 215471991646547"
+                disabled={isProcessing}
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -269,23 +390,20 @@ const TopicAnalyzerAdmin = () => {
               />
             </div>
             <button
-              onClick={handleAnalyze}
-              disabled={loading || !conversationId}
+              onClick={handleAnalyzeSingle}
+              disabled={isProcessing || !conversationId}
               style={{
                 padding: '0.75rem 2rem',
                 borderRadius: '8px',
                 border: 'none',
-                background: loading ? 'rgba(37, 99, 235, 0.3)' : 'linear-gradient(135deg, #2563EB, #7C3AED)',
+                background: isProcessing ? 'rgba(37, 99, 235, 0.3)' : 'linear-gradient(135deg, #2563EB, #7C3AED)',
                 color: '#fff',
                 fontSize: '0.875rem',
                 fontWeight: '600',
-                cursor: loading ? 'wait' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
+                cursor: isProcessing ? 'wait' : 'pointer'
               }}
             >
-              {loading ? '⏳ Analyzing...' : '🔍 Analyze'}
+              {isFetching ? '⏳ Fetching...' : '🔍 Fetch & Save'}
             </button>
           </div>
         ) : (
@@ -302,6 +420,7 @@ const TopicAnalyzerAdmin = () => {
                   key={key}
                   type="button"
                   onClick={() => setQuickRange(key)}
+                  disabled={isProcessing}
                   style={{
                     padding: '0.5rem 1rem',
                     borderRadius: '8px',
@@ -309,7 +428,7 @@ const TopicAnalyzerAdmin = () => {
                     background: 'rgba(255, 255, 255, 0.05)',
                     color: '#94A3B8',
                     fontSize: '0.8rem',
-                    cursor: 'pointer',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s'
                   }}
                 >
@@ -317,156 +436,145 @@ const TopicAnalyzerAdmin = () => {
                 </button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                From Date
-              </label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: '#F8FAFC',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                From Time
-              </label>
-              <input
-                type="time"
-                value={timeFrom}
-                onChange={(e) => setTimeFrom(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: '#F8FAFC',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                To Date
-              </label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: '#F8FAFC',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                To Time
-              </label>
-              <input
-                type="time"
-                value={timeTo}
-                onChange={(e) => setTimeTo(e.target.value)}
-                style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: '#F8FAFC',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                Limit
-              </label>
-              <input
-                type="number"
-                value={limit}
-                onChange={(e) => setLimit(parseInt(e.target.value) || 50)}
-                min="1"
-                max="5000"
-                style={{
-                  width: '100px',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  background: 'rgba(15, 23, 42, 0.6)',
-                  color: '#F8FAFC',
-                  fontSize: '0.875rem',
-                  outline: 'none'
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
-                id="skipAI"
-                checked={skipAI}
-                onChange={(e) => setSkipAI(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <label htmlFor="skipAI" style={{ color: '#94A3B8', fontSize: '0.8rem', cursor: 'pointer' }}>
-                Skip AI (faster for bulk)
-              </label>
-            </div>
-            <button
-              onClick={handleAnalyze}
-              disabled={loading || !dateFrom || !dateTo}
-              style={{
-                padding: '0.75rem 2rem',
-                borderRadius: '8px',
-                border: 'none',
-                background: loading ? 'rgba(37, 99, 235, 0.3)' : 'linear-gradient(135deg, #2563EB, #7C3AED)',
-                color: '#fff',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                cursor: loading ? 'wait' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              {loading 
-                ? (skipAI ? '⏳ Fetching...' : '⏳ Analyzing with AI...') 
-                : '🔍 Analyze Range'}
-            </button>
-            </div>
-            {/* Warning for large limits */}
-            {limit > 100 && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem 1rem',
-                background: limit > 500 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(251, 191, 36, 0.1)',
-                border: `1px solid ${limit > 500 ? 'rgba(239, 68, 68, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                color: limit > 500 ? '#F87171' : '#FBBF24'
-              }}>
-                {limit > 500 
-                  ? `⚠️ Large request (${limit}): May timeout. Enable "Skip AI" for better chances. Consider processing in smaller batches.`
-                  : `⏱️ ${limit} conversations ${skipAI ? 'without' : 'with'} AI will take ~${skipAI ? Math.ceil(limit / 50) : Math.ceil(limit / 3)} minutes`
-                }
+
+            {/* Date/Time inputs */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  From Date
+                </label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
               </div>
-            )}
+              <div>
+                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  From Time
+                </label>
+                <input
+                  type="time"
+                  value={timeFrom}
+                  onChange={(e) => setTimeFrom(e.target.value)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  To Date
+                </label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  To Time
+                </label>
+                <input
+                  type="time"
+                  value={timeTo}
+                  onChange={(e) => setTimeTo(e.target.value)}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleFetchAndSave}
+                disabled={isProcessing || !dateFrom || !dateTo}
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: isProcessing ? 'rgba(37, 99, 235, 0.3)' : 'linear-gradient(135deg, #2563EB, #7C3AED)',
+                  color: '#fff',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isFetching ? '⏳ Fetching & Saving...' : '📥 Fetch & Save to Supabase'}
+              </button>
+
+              <button
+                onClick={handleAnalyzeUnanalyzed}
+                disabled={isProcessing}
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: isProcessing ? 'rgba(124, 58, 237, 0.3)' : 'linear-gradient(135deg, #7C3AED, #6366F1)',
+                  color: '#fff',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isAnalyzing ? '⏳ Analyzing...' : '🤖 Analyze Unanalyzed'}
+              </button>
+
+              {isProcessing && (
+                <button
+                  onClick={handleStop}
+                  style={{
+                    padding: '0.75rem 2rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+                    color: '#fff',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⏹️ Stop
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -485,313 +593,119 @@ const TopicAnalyzerAdmin = () => {
         </div>
       )}
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div>
-          {/* Stats Bar */}
-          {fetchStats && (
-            <div style={{
-              display: 'flex',
-              gap: '1.5rem',
-              marginBottom: '1rem',
-              padding: '1rem',
-              background: 'rgba(37, 99, 235, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(37, 99, 235, 0.2)',
-              flexWrap: 'wrap'
-            }}>
-              <div>
-                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Total Available</span>
-                <div style={{ color: '#38BDF8', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.total.toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Fetched</span>
-                <div style={{ color: '#22C55E', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.fetched.toLocaleString()}</div>
-              </div>
-              <div>
-                <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Processed</span>
-                <div style={{ color: '#A78BFA', fontSize: '1.25rem', fontWeight: '700' }}>{fetchStats.processed.toLocaleString()}</div>
-              </div>
-              {fetchStats.skippedAI && (
-                <div style={{ 
-                  padding: '0.5rem 1rem', 
-                  background: 'rgba(251, 191, 36, 0.15)', 
-                  borderRadius: '6px',
-                  alignSelf: 'center'
-                }}>
-                  <span style={{ color: '#FBBF24', fontSize: '0.8rem' }}>⚡ AI Analysis Skipped (bulk mode)</span>
+      {/* Progress Display */}
+      {(isFetching || isAnalyzing || progress.saved > 0 || progress.analyzed > 0) && (
+        <div style={{
+          background: 'rgba(30, 41, 59, 0.5)',
+          borderRadius: '12px',
+          padding: '1.5rem',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          <h3 style={{ color: '#F8FAFC', margin: '0 0 1rem 0', fontSize: '1rem' }}>
+            📊 Progress
+          </h3>
+          
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+            {/* Fetch Progress */}
+            {(isFetching || progress.fetched > 0) && (
+              <>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Total Available</div>
+                  <div style={{ color: '#38BDF8', fontSize: '1.5rem', fontWeight: '700' }}>
+                    {progress.totalAvailable.toLocaleString()}
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Fetched</div>
+                  <div style={{ color: '#A78BFA', fontSize: '1.5rem', fontWeight: '700' }}>
+                    {progress.fetched.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Saved to Supabase</div>
+                  <div style={{ color: '#22C55E', fontSize: '1.5rem', fontWeight: '700' }}>
+                    {progress.saved.toLocaleString()}
+                  </div>
+                </div>
+                {isFetching && (
+                  <div>
+                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Current Page</div>
+                    <div style={{ color: '#FBBF24', fontSize: '1.5rem', fontWeight: '700' }}>
+                      {progress.currentPage}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1rem'
-          }}>
-            <h3 style={{ color: '#F8FAFC', margin: 0 }}>
-              📊 Results ({results.length} conversation{results.length > 1 ? 's' : ''})
-              {fetchStats && fetchStats.total > fetchStats.fetched && (
-                <span style={{ color: '#64748B', fontSize: '0.875rem', fontWeight: '400', marginLeft: '0.5rem' }}>
-                  of {fetchStats.total.toLocaleString()} total
-                </span>
-              )}
-            </h3>
-            {results.length > 1 && (
-              <button
-                onClick={handleSaveAll}
-                disabled={saving}
-                style={{
-                  padding: '0.5rem 1.5rem',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                  color: '#fff',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  cursor: saving ? 'wait' : 'pointer'
-                }}
-              >
-                {saving ? '⏳ Saving...' : '💾 Save All to Supabase'}
-              </button>
+            {/* Analyze Progress */}
+            {(isAnalyzing || progress.analyzed > 0) && (
+              <>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>To Analyze</div>
+                  <div style={{ color: '#38BDF8', fontSize: '1.5rem', fontWeight: '700' }}>
+                    {progress.toAnalyze.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Analyzed</div>
+                  <div style={{ color: '#22C55E', fontSize: '1.5rem', fontWeight: '700' }}>
+                    {progress.analyzed.toLocaleString()}
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
-          {results.map((result, index) => {
-            const resolution = getResolutionBadge(result['Was it in client\'s favor?']);
-            const isSaved = savedIds.has(result['Conversation ID']);
-            
-            return (
-              <div
-                key={result['Conversation ID'] || index}
-                style={{
-                  background: 'rgba(30, 41, 59, 0.5)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '1rem',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
-                }}
-              >
-                {/* Header Row */}
+          {/* Progress bar */}
+          {(isFetching || isAnalyzing) && (
+            <div style={{ marginTop: '1rem' }}>
+              <div style={{
+                width: '100%',
+                height: '8px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '4px',
+                overflow: 'hidden'
+              }}>
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '1rem',
-                  flexWrap: 'wrap',
-                  gap: '1rem'
-                }}>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      Conversation ID
-                    </div>
-                    <div style={{ color: '#F8FAFC', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                      {result['Conversation ID']}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      Country
-                    </div>
-                    <div style={{ color: '#F8FAFC' }}>
-                      {result['Country'] || '—'}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      Email
-                    </div>
-                    <div style={{ color: '#F8FAFC', fontSize: '0.875rem' }}>
-                      {result['Email'] || '—'}
-                    </div>
-                  </div>
-                  <div style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    background: resolution.bg,
-                    color: resolution.color,
-                    fontSize: '0.8rem',
-                    fontWeight: '600'
-                  }}>
-                    {resolution.text}
-                  </div>
-                </div>
-
-                {/* Topics */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '1rem',
-                  marginBottom: '1rem'
-                }}>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                      Main Topics
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {(result['Main-Topics'] || []).map((topic, i) => (
-                        <span key={i} style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '20px',
-                          background: 'rgba(37, 99, 235, 0.2)',
-                          color: '#38BDF8',
-                          fontSize: '0.8rem'
-                        }}>
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                      Sub Topics
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {(result['Sub-Topics'] || []).map((topic, i) => (
-                        <span key={i} style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '20px',
-                          background: 'rgba(124, 58, 237, 0.2)',
-                          color: '#A78BFA',
-                          fontSize: '0.8rem'
-                        }}>
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sentiment */}
-                <div style={{
-                  display: 'flex',
-                  gap: '2rem',
-                  marginBottom: '1rem'
-                }}>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      Sentiment Start
-                    </div>
-                    <div style={{ 
-                      color: getSentimentColor(result['Sentiment Start']),
-                      fontWeight: '600'
-                    }}>
-                      {result['Sentiment Start'] || '—'}
-                    </div>
-                  </div>
-                  <div style={{ color: '#475569', fontSize: '1.5rem' }}>→</div>
-                  <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                      Sentiment End
-                    </div>
-                    <div style={{ 
-                      color: getSentimentColor(result['Sentiment End']),
-                      fontWeight: '600'
-                    }}>
-                      {result['Sentiment End'] || '—'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feedbacks */}
-                {result['Feedbacks'] && result['Feedbacks'].length > 0 && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                      💡 Feedbacks & Suggestions
-                    </div>
-                    <ul style={{ 
-                      margin: 0, 
-                      paddingLeft: '1.25rem',
-                      color: '#CBD5E1'
-                    }}>
-                      {result['Feedbacks'].map((fb, i) => (
-                        <li key={i} style={{ marginBottom: '0.25rem', fontSize: '0.875rem' }}>{fb}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Transcript Preview */}
-                <div>
-                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                    📝 Transcript Preview
-                  </div>
-                  <div style={{
-                    background: 'rgba(15, 23, 42, 0.5)',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    maxHeight: '150px',
-                    overflow: 'auto',
-                    fontSize: '0.8rem',
-                    color: '#94A3B8',
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: 'monospace'
-                  }}>
-                    {result['Transcript'] || '(No transcript)'}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                  {/* Analyze with AI button - show if no AI data */}
-                  {(!result['Main-Topics'] || result['Main-Topics'].length === 0) && (
-                    <button
-                      onClick={() => handleAnalyzeSingle(result['Conversation ID'])}
-                      disabled={analyzingIds.has(result['Conversation ID'])}
-                      style={{
-                        padding: '0.5rem 1.5rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: analyzingIds.has(result['Conversation ID'])
-                          ? 'rgba(124, 58, 237, 0.3)'
-                          : 'linear-gradient(135deg, #7C3AED, #6366F1)',
-                        color: '#fff',
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        cursor: analyzingIds.has(result['Conversation ID']) ? 'wait' : 'pointer'
-                      }}
-                    >
-                      {analyzingIds.has(result['Conversation ID']) ? '⏳ Analyzing...' : '🤖 Analyze with AI'}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleSaveToSupabase(result)}
-                    disabled={saving || isSaved}
-                    style={{
-                      padding: '0.5rem 1.5rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: isSaved 
-                        ? 'rgba(34, 197, 94, 0.2)' 
-                        : 'linear-gradient(135deg, #22C55E, #16A34A)',
-                      color: isSaved ? '#22C55E' : '#fff',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      cursor: (saving || isSaved) ? 'default' : 'pointer'
-                    }}
-                  >
-                    {isSaved ? '✓ Saved' : saving ? '⏳ Saving...' : '💾 Save to Supabase'}
-                  </button>
-                </div>
+                  width: isFetching 
+                    ? (progress.totalAvailable > 0 ? `${(progress.fetched / progress.totalAvailable) * 100}%` : '0%')
+                    : (progress.toAnalyze > 0 ? `${(progress.analyzed / progress.toAnalyze) * 100}%` : '0%'),
+                  height: '100%',
+                  background: 'linear-gradient(135deg, #22C55E, #16A34A)',
+                  transition: 'width 0.3s ease'
+                }} />
               </div>
-            );
-          })}
+            </div>
+          )}
+
+          {/* Status message */}
+          <div style={{ marginTop: '1rem', color: '#94A3B8', fontSize: '0.875rem' }}>
+            {isFetching && `Fetching page ${progress.currentPage}... (150 conversations per page)`}
+            {isAnalyzing && `Analyzing conversation ${progress.analyzed} of ${progress.toAnalyze}...`}
+            {!isProcessing && progress.saved > 0 && `✅ Complete! ${progress.saved} conversations saved to Supabase.`}
+            {!isProcessing && progress.analyzed > 0 && progress.saved === 0 && `✅ Complete! ${progress.analyzed} conversations analyzed.`}
+          </div>
         </div>
       )}
 
-      {/* Empty State */}
-      {!loading && results.length === 0 && !error && (
-        <div style={{
-          textAlign: 'center',
-          padding: '4rem 2rem',
-          color: '#64748B'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-          <p>Enter a conversation ID or date range to analyze</p>
+      {/* Info box */}
+      <div style={{
+        marginTop: '1.5rem',
+        padding: '1rem',
+        background: 'rgba(37, 99, 235, 0.1)',
+        border: '1px solid rgba(37, 99, 235, 0.2)',
+        borderRadius: '8px'
+      }}>
+        <div style={{ color: '#38BDF8', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+          ℹ️ How it works
         </div>
-      )}
+        <ul style={{ color: '#94A3B8', fontSize: '0.8rem', margin: 0, paddingLeft: '1.25rem' }}>
+          <li><strong>Fetch & Save:</strong> Pulls 150 conversations per page from Intercom and saves directly to Supabase (no AI analysis)</li>
+          <li><strong>Analyze Unanalyzed:</strong> Finds conversations in Supabase without AI analysis and processes them one by one</li>
+          <li><strong>Stop:</strong> Safely stops the current operation after the current item completes</li>
+        </ul>
+      </div>
     </div>
   );
 };

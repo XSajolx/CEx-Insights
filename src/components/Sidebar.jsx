@@ -92,8 +92,16 @@ const Icons = {
     )
 };
 
+// Only these emails can see the Topic Analyzer Admin
+const ADMIN_EMAILS = ['sajol@nextventures.io'];
+
 const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, userEmail }) => {
-    const menuItems = [
+    // Check if current user is admin
+    const isAdmin = userEmail && ADMIN_EMAILS.some(
+        email => email.toLowerCase() === userEmail.toLowerCase()
+    );
+
+    const baseMenuItems = [
         { id: 'intercom', label: 'Conversation Topics', icon: <Icons.Topics /> },
         { id: 'csat', label: 'CSAT', icon: <Icons.CSAT /> },
         { id: 'feedback', label: 'Feedback and Suggestion', icon: <Icons.Feedback /> },
@@ -102,9 +110,13 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, use
         { id: 'inflow', label: 'Conversation Inflow', icon: <Icons.Inflow /> },
         { id: 'tickets', label: 'Ticket Inflow', icon: <Icons.Ticket /> },
         { id: 'performance', label: 'Performance Metrics', icon: <Icons.Performance /> },
-        { id: 'country', label: 'Country-wise Performance', icon: <Icons.Country /> },
-        { id: 'topic-analyzer', label: 'Topic Analyzer Admin', icon: <Icons.Admin /> }
+        { id: 'country', label: 'Country-wise Performance', icon: <Icons.Country /> }
     ];
+
+    // Only add Topic Analyzer Admin for admin users
+    const menuItems = isAdmin 
+        ? [...baseMenuItems, { id: 'topic-analyzer', label: 'Topic Analyzer Admin', icon: <Icons.Admin /> }]
+        : baseMenuItems;
 
     return (
         <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>

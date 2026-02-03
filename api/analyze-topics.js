@@ -161,13 +161,44 @@ module.exports = async function handler(req, res) {
     if (!process.env.INTERCOM_ACCESS_TOKEN) {
         return res.status(500).json({ error: 'INTERCOM_ACCESS_TOKEN not configured' });
     }
-    if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
-    }
     
-    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, limit = 5, skipAI = false } = req.body || {};
+    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, startingAfter } = req.body || {};
     
     try {
+        // Action: Analyze a single conversation with AI
+        if (action === 'analyze-single') {
+            if (!conversationId) {
+                return res.status(400).json({ error: 'conversationId required' });
+            }
+            
+            if (!process.env.OPENAI_API_KEY) {
+                return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+            }
+            
+            const convResp = await fetchIntercom(`/conversations/${conversationId}?display_as=plaintext`);
+            if (!convResp.ok) {
+                return res.status(404).json({ error: 'Conversation not found' });
+            }
+            
+            const conv = convResp.data;
+            const transcript = extractTranscript(conv);
+            const aiResult = await analyzeWithAI(transcript);
+            
+            return res.status(200).json({
+                success: true,
+                data: {
+                    'Conversation ID': String(conv.id),
+                    'Main-Topics': aiResult?.main_category || [],
+                    'Sub-Topics': aiResult?.sub_category || [],
+                    'Sentiment Start': aiResult?.sentiment_start || null,
+                    'Sentiment End': aiResult?.sentiment_end || null,
+                    'Feedbacks': aiResult?.feedbacks || [],
+                    'Was it in client\'s favor?': aiResult?.resolution_outcome || null
+                }
+            });
+        }
+        
+        // Action: Fetch a single conversation (for legacy/single mode)
         if (action === 'fetch-single') {
             if (!conversationId) {
                 return res.status(400).json({ error: 'conversationId required' });
@@ -180,7 +211,6 @@ module.exports = async function handler(req, res) {
             
             const conv = convResp.data;
             const transcript = extractTranscript(conv);
-            const aiResult = await analyzeWithAI(transcript);
             
             // Get contact for country
             let country = null, region = null;
@@ -191,6 +221,12 @@ module.exports = async function handler(req, res) {
                     country = contactResp.data.location?.country;
                     region = contactResp.data.location?.region;
                 }
+            }
+            
+            // Also run AI analysis for single fetch
+            let aiResult = null;
+            if (process.env.OPENAI_API_KEY) {
+                aiResult = await analyzeWithAI(transcript);
             }
             
             return res.status(200).json({
@@ -210,8 +246,10 @@ module.exports = async function handler(req, res) {
                     'Was it in client\'s favor?': aiResult?.resolution_outcome || null
                 }
             });
-            
-        } else if (action === 'fetch-range') {
+        }
+        
+        // Action: Fetch one page of conversations (150 per page) - NO AI analysis
+        if (action === 'fetch-page') {
             if (!dateFrom || !dateTo) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
@@ -221,83 +259,49 @@ module.exports = async function handler(req, res) {
             const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
             const toTs = Math.floor(new Date(toStr).getTime() / 1000);
             
-            const requestedLimit = Math.min(parseInt(limit) || 5, 5000);
-            const perPage = Math.min(requestedLimit, 150); // Intercom max is 150
+            const searchBody = {
+                query: {
+                    operator: 'AND',
+                    value: [
+                        { field: 'created_at', operator: '>=', value: fromTs },
+                        { field: 'created_at', operator: '<=', value: toTs }
+                    ]
+                },
+                pagination: { per_page: 150 }
+            };
             
-            // Fetch all conversation IDs with pagination
-            let allConversations = [];
-            let startingAfter = null;
-            let totalAvailable = 0;
-            
-            while (allConversations.length < requestedLimit) {
-                const searchBody = {
-                    query: {
-                        operator: 'AND',
-                        value: [
-                            { field: 'created_at', operator: '>=', value: fromTs },
-                            { field: 'created_at', operator: '<=', value: toTs }
-                        ]
-                    },
-                    pagination: { per_page: perPage }
-                };
-                
-                if (startingAfter) {
-                    searchBody.pagination.starting_after = startingAfter;
-                }
-                
-                const searchResp = await fetchIntercom('/conversations/search', {
-                    method: 'POST',
-                    body: JSON.stringify(searchBody)
-                });
-                
-                if (!searchResp.ok) {
-                    console.error('Intercom search failed:', searchResp.status, searchResp.data);
-                    return res.status(500).json({ 
-                        error: 'Failed to search conversations',
-                        details: searchResp.data
-                    });
-                }
-                
-                const pageConversations = searchResp.data.conversations || [];
-                totalAvailable = searchResp.data.total_count || allConversations.length + pageConversations.length;
-                
-                if (pageConversations.length === 0) break;
-                
-                allConversations = allConversations.concat(pageConversations);
-                
-                // Check if there are more pages
-                const pages = searchResp.data.pages;
-                if (pages && pages.next && pages.next.starting_after) {
-                    startingAfter = pages.next.starting_after;
-                } else {
-                    break;
-                }
-                
-                // Safety: don't exceed requested limit
-                if (allConversations.length >= requestedLimit) break;
+            if (startingAfter) {
+                searchBody.pagination.starting_after = startingAfter;
             }
             
-            // Trim to requested limit
-            allConversations = allConversations.slice(0, requestedLimit);
+            const searchResp = await fetchIntercom('/conversations/search', {
+                method: 'POST',
+                body: JSON.stringify(searchBody)
+            });
             
+            if (!searchResp.ok) {
+                console.error('Intercom search failed:', searchResp.status, searchResp.data);
+                return res.status(500).json({ 
+                    error: 'Failed to search conversations',
+                    details: searchResp.data
+                });
+            }
+            
+            const conversations = searchResp.data.conversations || [];
+            const totalCount = searchResp.data.total_count || 0;
+            const pages = searchResp.data.pages;
+            const nextStartingAfter = pages?.next?.starting_after || null;
+            
+            // Fetch full details for each conversation in this page
             const results = [];
-            
-            // Process each conversation (with or without AI)
-            for (let i = 0; i < allConversations.length; i++) {
-                const convId = allConversations[i].id;
-                
-                const convResp = await fetchIntercom(`/conversations/${convId}?display_as=plaintext`);
+            for (const convSummary of conversations) {
+                const convResp = await fetchIntercom(`/conversations/${convSummary.id}?display_as=plaintext`);
                 if (!convResp.ok) continue;
                 
                 const conv = convResp.data;
                 const transcript = extractTranscript(conv);
                 
-                // Only run AI analysis if skipAI is false
-                let aiResult = null;
-                if (!skipAI) {
-                    aiResult = await analyzeWithAI(transcript);
-                }
-                
+                // Get contact for country
                 let country = null;
                 const contactId = conv.contacts?.contacts?.[0]?.id;
                 if (contactId) {
@@ -309,29 +313,29 @@ module.exports = async function handler(req, res) {
                     'Conversation ID': String(conv.id),
                     'created_at': conv.created_at,
                     'Email': conv.source?.author?.email || null,
-                    'Transcript': transcript.substring(0, 300) + (transcript.length > 300 ? '...' : ''),
+                    'Transcript': transcript,
                     'Country': country,
-                    'Main-Topics': aiResult?.main_category || [],
-                    'Sub-Topics': aiResult?.sub_category || [],
-                    'Sentiment Start': aiResult?.sentiment_start || null,
-                    'Sentiment End': aiResult?.sentiment_end || null,
-                    'Feedbacks': aiResult?.feedbacks || [],
-                    'Was it in client\'s favor?': aiResult?.resolution_outcome || null
+                    'Main-Topics': [],
+                    'Sub-Topics': [],
+                    'Sentiment Start': null,
+                    'Sentiment End': null,
+                    'Feedbacks': [],
+                    'Was it in client\'s favor?': null,
+                    'AI Analyzed': false
                 });
             }
             
-            return res.status(200).json({ 
-                success: true, 
-                data: results, 
-                total: totalAvailable,
-                fetched: allConversations.length,
-                processed: results.length,
-                skippedAI: skipAI
+            return res.status(200).json({
+                success: true,
+                data: results,
+                totalCount,
+                pageSize: conversations.length,
+                nextStartingAfter,
+                hasMore: !!nextStartingAfter
             });
-            
-        } else {
-            return res.status(400).json({ error: 'Invalid action' });
         }
+        
+        return res.status(400).json({ error: 'Invalid action. Use: fetch-page, fetch-single, or analyze-single' });
         
     } catch (error) {
         console.error('API Error:', error);
