@@ -248,7 +248,181 @@ module.exports = async function handler(req, res) {
             });
         }
         
-        // Action: Fetch one page of conversations (150 per page) - NO AI analysis
+        // Action: Fetch conversation IDs only (fast) - for pagination
+        if (action === 'fetch-ids') {
+            if (!dateFrom || !dateTo) {
+                return res.status(400).json({ error: 'dateFrom and dateTo required' });
+            }
+            
+            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00Z';
+            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59Z';
+            const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
+            const toTs = Math.floor(new Date(toStr).getTime() / 1000);
+            
+            const searchBody = {
+                query: {
+                    operator: 'AND',
+                    value: [
+                        { field: 'created_at', operator: '>=', value: fromTs },
+                        { field: 'created_at', operator: '<=', value: toTs }
+                    ]
+                },
+                pagination: { per_page: 150 }
+            };
+            
+            if (startingAfter) {
+                searchBody.pagination.starting_after = startingAfter;
+            }
+            
+            const searchResp = await fetchIntercom('/conversations/search', {
+                method: 'POST',
+                body: JSON.stringify(searchBody)
+            });
+            
+            if (!searchResp.ok) {
+                console.error('Intercom search failed:', searchResp.status, searchResp.data);
+                return res.status(500).json({ 
+                    error: 'Failed to search conversations',
+                    details: searchResp.data
+                });
+            }
+            
+            const conversations = searchResp.data.conversations || [];
+            const totalCount = searchResp.data.total_count || 0;
+            const pages = searchResp.data.pages;
+            const nextStartingAfter = pages?.next?.starting_after || null;
+            
+            // Return minimal records for Phase 1: Conversation ID + created_at (150 per page)
+            const data = conversations.map(c => ({
+                'Conversation ID': String(c.id),
+                'created_at': c.created_at != null ? String(c.created_at) : null
+            }));
+            
+            return res.status(200).json({
+                success: true,
+                data,
+                totalCount,
+                nextStartingAfter,
+                hasMore: !!nextStartingAfter
+            });
+        }
+        
+        // Action: Debug - return raw conversation and contact data to inspect field structure
+        if (action === 'debug') {
+            if (!conversationId) {
+                return res.status(400).json({ error: 'conversationId required' });
+            }
+            
+            const convResp = await fetchIntercom(`/conversations/${conversationId}?display_as=plaintext`);
+            if (!convResp.ok) {
+                return res.status(404).json({ error: 'Conversation not found' });
+            }
+            
+            const conv = convResp.data;
+            
+            // Get contact if available
+            let contact = null;
+            const contactId = conv.contacts?.contacts?.[0]?.id;
+            if (contactId) {
+                const contactResp = await fetchIntercom(`/contacts/${contactId}`);
+                if (contactResp.ok) {
+                    contact = contactResp.data;
+                }
+            }
+            
+            // Return raw data for debugging
+            return res.status(200).json({
+                success: true,
+                conversation: {
+                    id: conv.id,
+                    custom_attributes: conv.custom_attributes,
+                    tags: conv.tags,
+                    topics: conv.topics,
+                    source: conv.source,
+                    conversation_rating: conv.conversation_rating,
+                    all_keys: Object.keys(conv)
+                },
+                contact: contact ? {
+                    id: contact.id,
+                    external_id: contact.external_id,
+                    location: contact.location,
+                    custom_attributes: contact.custom_attributes,
+                    all_keys: Object.keys(contact)
+                } : null
+            });
+        }
+
+        // Action: Fetch full details for a single conversation (for saving to Supabase)
+        if (action === 'fetch-details') {
+            if (!conversationId) {
+                return res.status(400).json({ error: 'conversationId required' });
+            }
+            
+            const convResp = await fetchIntercom(`/conversations/${conversationId}?display_as=plaintext`);
+            if (!convResp.ok) {
+                return res.status(404).json({ error: 'Conversation not found' });
+            }
+            
+            const conv = convResp.data;
+            const transcript = extractTranscript(conv);
+            
+            // Get contact details by fetching the contact (Country, Region from contact.location)
+            let contactData = { Country: null, Region: null, 'User ID': null };
+            const contactId = conv.contacts?.contacts?.[0]?.id;
+            if (contactId) {
+                const contactResp = await fetchIntercom(`/contacts/${contactId}`);
+                if (contactResp.ok) {
+                    const contact = contactResp.data;
+                    contactData = {
+                        'Country': contact.location?.country || null,
+                        'Region': contact.location?.region || null,
+                        'User ID': contact.external_id || contact.id || null
+                    };
+                }
+            }
+            
+            // Get team/channel assignment
+            const teamAssigneeId = conv.team_assignee_id;
+            
+            // Conversation rating (Intercom conversation_rating.rating)
+            const rating = conv.conversation_rating?.rating;
+            
+            // Product: directly from conversation custom_attributes (the user confirmed it's there)
+            const customAttrs = conv.custom_attributes || {};
+            let product = customAttrs.product ?? customAttrs.Product ?? customAttrs.product_name ?? null;
+            
+            // Scan all custom_attributes keys for any containing "product" (case-insensitive)
+            if (!product) {
+                for (const [k, v] of Object.entries(customAttrs)) {
+                    if (v != null && String(v).trim() !== '' && /product/i.test(k)) {
+                        product = String(v);
+                        break;
+                    }
+                }
+            }
+            
+            // Build the full record with all available data
+            const record = {
+                'Conversation ID': String(conv.id),
+                'created_at': conv.created_at,
+                'Email': conv.source?.author?.email || null,
+                'Transcript': transcript || null,
+                'User ID': contactData['User ID'] || conv.source?.author?.id || null,
+                'Country': contactData['Country'] || null,
+                'Region': contactData['Region'] || null,
+                'Assigned Channel ID': teamAssigneeId ? String(teamAssigneeId) : null,
+                'CX Score Rating': rating != null ? String(rating) : null,
+                'Conversation Rating': rating != null ? String(rating) : null,
+                'Product': product
+            };
+            
+            return res.status(200).json({
+                success: true,
+                data: record
+            });
+        }
+        
+        // Legacy: Fetch one page of conversations (150 per page) - NO AI analysis
         if (action === 'fetch-page') {
             if (!dateFrom || !dateTo) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
@@ -292,38 +466,11 @@ module.exports = async function handler(req, res) {
             const pages = searchResp.data.pages;
             const nextStartingAfter = pages?.next?.starting_after || null;
             
-            // Fetch full details for each conversation in this page
-            const results = [];
-            for (const convSummary of conversations) {
-                const convResp = await fetchIntercom(`/conversations/${convSummary.id}?display_as=plaintext`);
-                if (!convResp.ok) continue;
-                
-                const conv = convResp.data;
-                const transcript = extractTranscript(conv);
-                
-                // Get contact for country
-                let country = null;
-                const contactId = conv.contacts?.contacts?.[0]?.id;
-                if (contactId) {
-                    const contactResp = await fetchIntercom(`/contacts/${contactId}`);
-                    if (contactResp.ok) country = contactResp.data.location?.country;
-                }
-                
-                results.push({
-                    'Conversation ID': String(conv.id),
-                    'created_at': conv.created_at,
-                    'Email': conv.source?.author?.email || null,
-                    'Transcript': transcript,
-                    'Country': country,
-                    'Main-Topics': [],
-                    'Sub-Topics': [],
-                    'Sentiment Start': null,
-                    'Sentiment End': null,
-                    'Feedbacks': [],
-                    'Was it in client\'s favor?': null,
-                    'AI Analyzed': false
-                });
-            }
+            // Return basic info - full details fetched separately
+            const results = conversations.map(conv => ({
+                'Conversation ID': String(conv.id),
+                'created_at': conv.created_at
+            }));
             
             return res.status(200).json({
                 success: true,

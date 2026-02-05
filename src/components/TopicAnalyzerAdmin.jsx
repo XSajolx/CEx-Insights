@@ -26,14 +26,30 @@ const TopicAnalyzerAdmin = () => {
     saved: 0,
     currentPage: 0,
     analyzed: 0,
-    toAnalyze: 0
+    toAnalyze: 0,
+    status: '' // Current operation status
   });
   
   // Stop flag using ref (persists across renders without causing re-render)
   const stopRequestedRef = useRef(false);
   
-  // API URL
+  // API URL (relative; in dev Vite proxies /api to Vercel - see vite.config.js)
   const API_URL = '/api/analyze-topics';
+
+  // Parse JSON or throw a clear error (e.g. when API is unreachable on localhost)
+  const parseJson = async (response) => {
+    const text = await response.text();
+    if (!text || !text.trim()) {
+      throw new Error(
+        'API returned no data. From localhost: restart dev server so /api is proxied to Vercel (vite.config.js), or run "vercel dev".'
+      );
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`API returned invalid JSON. From localhost, ensure the API proxy is set up or run "vercel dev".`);
+    }
+  };
 
   // Quick date filters
   const setQuickRange = (preset) => {
@@ -78,42 +94,317 @@ const TopicAnalyzerAdmin = () => {
     );
   }
 
-  // Save a batch of records to Supabase
-  const saveBatchToSupabase = async (records) => {
-    let savedCount = 0;
-    for (const record of records) {
-      if (stopRequestedRef.current) break;
-      
-      try {
-        // Check if exists
-        const { data: existing } = await supabase
-          .from('Intercom Topic')
-          .select('Conversation ID')
-          .eq('Conversation ID', record['Conversation ID'])
-          .limit(1);
-
-        if (existing && existing.length > 0) {
-          // Update
-          const { error } = await supabase
-            .from('Intercom Topic')
-            .update(record)
-            .eq('Conversation ID', record['Conversation ID']);
-          if (!error) savedCount++;
-        } else {
-          // Insert
-          const { error } = await supabase
-            .from('Intercom Topic')
-            .insert(record);
-          if (!error) savedCount++;
-        }
-      } catch (err) {
-        console.error('Save error:', err);
-      }
+  // Insert minimal record (Phase 1: Conversation ID + created_at only)
+  const insertIdsBatch = async (records) => {
+    if (!records || records.length === 0) return { inserted: 0, errors: 0 };
+    const { data, error } = await supabase
+      .from('Intercom Topic')
+      .insert(records)
+      .select();
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return { inserted: 0, errors: records.length };
     }
-    return savedCount;
+    return { inserted: data?.length ?? records.length, errors: 0 };
   };
 
-  // Main fetch and save function
+  // Update row by Conversation ID with full data (Phase 2)
+  // Writes to both "CX Score Rating" and "Conversation Rating" so either column name in Supabase gets the value
+  const updateRowInSupabase = async (convId, fullRecord) => {
+    const rating = fullRecord['CX Score Rating'] ?? fullRecord['Conversation Rating'];
+    const payload = {
+      created_at: fullRecord['created_at'],
+      Email: fullRecord['Email'],
+      Transcript: fullRecord['Transcript'],
+      'User ID': fullRecord['User ID'],
+      Country: fullRecord['Country'],
+      Region: fullRecord['Region'],
+      'Assigned Channel ID': fullRecord['Assigned Channel ID'],
+      Product: fullRecord['Product'] ?? null
+    };
+    if (rating != null && String(rating).trim() !== '') {
+      payload['Conversation Rating'] = String(rating);
+    }
+    
+    // Debug: log what we're trying to update
+    console.log('Updating convId:', convId, 'with payload:', JSON.stringify(payload, null, 2));
+    
+    // Use .select() to verify the update actually affected rows
+    // Column names with spaces need to be quoted in Supabase
+    const { data, error } = await supabase
+      .from('Intercom Topic')
+      .update(payload)
+      .eq('"Conversation ID"', convId)
+      .select();
+    
+    if (error) {
+      console.error('Supabase update error:', error);
+      return false;
+    }
+    
+    // Check if any rows were actually updated
+    if (!data || data.length === 0) {
+      console.error('No rows matched for Conversation ID:', convId);
+      return false;
+    }
+    
+    console.log('Updated', data.length, 'row(s) for', convId);
+    return true;
+  };
+
+  // Pull full data from Intercom for every Conversation ID already in Supabase (no date range needed)
+  const handleEnrichFromSupabase = async () => {
+    setIsFetching(true);
+    setError('');
+    stopRequestedRef.current = false;
+    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0, status: '' });
+
+    try {
+      setProgress(prev => ({ ...prev, status: '📋 Loading Conversation IDs from Supabase...' }));
+
+      const { data: rows, error: fetchErr } = await supabase
+        .from('Intercom Topic')
+        .select('"Conversation ID"');
+
+      if (fetchErr) {
+        setError(`Supabase error: ${fetchErr.message}`);
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        setProgress(prev => ({ ...prev, status: '⚠️ No rows in Intercom Topic. Use Fetch & Save first.' }));
+        return;
+      }
+
+      const total = rows.length;
+      setProgress(prev => ({ ...prev, totalAvailable: total, status: `📥 Pulling data from Intercom for ${total} chat IDs...` }));
+
+      let enriched = 0;
+      let errorCount = 0;
+      let lastError = '';
+      const ENRICH_DELAY_MS = 400; // Delay between requests to avoid Intercom rate limiting (429)
+
+      for (let i = 0; i < rows.length; i++) {
+        if (stopRequestedRef.current) {
+          setProgress(prev => ({ ...prev, status: `⏹️ Stopped. Enriched ${enriched} of ${total}.` }));
+          break;
+        }
+
+        const convId = rows[i]['Conversation ID'] ?? rows[i]['"Conversation ID"'];
+        setProgress(prev => ({
+          ...prev,
+          fetched: i + 1,
+          saved: enriched,
+          status: `📥 Pulling data for chat ID ${i + 1}/${total}: ${convId}...`
+        }));
+
+        try {
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'fetch-details', conversationId: convId })
+          });
+          if (!res.ok) {
+            lastError = res.status === 429 ? 'Rate limited (429) – try again later or use slower pace' : `${res.status} ${res.statusText}`;
+            errorCount++;
+            if (res.status === 429) await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          const result = await parseJson(res);
+          if (!result.success || !result.data) {
+            lastError = 'Empty or invalid API response';
+            errorCount++;
+            continue;
+          }
+          const ok = await updateRowInSupabase(convId, result.data);
+          if (ok) enriched++;
+          else {
+            lastError = 'Supabase update failed';
+            errorCount++;
+          }
+        } catch (err) {
+          lastError = err.message || String(err);
+          console.error(`Enrich ${convId}:`, err);
+          errorCount++;
+        }
+
+        if (i < rows.length - 1) await new Promise(r => setTimeout(r, ENRICH_DELAY_MS));
+      }
+
+      const finalStatus = errorCount > 0
+        ? `✅ Done. Enriched ${enriched} of ${total}. Errors: ${errorCount}.${lastError ? ` Last error: ${lastError}` : ''}`
+        : `✅ Done. Enriched all ${enriched} rows with data from Intercom.`;
+      setProgress(prev => ({ ...prev, status: finalStatus, saved: enriched }));
+    } catch (err) {
+      console.error('Enrich error:', err);
+      setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
+    } finally {
+      setIsFetching(false);
+      stopRequestedRef.current = false;
+    }
+  };
+
+  // Check for rows with missing data and populate from Intercom – PARALLEL processing (5 at a time)
+  const handlePopulateMissingData = async () => {
+    setIsFetching(true);
+    setError('');
+    stopRequestedRef.current = false;
+    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0, status: '' });
+
+    const BATCH_SIZE = 5; // Process 5 conversations in parallel
+    const BASE_DELAY_MS = 300; // Delay between batches
+    let currentBackoff = BASE_DELAY_MS;
+    const MAX_BACKOFF = 10000; // Max 10 second backoff
+
+    try {
+      // Get all rows with missing data upfront
+      const { data: allMissing, error: countErr } = await supabase
+        .from('Intercom Topic')
+        .select('"Conversation ID"')
+        .or('Email.is.null,Transcript.is.null,Product.is.null,Region.is.null,"Conversation Rating".is.null');
+
+      if (countErr) {
+        setError(`Supabase error: ${countErr.message}`);
+        return;
+      }
+
+      const total = allMissing?.length || 0;
+      if (total === 0) {
+        setProgress(prev => ({ ...prev, status: '✅ No rows with missing data.' }));
+        return;
+      }
+
+      const startTime = Date.now();
+      setProgress(prev => ({ ...prev, status: `🔍 Found ${total} rows with missing data. Processing ${BATCH_SIZE} at a time...`, totalAvailable: total }));
+
+      let enriched = 0;
+      let errorCount = 0;
+      let lastError = '';
+      let processed = 0;
+
+      // Process in batches of BATCH_SIZE
+      for (let i = 0; i < total && !stopRequestedRef.current; i += BATCH_SIZE) {
+        const batchIds = allMissing.slice(i, i + BATCH_SIZE).map(r => r['Conversation ID'] ?? r['"Conversation ID"']);
+        
+        // Calculate ETA
+        const elapsed = (Date.now() - startTime) / 1000;
+        const rate = processed > 0 ? processed / elapsed : 0;
+        const remaining = total - processed;
+        const etaSeconds = rate > 0 ? Math.round(remaining / rate) : 0;
+        const etaStr = etaSeconds > 60 ? `${Math.round(etaSeconds / 60)}m` : `${etaSeconds}s`;
+        
+        setProgress(prev => ({
+          ...prev,
+          fetched: processed,
+          status: `📥 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(total / BATCH_SIZE)} | Enriched: ${enriched}/${total} | ETA: ${etaStr}`
+        }));
+
+        // Fetch all conversations in this batch in parallel
+        const batchPromises = batchIds.map(async (convId) => {
+          try {
+            const res = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'fetch-details', conversationId: convId })
+            });
+            
+            if (res.status === 429) {
+              return { convId, error: 'rate_limited', status: 429 };
+            }
+            if (!res.ok) {
+              return { convId, error: `${res.status} ${res.statusText}`, status: res.status };
+            }
+            
+            const result = await parseJson(res);
+            if (!result.success || !result.data) {
+              return { convId, error: 'Empty API response' };
+            }
+            
+            return { convId, data: result.data };
+          } catch (err) {
+            return { convId, error: err.message || String(err) };
+          }
+        });
+
+        const results = await Promise.all(batchPromises);
+        
+        // Check if any were rate limited
+        const rateLimited = results.filter(r => r.status === 429);
+        if (rateLimited.length > 0) {
+          // Exponential backoff
+          currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF);
+          console.log(`Rate limited, backing off ${currentBackoff}ms`);
+          await new Promise(r => setTimeout(r, currentBackoff));
+          // Retry this batch
+          i -= BATCH_SIZE;
+          continue;
+        } else {
+          // Reset backoff on success
+          currentBackoff = BASE_DELAY_MS;
+        }
+
+        // Process successful results
+        for (const result of results) {
+          processed++;
+          if (result.error) {
+            lastError = result.error;
+            errorCount++;
+            continue;
+          }
+          
+          const ok = await updateRowInSupabase(result.convId, result.data);
+          if (ok) {
+            enriched++;
+          } else {
+            lastError = 'Supabase update failed';
+            errorCount++;
+          }
+        }
+
+        setProgress(prev => ({ ...prev, saved: enriched, fetched: processed }));
+        
+        // Small delay between batches to avoid overwhelming the API
+        await new Promise(r => setTimeout(r, currentBackoff));
+      }
+
+      const finalStatus = stopRequestedRef.current
+        ? `⏹️ Stopped. Populated ${enriched} of ${total} rows.`
+        : errorCount > 0
+          ? `✅ Done. Populated ${enriched}/${total}. Errors: ${errorCount}.${lastError ? ` Last: ${lastError}` : ''}`
+          : `✅ Done. Populated all ${enriched} rows.`;
+      setProgress(prev => ({ ...prev, status: finalStatus }));
+    } catch (err) {
+      console.error('Populate missing error:', err);
+      setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
+    } finally {
+      setIsFetching(false);
+      stopRequestedRef.current = false;
+    }
+  };
+
+  // Clear all rows in Intercom Topic
+  const handleClearTable = async () => {
+    if (!window.confirm('Delete ALL data in Intercom Topic? This cannot be undone.')) return;
+    setError('');
+    setProgress(prev => ({ ...prev, status: '🗑️ Deleting all rows...' }));
+    // Delete in chunks (Supabase may require a filter; delete rows where Conversation ID is not null = all rows)
+    const { data: ids } = await supabase.from('Intercom Topic').select('"Conversation ID"');
+    if (ids && ids.length > 0) {
+      const chunkSize = 100;
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        const chunk = ids.slice(i, i + chunkSize).map(r => r['Conversation ID'] ?? r['"Conversation ID"']);
+        const { error } = await supabase.from('Intercom Topic').delete().in('"Conversation ID"', chunk);
+        if (error) {
+          setError(`Delete failed: ${error.message}`);
+          return;
+        }
+      }
+    }
+    setProgress(prev => ({ ...prev, status: '✅ Intercom Topic cleared.' }));
+  };
+
+  // Two-phase fetch (like n8n): Phase 1 = IDs only 150/page → save; Phase 2 = pull full data per Conversation ID → update
   const handleFetchAndSave = async () => {
     if (!dateFrom || !dateTo) {
       setError('Please select a date range');
@@ -123,25 +414,30 @@ const TopicAnalyzerAdmin = () => {
     setIsFetching(true);
     setError('');
     stopRequestedRef.current = false;
-    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0 });
-
-    let startingAfter = null;
-    let pageNum = 0;
-    let totalFetched = 0;
-    let totalSaved = 0;
-    let totalAvailable = 0;
+    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0, status: '' });
 
     try {
+      // ---------- PHASE 1: Pull only Conversation ID (150 per page), save to Supabase ----------
+      setProgress(prev => ({ ...prev, status: '📥 Phase 1: Fetching Conversation IDs (150 per page) and saving...' }));
+      
+      let startingAfter = null;
+      let pageNum = 0;
+      let totalIdsSaved = 0;
+      let totalAvailable = 0;
+
       while (!stopRequestedRef.current) {
         pageNum++;
-        setProgress(prev => ({ ...prev, currentPage: pageNum }));
+        setProgress(prev => ({ 
+          ...prev, 
+          currentPage: pageNum,
+          status: `📥 Phase 1 – Page ${pageNum}: Fetching 150 Conversation IDs...`
+        }));
 
-        // Fetch one page from Intercom
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            action: 'fetch-page',
+            action: 'fetch-ids',
             dateFrom,
             dateTo,
             timeFrom,
@@ -151,38 +447,148 @@ const TopicAnalyzerAdmin = () => {
         });
 
         if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.error || 'Failed to fetch page');
+          const errData = await parseJson(response);
+          throw new Error(errData.error || 'Failed to fetch IDs');
         }
 
-        const data = await response.json();
-        totalAvailable = data.totalCount || totalAvailable;
+        const data = await parseJson(response);
+        totalAvailable = data.totalCount ?? totalAvailable;
+        const pageRecords = data.data || [];
         
-        if (!data.data || data.data.length === 0) {
-          break;
-        }
+        if (pageRecords.length === 0) break;
 
-        totalFetched += data.data.length;
         setProgress(prev => ({ 
           ...prev, 
-          totalAvailable, 
-          fetched: totalFetched 
+          totalAvailable,
+          fetched: totalIdsSaved + pageRecords.length,
+          status: `💾 Phase 1 – Saving ${pageRecords.length} IDs to Supabase...`
         }));
 
-        // Save this batch to Supabase immediately
-        const savedCount = await saveBatchToSupabase(data.data);
-        totalSaved += savedCount;
-        setProgress(prev => ({ ...prev, saved: totalSaved }));
+        const { inserted } = await insertIdsBatch(pageRecords);
+        totalIdsSaved += inserted;
+        setProgress(prev => ({ ...prev, saved: totalIdsSaved }));
 
-        // Check if there are more pages
-        if (!data.hasMore || !data.nextStartingAfter) {
-          break;
-        }
+        if (!data.hasMore || !data.nextStartingAfter) break;
         startingAfter = data.nextStartingAfter;
       }
+
+      if (stopRequestedRef.current) {
+        setProgress(prev => ({ ...prev, status: '⏹️ Stopped.' }));
+        return;
+      }
+
+      setProgress(prev => ({ ...prev, status: `✅ Phase 1 done. ${totalIdsSaved} Conversation IDs saved. Starting Phase 2...` }));
+
+      // ---------- PHASE 2: PARALLEL processing – fetch 5 at a time from Intercom ----------
+      const BATCH_SIZE = 5;
+      const BASE_DELAY_MS = 300;
+      let currentBackoff = BASE_DELAY_MS;
+      const MAX_BACKOFF = 10000;
+
+      // Get all conversation IDs that need enrichment
+      const { data: allRows, error: allRowsErr } = await supabase
+        .from('Intercom Topic')
+        .select('"Conversation ID"')
+        .order('created_at', { ascending: true });
+
+      if (allRowsErr) {
+        setError(`Supabase read error: ${allRowsErr.message}`);
+        return;
+      }
+
+      const totalRows = allRows?.length || 0;
+      const startTime = Date.now();
+      let enriched = 0;
+      let errorCount = 0;
+      let phase2LastError = '';
+      let processed = 0;
+
+      for (let i = 0; i < totalRows && !stopRequestedRef.current; i += BATCH_SIZE) {
+        const batchIds = allRows.slice(i, i + BATCH_SIZE).map(r => r['Conversation ID'] ?? r['"Conversation ID"']);
+
+        // Calculate ETA
+        const elapsed = (Date.now() - startTime) / 1000;
+        const rate = processed > 0 ? processed / elapsed : 0;
+        const remaining = totalRows - processed;
+        const etaSeconds = rate > 0 ? Math.round(remaining / rate) : 0;
+        const etaStr = etaSeconds > 60 ? `${Math.round(etaSeconds / 60)}m` : `${etaSeconds}s`;
+
+        setProgress(prev => ({
+          ...prev,
+          saved: totalIdsSaved,
+          status: `📥 Phase 2 – Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(totalRows / BATCH_SIZE)} | Enriched: ${enriched}/${totalRows} | ETA: ${etaStr}`
+        }));
+
+        // Fetch all conversations in this batch in parallel
+        const batchPromises = batchIds.map(async (convId) => {
+          try {
+            const res = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'fetch-details', conversationId: convId })
+            });
+
+            if (res.status === 429) {
+              return { convId, error: 'rate_limited', status: 429 };
+            }
+            if (!res.ok) {
+              return { convId, error: `${res.status} ${res.statusText}`, status: res.status };
+            }
+
+            const result = await parseJson(res);
+            if (!result.success || !result.data) {
+              return { convId, error: 'Empty API response' };
+            }
+
+            return { convId, data: result.data };
+          } catch (err) {
+            return { convId, error: err.message || String(err) };
+          }
+        });
+
+        const results = await Promise.all(batchPromises);
+
+        // Check if any were rate limited
+        const rateLimited = results.filter(r => r.status === 429);
+        if (rateLimited.length > 0) {
+          currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF);
+          console.log(`Rate limited, backing off ${currentBackoff}ms`);
+          await new Promise(r => setTimeout(r, currentBackoff));
+          i -= BATCH_SIZE; // Retry this batch
+          continue;
+        } else {
+          currentBackoff = BASE_DELAY_MS;
+        }
+
+        // Process successful results
+        for (const result of results) {
+          processed++;
+          if (result.error) {
+            phase2LastError = result.error;
+            errorCount++;
+            continue;
+          }
+
+          const ok = await updateRowInSupabase(result.convId, result.data);
+          if (ok) enriched++;
+          else {
+            phase2LastError = 'Supabase update failed';
+            errorCount++;
+          }
+        }
+
+        await new Promise(r => setTimeout(r, currentBackoff));
+      }
+
+      const finalStatus = errorCount > 0
+        ? `✅ Done. Enriched ${enriched} rows. Errors: ${errorCount}.${phase2LastError ? ` Last error: ${phase2LastError}` : ''}`
+        : `✅ Complete. All ${enriched} rows enriched with full data.`;
+      setProgress(prev => ({ ...prev, status: finalStatus }));
+
     } catch (err) {
       console.error('Fetch error:', err);
       setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
     } finally {
       setIsFetching(false);
       stopRequestedRef.current = false;
@@ -197,11 +603,11 @@ const TopicAnalyzerAdmin = () => {
     
     try {
       // Fetch unanalyzed records from Supabase
-      // Records where AI Analyzed is false or Main-Topics is empty
+      // Records where Main-Topics is null or empty (not yet analyzed by AI)
       const { data: unanalyzed, error: fetchError } = await supabase
         .from('Intercom Topic')
         .select('*')
-        .or('AI Analyzed.is.null,AI Analyzed.eq.false')
+        .or('Main-Topics.is.null,Main-Topics.eq.[]')
         .order('created_at', { ascending: true })
         .limit(500);
 
@@ -233,7 +639,7 @@ const TopicAnalyzerAdmin = () => {
           });
 
           if (response.ok) {
-            const result = await response.json();
+            const result = await parseJson(response);
             if (result.success && result.data) {
               // Update Supabase with AI results
               await supabase
@@ -244,10 +650,9 @@ const TopicAnalyzerAdmin = () => {
                   'Sentiment Start': result.data['Sentiment Start'],
                   'Sentiment End': result.data['Sentiment End'],
                   'Feedbacks': result.data['Feedbacks'],
-                  'Was it in client\'s favor?': result.data['Was it in client\'s favor?'],
-                  'AI Analyzed': true
+                  'Was it in client\'s favor?': result.data['Was it in client\'s favor?']
                 })
-                .eq('Conversation ID', convId);
+                .eq('"Conversation ID"', convId);
             }
           }
         } catch (err) {
@@ -285,7 +690,7 @@ const TopicAnalyzerAdmin = () => {
         })
       });
 
-      const data = await response.json();
+      const data = await parseJson(response);
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch conversation');
       }
@@ -521,8 +926,28 @@ const TopicAnalyzerAdmin = () => {
               </div>
             </div>
 
+            <p style={{ color: '#64748B', fontSize: '0.75rem', margin: '0 0 1rem 0' }}>
+              Time period above is used when fetching from Intercom (Fetch & Save). Pull by Chat ID uses existing rows only.
+            </p>
+
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleClearTable}
+                disabled={isProcessing}
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  background: 'transparent',
+                  color: '#F87171',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🗑️ Clear Intercom Topic
+              </button>
               <button
                 onClick={handleFetchAndSave}
                 disabled={isProcessing || !dateFrom || !dateTo}
@@ -538,6 +963,42 @@ const TopicAnalyzerAdmin = () => {
                 }}
               >
                 {isFetching ? '⏳ Fetching & Saving...' : '📥 Fetch & Save to Supabase'}
+              </button>
+
+              <button
+                onClick={handleEnrichFromSupabase}
+                disabled={isProcessing}
+                title="Pull full data from Intercom for every Conversation ID already in Supabase"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(34, 197, 94, 0.5)',
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  color: '#22C55E',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                📲 Pull data by Chat ID from Supabase
+              </button>
+
+              <button
+                onClick={handlePopulateMissingData}
+                disabled={isProcessing}
+                title="Find rows missing Email, Transcript, Product, Region or CX Score Rating and populate from Intercom"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(251, 191, 36, 0.5)',
+                  background: 'rgba(251, 191, 36, 0.15)',
+                  color: '#FBBF24',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🔧 Check & populate missing data
               </button>
 
               <button
@@ -681,10 +1142,11 @@ const TopicAnalyzerAdmin = () => {
 
           {/* Status message */}
           <div style={{ marginTop: '1rem', color: '#94A3B8', fontSize: '0.875rem' }}>
-            {isFetching && `Fetching page ${progress.currentPage}... (150 conversations per page)`}
-            {isAnalyzing && `Analyzing conversation ${progress.analyzed} of ${progress.toAnalyze}...`}
-            {!isProcessing && progress.saved > 0 && `✅ Complete! ${progress.saved} conversations saved to Supabase.`}
-            {!isProcessing && progress.analyzed > 0 && progress.saved === 0 && `✅ Complete! ${progress.analyzed} conversations analyzed.`}
+            {progress.status || (
+              isAnalyzing 
+                ? `Analyzing conversation ${progress.analyzed} of ${progress.toAnalyze}...`
+                : null
+            )}
           </div>
         </div>
       )}
@@ -701,8 +1163,11 @@ const TopicAnalyzerAdmin = () => {
           ℹ️ How it works
         </div>
         <ul style={{ color: '#94A3B8', fontSize: '0.8rem', margin: 0, paddingLeft: '1.25rem' }}>
-          <li><strong>Fetch & Save:</strong> Pulls 150 conversations per page from Intercom and saves directly to Supabase (no AI analysis)</li>
-          <li><strong>Analyze Unanalyzed:</strong> Finds conversations in Supabase without AI analysis and processes them one by one</li>
+          <li><strong>Clear Intercom Topic:</strong> Deletes all existing rows (optional – do this first for a fresh run)</li>
+          <li><strong>Fetch & Save:</strong> Uses the date/time range above. Phase 1 – pulls 150 Conversation IDs per page from Intercom and saves only ID + created_at. Phase 2 – for each row, pulls full data from Intercom and updates the row</li>
+          <li><strong>Pull data by Chat ID from Supabase:</strong> No date range. Reads all Conversation IDs from Supabase and for each pulls full data from Intercom, then updates the row</li>
+          <li><strong>Check & populate missing data:</strong> Finds rows where Email, Transcript, Product, Region or CX Score Rating is empty, then fetches full data from Intercom for only those rows and updates them</li>
+          <li><strong>Analyze Unanalyzed:</strong> Finds rows with empty Main-Topics and runs AI analysis</li>
           <li><strong>Stop:</strong> Safely stops the current operation after the current item completes</li>
         </ul>
       </div>

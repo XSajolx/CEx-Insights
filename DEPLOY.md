@@ -1,5 +1,25 @@
 # Vercel Deployment Guide
 
+## Using Topic Analyzer Admin from localhost
+
+The Topic Analyzer buttons call `/api/analyze-topics`, which is a **Vercel serverless function**. On localhost, Vite does not run that API, so requests would fail with "Unexpected end of JSON input".
+
+**Fix:** The dev server is configured to proxy `/api` to your Vercel deployment. Restart the dev server after pulling:
+
+```bash
+npm run dev
+```
+
+Then use the app at http://localhost:5173 as usual; API calls go to Vercel.
+
+**Alternative:** Run the full stack locally (frontend + API) with:
+
+```bash
+vercel dev
+```
+
+---
+
 ## Environment Variables Required
 
 Before deploying, make sure to set these in Vercel:
