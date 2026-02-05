@@ -67,19 +67,55 @@ function htmlToText(html) {
 function extractTranscript(conv) {
     const messages = [];
     
+    // Source: Initial message from user
     if (conv.source && conv.source.body) {
         const body = htmlToText(conv.source.body);
         if (body) messages.push({ role: 'USER', body });
     }
     
+    // Conversation parts: All messages in the thread
     const parts = (conv.conversation_parts && conv.conversation_parts.conversation_parts) || [];
     for (const part of parts) {
-        if (part.part_type !== 'comment' || !part.body) continue;
+        // Accept multiple part types that contain actual conversation content
+        const validPartTypes = ['comment', 'note', 'open', 'close', 'assignment', 'conversation_part_channel_changed'];
+        const hasBody = part.body && part.body.trim();
+        
+        // Skip parts without body content
+        if (!hasBody) continue;
+        
         const author = part.author || {};
-        const role = author.type === 'user' ? 'USER' : author.type === 'admin' ? 'AGENT' : null;
-        if (!role) continue;
+        // Determine role: user, admin (agent), bot, or team
+        let role = null;
+        if (author.type === 'user' || author.type === 'lead' || author.type === 'contact') {
+            role = 'USER';
+        } else if (author.type === 'admin' || author.type === 'bot' || author.type === 'team') {
+            role = 'AGENT';
+        }
+        
+        // If we couldn't determine role, try to infer from part_type
+        if (!role) {
+            if (part.part_type === 'comment' && part.author?.id) {
+                role = 'AGENT'; // Default to agent for comments with author
+            } else {
+                continue; // Skip if we can't determine role
+            }
+        }
+        
         const text = htmlToText(part.body);
         if (text) messages.push({ role, body: text });
+    }
+    
+    // If still no messages, try alternative sources
+    if (messages.length === 0) {
+        // Check if there's a plain_text_body field
+        if (conv.source?.plain_text_body) {
+            messages.push({ role: 'USER', body: conv.source.plain_text_body });
+        }
+        // Check conversation_message
+        if (conv.conversation_message?.body) {
+            const body = htmlToText(conv.conversation_message.body);
+            if (body) messages.push({ role: 'USER', body });
+        }
     }
     
     return messages.map(m => `${m.role}: ${m.body}`).join('\n');
@@ -330,6 +366,18 @@ module.exports = async function handler(req, res) {
                 }
             }
             
+            // Extract transcript for debugging
+            const transcript = extractTranscript(conv);
+            
+            // Summarize conversation_parts for debugging
+            const parts = conv.conversation_parts?.conversation_parts || [];
+            const partsSummary = parts.slice(0, 5).map(p => ({
+                part_type: p.part_type,
+                author_type: p.author?.type,
+                has_body: !!p.body,
+                body_preview: p.body ? htmlToText(p.body).substring(0, 100) : null
+            }));
+            
             // Return raw data for debugging
             return res.status(200).json({
                 success: true,
@@ -338,8 +386,14 @@ module.exports = async function handler(req, res) {
                     custom_attributes: conv.custom_attributes,
                     tags: conv.tags,
                     topics: conv.topics,
-                    source: conv.source,
+                    source: {
+                        body: conv.source?.body ? htmlToText(conv.source.body).substring(0, 200) : null,
+                        author: conv.source?.author,
+                        delivered_as: conv.source?.delivered_as
+                    },
                     conversation_rating: conv.conversation_rating,
+                    conversation_parts_count: parts.length,
+                    conversation_parts_sample: partsSummary,
                     all_keys: Object.keys(conv)
                 },
                 contact: contact ? {
@@ -348,7 +402,9 @@ module.exports = async function handler(req, res) {
                     location: contact.location,
                     custom_attributes: contact.custom_attributes,
                     all_keys: Object.keys(contact)
-                } : null
+                } : null,
+                extracted_transcript: transcript ? transcript.substring(0, 500) : null,
+                transcript_length: transcript ? transcript.length : 0
             });
         }
 
