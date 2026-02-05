@@ -368,9 +368,10 @@ module.exports = async function handler(req, res) {
             
             // Get contact details by fetching the contact (Country, Region from contact.location)
             let contactData = { Country: null, Region: null, 'User ID': null };
+            let contactResp = null;
             const contactId = conv.contacts?.contacts?.[0]?.id;
             if (contactId) {
-                const contactResp = await fetchIntercom(`/contacts/${contactId}`);
+                contactResp = await fetchIntercom(`/contacts/${contactId}`);
                 if (contactResp.ok) {
                     const contact = contactResp.data;
                     contactData = {
@@ -387,18 +388,78 @@ module.exports = async function handler(req, res) {
             // Conversation rating (Intercom conversation_rating.rating)
             const rating = conv.conversation_rating?.rating;
             
-            // Product: directly from conversation custom_attributes (the user confirmed it's there)
+            // Product: Check MULTIPLE sources for product data
+            // Known product values to look for in tags/topics
+            const KNOWN_PRODUCTS = ['CFD', 'CFDs', 'Futures', 'Forex', 'Stocks', 'Crypto', 'Options', 'Commodities', 'Indices', 'ETF', 'Bonds'];
+            
+            let product = null;
+            
+            // Source 1: Conversation custom_attributes
             const customAttrs = conv.custom_attributes || {};
-            let product = customAttrs.product ?? customAttrs.Product ?? customAttrs.product_name ?? null;
+            product = customAttrs.product ?? customAttrs.Product ?? customAttrs.product_name ?? customAttrs.channel ?? null;
             
             // Scan all custom_attributes keys for any containing "product" (case-insensitive)
             if (!product) {
                 for (const [k, v] of Object.entries(customAttrs)) {
-                    if (v != null && String(v).trim() !== '' && /product/i.test(k)) {
+                    if (v != null && String(v).trim() !== '' && /product|channel/i.test(k)) {
                         product = String(v);
                         break;
                     }
                 }
+            }
+            
+            // Source 2: Tags - check if any tag name matches known products
+            if (!product && conv.tags?.tags?.length > 0) {
+                for (const tag of conv.tags.tags) {
+                    const tagName = tag.name || tag;
+                    // Check if tag name contains a known product
+                    for (const knownProduct of KNOWN_PRODUCTS) {
+                        if (String(tagName).toLowerCase().includes(knownProduct.toLowerCase())) {
+                            product = knownProduct;
+                            break;
+                        }
+                    }
+                    // Also check if tag name contains "product" in the key
+                    if (!product && /product/i.test(String(tagName))) {
+                        product = String(tagName).replace(/product[:\s]*/i, '').trim() || tagName;
+                    }
+                    if (product) break;
+                }
+            }
+            
+            // Source 3: Topics - might have product info
+            if (!product && conv.topics) {
+                const topicsArr = Array.isArray(conv.topics) ? conv.topics : (conv.topics.topics || []);
+                for (const topic of topicsArr) {
+                    const topicName = topic.name || topic;
+                    for (const knownProduct of KNOWN_PRODUCTS) {
+                        if (String(topicName).toLowerCase().includes(knownProduct.toLowerCase())) {
+                            product = knownProduct;
+                            break;
+                        }
+                    }
+                    if (product) break;
+                }
+            }
+            
+            // Source 4: Contact custom_attributes (if we fetched contact data)
+            if (!product && contactResp?.data?.custom_attributes) {
+                const contactAttrs = contactResp.data.custom_attributes;
+                product = contactAttrs.product ?? contactAttrs.Product ?? contactAttrs.channel ?? null;
+                if (!product) {
+                    for (const [k, v] of Object.entries(contactAttrs)) {
+                        if (v != null && String(v).trim() !== '' && /product|channel/i.test(k)) {
+                            product = String(v);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Source 5: Check conversation source metadata
+            if (!product && conv.source?.custom_attributes) {
+                const srcAttrs = conv.source.custom_attributes;
+                product = srcAttrs.product ?? srcAttrs.Product ?? null;
             }
             
             // Build the full record with all available data
