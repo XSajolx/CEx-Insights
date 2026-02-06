@@ -211,7 +211,7 @@ const TopicAnalyzerAdmin = () => {
           }
           const result = await parseJson(res);
           if (!result.success || !result.data) {
-            lastError = 'Empty or invalid API response';
+            lastError = result.error || 'Empty or invalid API response';
             errorCount++;
             continue;
           }
@@ -317,7 +317,7 @@ const TopicAnalyzerAdmin = () => {
             
             const result = await parseJson(res);
             if (!result.success || !result.data) {
-              return { convId, error: 'Empty API response' };
+              return { convId, error: result.error || 'Empty API response' };
             }
             
             return { convId, data: result.data };
@@ -344,15 +344,15 @@ const TopicAnalyzerAdmin = () => {
         }
 
         // Process successful results
-        for (const result of results) {
+        for (const r of results) {
           processed++;
-          if (result.error) {
-            lastError = result.error;
+          if (r.error) {
+            lastError = r.error;
             errorCount++;
             continue;
           }
           
-          const ok = await updateRowInSupabase(result.convId, result.data);
+          const ok = await updateRowInSupabase(r.convId, r.data);
           if (ok) {
             enriched++;
           } else {
@@ -402,6 +402,74 @@ const TopicAnalyzerAdmin = () => {
       }
     }
     setProgress(prev => ({ ...prev, status: '✅ Intercom Topic cleared.' }));
+  };
+
+  // Reset all data EXCEPT Conversation ID and unique_id – keeps rows but clears their data
+  const handleResetDataKeepIds = async () => {
+    if (!window.confirm('Clear ALL data except Conversation ID and unique_id? This will set Transcript, Product, Email, Region, etc. to NULL so you can re-fetch.')) return;
+    setError('');
+    setIsFetching(true);
+    setProgress(prev => ({ ...prev, status: '🔄 Resetting data (keeping Conversation IDs)...' }));
+
+    try {
+      // Get all conversation IDs
+      const { data: rows, error: fetchErr } = await supabase
+        .from('Intercom Topic')
+        .select('"Conversation ID"');
+
+      if (fetchErr) {
+        setError(`Supabase error: ${fetchErr.message}`);
+        return;
+      }
+
+      const total = rows?.length || 0;
+      if (total === 0) {
+        setProgress(prev => ({ ...prev, status: '✅ No rows to reset.' }));
+        return;
+      }
+
+      // Update in batches: set all data columns to null
+      const nullData = {
+        'Email': null,
+        'Transcript': null,
+        'User ID': null,
+        'Country': null,
+        'Region': null,
+        'Assigned Channel ID': null,
+        'CX Score Rating': null,
+        'Conversation Rating': null,
+        'Product': null,
+        'Main-Topics': null,
+        'Sub-Topics': null,
+        'Sentiment Start': null,
+        'Sentiment End': null,
+        'Feedbacks': null,
+        "Was it in client's favor?": null
+      };
+
+      const chunkSize = 100;
+      let processed = 0;
+      for (let i = 0; i < total; i += chunkSize) {
+        const chunk = rows.slice(i, i + chunkSize).map(r => r['Conversation ID'] ?? r['"Conversation ID"']);
+        const { error } = await supabase
+          .from('Intercom Topic')
+          .update(nullData)
+          .in('"Conversation ID"', chunk);
+
+        if (error) {
+          setError(`Reset failed: ${error.message}`);
+          return;
+        }
+        processed += chunk.length;
+        setProgress(prev => ({ ...prev, status: `🔄 Reset ${processed}/${total} rows...` }));
+      }
+
+      setProgress(prev => ({ ...prev, status: `✅ Reset complete. ${total} rows cleared (Conversation IDs kept). Now run "Check & populate missing data" to re-fetch.` }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   // Two-phase fetch (like n8n): Phase 1 = IDs only 150/page → save; Phase 2 = pull full data per Conversation ID → update
@@ -537,7 +605,7 @@ const TopicAnalyzerAdmin = () => {
 
             const result = await parseJson(res);
             if (!result.success || !result.data) {
-              return { convId, error: 'Empty API response' };
+              return { convId, error: result.error || 'Empty API response' };
             }
 
             return { convId, data: result.data };
@@ -561,15 +629,15 @@ const TopicAnalyzerAdmin = () => {
         }
 
         // Process successful results
-        for (const result of results) {
+        for (const r of results) {
           processed++;
-          if (result.error) {
-            phase2LastError = result.error;
+          if (r.error) {
+            phase2LastError = r.error;
             errorCount++;
             continue;
           }
 
-          const ok = await updateRowInSupabase(result.convId, result.data);
+          const ok = await updateRowInSupabase(r.convId, r.data);
           if (ok) enriched++;
           else {
             phase2LastError = 'Supabase update failed';
@@ -949,6 +1017,23 @@ const TopicAnalyzerAdmin = () => {
                 🗑️ Clear Intercom Topic
               </button>
               <button
+                onClick={handleResetDataKeepIds}
+                disabled={isProcessing}
+                title="Keep Conversation IDs but clear all other data (Transcript, Product, Email, etc.) so you can re-fetch"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(251, 191, 36, 0.5)',
+                  background: 'transparent',
+                  color: '#FBBF24',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🔄 Reset Data (Keep IDs)
+              </button>
+              <button
                 onClick={handleFetchAndSave}
                 disabled={isProcessing || !dateFrom || !dateTo}
                 style={{
@@ -1164,6 +1249,7 @@ const TopicAnalyzerAdmin = () => {
         </div>
         <ul style={{ color: '#94A3B8', fontSize: '0.8rem', margin: 0, paddingLeft: '1.25rem' }}>
           <li><strong>Clear Intercom Topic:</strong> Deletes all existing rows (optional – do this first for a fresh run)</li>
+          <li><strong>Reset Data (Keep IDs):</strong> Clears Transcript, Product, Email, Region, etc. but keeps Conversation IDs. Use this to re-fetch data with updated logic</li>
           <li><strong>Fetch & Save:</strong> Uses the date/time range above. Phase 1 – pulls 150 Conversation IDs per page from Intercom and saves only ID + created_at. Phase 2 – for each row, pulls full data from Intercom and updates the row</li>
           <li><strong>Pull data by Chat ID from Supabase:</strong> No date range. Reads all Conversation IDs from Supabase and for each pulls full data from Intercom, then updates the row</li>
           <li><strong>Check & populate missing data:</strong> Finds rows where Email, Transcript, Product, Region or CX Score Rating is empty, then fetches full data from Intercom for only those rows and updates them</li>

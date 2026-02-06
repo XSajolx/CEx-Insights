@@ -53,72 +53,85 @@ Categories: KYC & Verification, Dashboard & Account Access, Rules & Scaling, Pla
 Transcript:
 `;
 
+// Match n8n export: strip script/style, preserve line breaks, replace image-only with [IMAGE]
 function htmlToText(html) {
-    if (!html) return '';
-    return String(html)
-        .replace(/<[^>]*>/g, '')
+    if (html == null) return '';
+    const hasImg = /<img\b/i.test(html);
+    let text = typeof html !== 'string' ? String(html) : html;
+
+    text = text
+        .replace(/<script[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[\s\S]*?<\/style>/gi, '');
+
+    text = text
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n');
+
+    text = text.replace(/<[^>]*>/g, '');
+
+    text = text
         .replace(/&nbsp;/g, ' ')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
-        .trim();
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"');
+
+    text = text.replace(/[ \t]+\n/g, '\n').trim();
+
+    if (!text && hasImg) return '[IMAGE]';
+    return text;
 }
 
+// Build transcript like n8n: only comment parts, USER/AGENT, sorted by created_at
 function extractTranscript(conv) {
+    if (!conv || typeof conv !== 'object') return '';
     const messages = [];
-    
-    // Source: Initial message from user
-    if (conv.source && conv.source.body) {
-        const body = htmlToText(conv.source.body);
-        if (body) messages.push({ role: 'USER', body });
-    }
-    
-    // Conversation parts: All messages in the thread
-    const parts = (conv.conversation_parts && conv.conversation_parts.conversation_parts) || [];
-    for (const part of parts) {
-        // Accept multiple part types that contain actual conversation content
-        const validPartTypes = ['comment', 'note', 'open', 'close', 'assignment', 'conversation_part_channel_changed'];
-        const hasBody = part.body && part.body.trim();
-        
-        // Skip parts without body content
-        if (!hasBody) continue;
-        
-        const author = part.author || {};
-        // Determine role: user, admin (agent), bot, or team
-        let role = null;
-        if (author.type === 'user' || author.type === 'lead' || author.type === 'contact') {
-            role = 'USER';
-        } else if (author.type === 'admin' || author.type === 'bot' || author.type === 'team') {
-            role = 'AGENT';
-        }
-        
-        // If we couldn't determine role, try to infer from part_type
-        if (!role) {
-            if (part.part_type === 'comment' && part.author?.id) {
-                role = 'AGENT'; // Default to agent for comments with author
-            } else {
-                continue; // Skip if we can't determine role
+
+    try {
+        // Initial message from source
+        if (conv.source && conv.source.body) {
+            const body = htmlToText(conv.source.body);
+            if (body) {
+                messages.push({
+                    role: 'USER',
+                    body,
+                    created_at: typeof conv.created_at === 'number' ? conv.created_at : 0
+                });
             }
         }
-        
-        const text = htmlToText(part.body);
-        if (text) messages.push({ role, body: text });
-    }
-    
-    // If still no messages, try alternative sources
-    if (messages.length === 0) {
-        // Check if there's a plain_text_body field
-        if (conv.source?.plain_text_body) {
-            messages.push({ role: 'USER', body: conv.source.plain_text_body });
+
+        const parts = conv.conversation_parts?.conversation_parts || [];
+        if (!Array.isArray(parts)) {
+            return messages.map(m => `${m.role}: ${m.body}`).join('\n');
         }
-        // Check conversation_message
-        if (conv.conversation_message?.body) {
-            const body = htmlToText(conv.conversation_message.body);
-            if (body) messages.push({ role: 'USER', body });
+
+        for (const part of parts) {
+            if (part.part_type !== 'comment' || !part.body) continue;
+
+            const author = part.author || {};
+            let role = 'UNKNOWN';
+            if (author.type === 'user' || author.type === 'lead' || author.type === 'contact') role = 'USER';
+            else if (author.type === 'admin' || author.type === 'bot' || author.type === 'team') role = 'AGENT';
+
+            if (role === 'UNKNOWN') continue;
+
+            const text = htmlToText(part.body);
+            if (!text) continue;
+
+            messages.push({
+                role,
+                body: text,
+                created_at: typeof part.created_at === 'number' ? part.created_at : 0
+            });
         }
+
+        // Sort by timestamp (like n8n) then format as "ROLE: body"
+        messages.sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+        return messages.map(m => `${m.role}: ${m.body}`).join('\n');
+    } catch (e) {
+        return messages.map(m => `${m.role}: ${m.body}`).join('\n');
     }
-    
-    return messages.map(m => `${m.role}: ${m.body}`).join('\n');
 }
 
 async function fetchIntercom(endpoint, options = {}) {
@@ -414,111 +427,121 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'conversationId required' });
             }
             
-            const convResp = await fetchIntercom(`/conversations/${conversationId}?display_as=plaintext`);
+            let convResp;
+            try {
+                convResp = await fetchIntercom(`/conversations/${conversationId}?display_as=plaintext`);
+            } catch (e) {
+                return res.status(200).json({ success: false, error: 'Intercom request failed: ' + (e.message || String(e)) });
+            }
+            
             if (!convResp.ok) {
-                return res.status(404).json({ error: 'Conversation not found' });
+                const errMsg = convResp.data?.error?.message || convResp.data?.message || ('Intercom ' + convResp.status);
+                return res.status(200).json({ success: false, error: errMsg, status: convResp.status });
             }
             
             const conv = convResp.data;
-            const transcript = extractTranscript(conv);
+            if (!conv || typeof conv !== 'object' || conv.type === 'error.list') {
+                return res.status(200).json({ success: false, error: 'Invalid conversation response from Intercom' });
+            }
+            if (conv.id == null) {
+                return res.status(200).json({ success: false, error: 'Conversation missing id' });
+            }
             
-            // Get contact details by fetching the contact (Country, Region from contact.location)
+            let transcript;
+            try {
+                transcript = extractTranscript(conv);
+            } catch (e) {
+                transcript = '';
+            }
+            
             let contactData = { Country: null, Region: null, 'User ID': null };
             let contactResp = null;
-            const contactId = conv.contacts?.contacts?.[0]?.id;
-            if (contactId) {
-                contactResp = await fetchIntercom(`/contacts/${contactId}`);
-                if (contactResp.ok) {
-                    const contact = contactResp.data;
-                    contactData = {
-                        'Country': contact.location?.country || null,
-                        'Region': contact.location?.region || null,
-                        'User ID': contact.external_id || contact.id || null
-                    };
+            try {
+                const contactId = conv.contacts?.contacts?.[0]?.id;
+                if (contactId) {
+                    contactResp = await fetchIntercom(`/contacts/${contactId}`);
+                    if (contactResp.ok && contactResp.data && typeof contactResp.data === 'object') {
+                        const contact = contactResp.data;
+                        contactData = {
+                            'Country': contact.location?.country || null,
+                            'Region': contact.location?.region || null,
+                            'User ID': contact.external_id || contact.id || null
+                        };
+                    }
                 }
+            } catch (e) {
+                // Continue without contact data
             }
             
-            // Get team/channel assignment
             const teamAssigneeId = conv.team_assignee_id;
-            
-            // Conversation rating (Intercom conversation_rating.rating)
             const rating = conv.conversation_rating?.rating;
             
-            // Product: Check MULTIPLE sources for product data
-            // Known product values to look for in tags/topics
-            const KNOWN_PRODUCTS = ['CFD', 'CFDs', 'Futures', 'Forex', 'Stocks', 'Crypto', 'Options', 'Commodities', 'Indices', 'ETF', 'Bonds'];
-            
             let product = null;
-            
-            // Source 1: Conversation custom_attributes
-            const customAttrs = conv.custom_attributes || {};
-            product = customAttrs.product ?? customAttrs.Product ?? customAttrs.product_name ?? customAttrs.channel ?? null;
-            
-            // Scan all custom_attributes keys for any containing "product" (case-insensitive)
-            if (!product) {
-                for (const [k, v] of Object.entries(customAttrs)) {
-                    if (v != null && String(v).trim() !== '' && /product|channel/i.test(k)) {
-                        product = String(v);
-                        break;
-                    }
-                }
-            }
-            
-            // Source 2: Tags - check if any tag name matches known products
-            if (!product && conv.tags?.tags?.length > 0) {
-                for (const tag of conv.tags.tags) {
-                    const tagName = tag.name || tag;
-                    // Check if tag name contains a known product
-                    for (const knownProduct of KNOWN_PRODUCTS) {
-                        if (String(tagName).toLowerCase().includes(knownProduct.toLowerCase())) {
-                            product = knownProduct;
-                            break;
-                        }
-                    }
-                    // Also check if tag name contains "product" in the key
-                    if (!product && /product/i.test(String(tagName))) {
-                        product = String(tagName).replace(/product[:\s]*/i, '').trim() || tagName;
-                    }
-                    if (product) break;
-                }
-            }
-            
-            // Source 3: Topics - might have product info
-            if (!product && conv.topics) {
-                const topicsArr = Array.isArray(conv.topics) ? conv.topics : (conv.topics.topics || []);
-                for (const topic of topicsArr) {
-                    const topicName = topic.name || topic;
-                    for (const knownProduct of KNOWN_PRODUCTS) {
-                        if (String(topicName).toLowerCase().includes(knownProduct.toLowerCase())) {
-                            product = knownProduct;
-                            break;
-                        }
-                    }
-                    if (product) break;
-                }
-            }
-            
-            // Source 4: Contact custom_attributes (if we fetched contact data)
-            if (!product && contactResp?.data?.custom_attributes) {
-                const contactAttrs = contactResp.data.custom_attributes;
-                product = contactAttrs.product ?? contactAttrs.Product ?? contactAttrs.channel ?? null;
+            try {
+                const KNOWN_PRODUCTS = ['CFD', 'CFDs', 'Futures', 'Forex', 'Stocks', 'Crypto', 'Options', 'Commodities', 'Indices', 'ETF', 'Bonds'];
+                const customAttrs = conv.custom_attributes || {};
+                product = customAttrs.product ?? customAttrs.Product ?? customAttrs.product_name ?? customAttrs.channel ?? null;
+                
                 if (!product) {
-                    for (const [k, v] of Object.entries(contactAttrs)) {
+                    for (const [k, v] of Object.entries(customAttrs)) {
                         if (v != null && String(v).trim() !== '' && /product|channel/i.test(k)) {
                             product = String(v);
                             break;
                         }
                     }
                 }
+                
+                if (!product && conv.tags?.tags?.length > 0) {
+                    for (const tag of conv.tags.tags) {
+                        const tagName = tag.name ?? tag;
+                        for (const knownProduct of KNOWN_PRODUCTS) {
+                            if (String(tagName).toLowerCase().includes(knownProduct.toLowerCase())) {
+                                product = knownProduct;
+                                break;
+                            }
+                        }
+                        if (!product && /product/i.test(String(tagName))) {
+                            product = String(tagName).replace(/product[:\s]*/i, '').trim() || tagName;
+                        }
+                        if (product) break;
+                    }
+                }
+                
+                if (!product && conv.topics) {
+                    const topicsArr = Array.isArray(conv.topics) ? conv.topics : (conv.topics?.topics || []);
+                    for (const topic of topicsArr) {
+                        const topicName = topic?.name ?? topic;
+                        for (const knownProduct of KNOWN_PRODUCTS) {
+                            if (String(topicName).toLowerCase().includes(knownProduct.toLowerCase())) {
+                                product = knownProduct;
+                                break;
+                            }
+                        }
+                        if (product) break;
+                    }
+                }
+                
+                if (!product && contactResp?.data?.custom_attributes) {
+                    const contactAttrs = contactResp.data.custom_attributes;
+                    product = contactAttrs.product ?? contactAttrs.Product ?? contactAttrs.channel ?? null;
+                    if (!product) {
+                        for (const [k, v] of Object.entries(contactAttrs)) {
+                            if (v != null && String(v).trim() !== '' && /product|channel/i.test(k)) {
+                                product = String(v);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!product && conv.source?.custom_attributes) {
+                    const srcAttrs = conv.source.custom_attributes;
+                    product = srcAttrs.product ?? srcAttrs.Product ?? null;
+                }
+            } catch (e) {
+                // Leave product as null
             }
             
-            // Source 5: Check conversation source metadata
-            if (!product && conv.source?.custom_attributes) {
-                const srcAttrs = conv.source.custom_attributes;
-                product = srcAttrs.product ?? srcAttrs.Product ?? null;
-            }
-            
-            // Build the full record with all available data
             const record = {
                 'Conversation ID': String(conv.id),
                 'created_at': conv.created_at,
@@ -527,7 +550,7 @@ module.exports = async function handler(req, res) {
                 'User ID': contactData['User ID'] || conv.source?.author?.id || null,
                 'Country': contactData['Country'] || null,
                 'Region': contactData['Region'] || null,
-                'Assigned Channel ID': teamAssigneeId ? String(teamAssigneeId) : null,
+                'Assigned Channel ID': teamAssigneeId != null ? String(teamAssigneeId) : null,
                 'CX Score Rating': rating != null ? String(rating) : null,
                 'Conversation Rating': rating != null ? String(rating) : null,
                 'Product': product
