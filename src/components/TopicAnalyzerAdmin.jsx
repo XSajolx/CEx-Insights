@@ -474,6 +474,147 @@ const TopicAnalyzerAdmin = () => {
     }
   };
 
+  // FAST: Extract ONLY Conversation IDs (no enrichment) - for bulk ID extraction
+  const handleFetchIdsOnly = async () => {
+    if (!dateFrom || !dateTo) {
+      setError('Please select a date range');
+      return;
+    }
+
+    setIsFetching(true);
+    setError('');
+    stopRequestedRef.current = false;
+    setProgress({ totalAvailable: 0, fetched: 0, saved: 0, currentPage: 0, analyzed: 0, toAnalyze: 0, status: '' });
+
+    const BASE_DELAY_MS = 200; // Fast but safe
+    let currentBackoff = BASE_DELAY_MS;
+    const MAX_BACKOFF = 5000;
+
+    try {
+      setProgress(prev => ({ ...prev, status: '🚀 Fast extraction: Fetching Conversation IDs only (150 per page)...' }));
+      
+      let startingAfter = null;
+      let pageNum = 0;
+      let totalIdsSaved = 0;
+      let totalAvailable = 0;
+      let allIds = []; // Collect all IDs first, then batch insert
+      const startTime = Date.now();
+
+      // PHASE 1: Fetch ALL IDs from Intercom (paginate through everything)
+      while (!stopRequestedRef.current) {
+        pageNum++;
+        
+        // Calculate stats
+        const elapsed = (Date.now() - startTime) / 1000;
+        const rate = allIds.length > 0 ? allIds.length / elapsed : 0;
+        
+        setProgress(prev => ({ 
+          ...prev, 
+          currentPage: pageNum,
+          fetched: allIds.length,
+          status: `📥 Page ${pageNum} | Fetched: ${allIds.length} IDs | Rate: ${rate.toFixed(1)}/sec`
+        }));
+
+        let response;
+        let retries = 0;
+        const maxRetries = 3;
+
+        while (retries < maxRetries) {
+          try {
+            response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'fetch-ids',
+                dateFrom,
+                dateTo,
+                timeFrom,
+                timeTo,
+                startingAfter
+              })
+            });
+
+            if (response.status === 429) {
+              // Rate limited - exponential backoff
+              currentBackoff = Math.min(currentBackoff * 2, MAX_BACKOFF);
+              console.log(`Rate limited on page ${pageNum}, backing off ${currentBackoff}ms`);
+              await new Promise(r => setTimeout(r, currentBackoff));
+              retries++;
+              continue;
+            }
+
+            if (!response.ok) {
+              const errData = await parseJson(response);
+              throw new Error(errData.error || `HTTP ${response.status}`);
+            }
+
+            // Success - reset backoff
+            currentBackoff = BASE_DELAY_MS;
+            break;
+          } catch (e) {
+            retries++;
+            if (retries >= maxRetries) throw e;
+            await new Promise(r => setTimeout(r, currentBackoff));
+          }
+        }
+
+        const data = await parseJson(response);
+        totalAvailable = data.totalCount ?? totalAvailable;
+        const pageRecords = data.data || [];
+        
+        if (pageRecords.length === 0) break;
+
+        // Collect IDs
+        allIds = allIds.concat(pageRecords);
+        setProgress(prev => ({ ...prev, totalAvailable, fetched: allIds.length }));
+
+        if (!data.hasMore || !data.nextStartingAfter) {
+          console.log(`No more pages after page ${pageNum}`);
+          break;
+        }
+        startingAfter = data.nextStartingAfter;
+
+        // Small delay between pages
+        await new Promise(r => setTimeout(r, currentBackoff));
+      }
+
+      if (stopRequestedRef.current) {
+        setProgress(prev => ({ ...prev, status: `⏹️ Stopped. Fetched ${allIds.length} IDs.` }));
+        return;
+      }
+
+      // PHASE 2: Batch insert ALL IDs to Supabase (100 at a time)
+      setProgress(prev => ({ ...prev, status: `💾 Saving ${allIds.length} IDs to Supabase...` }));
+      
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < allIds.length && !stopRequestedRef.current; i += BATCH_SIZE) {
+        const batch = allIds.slice(i, i + BATCH_SIZE);
+        const { inserted } = await insertIdsBatch(batch);
+        totalIdsSaved += inserted;
+        setProgress(prev => ({ 
+          ...prev, 
+          saved: totalIdsSaved,
+          status: `💾 Saved ${totalIdsSaved}/${allIds.length} IDs to Supabase...`
+        }));
+      }
+
+      const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      setProgress(prev => ({ 
+        ...prev, 
+        saved: totalIdsSaved,
+        status: `✅ Complete! Fetched ${allIds.length} IDs, saved ${totalIdsSaved} to Supabase in ${totalTime}s`
+      }));
+
+    } catch (err) {
+      console.error('Fast ID fetch error:', err);
+      setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
+    } finally {
+      setIsFetching(false);
+      stopRequestedRef.current = false;
+    }
+  };
+
   // Two-phase fetch (like n8n): Phase 1 = IDs only 150/page → save; Phase 2 = pull full data per Conversation ID → update
   const handleFetchAndSave = async () => {
     if (!dateFrom || !dateTo) {
@@ -1080,6 +1221,24 @@ const TopicAnalyzerAdmin = () => {
               </button>
 
               <button
+                onClick={handleFetchIdsOnly}
+                disabled={isProcessing || !dateFrom || !dateTo}
+                title="FAST: Extract only Conversation IDs (no transcript/product data) - use for bulk ID extraction"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: isProcessing ? 'rgba(16, 185, 129, 0.3)' : 'linear-gradient(135deg, #10B981, #059669)',
+                  color: '#fff',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: (isProcessing || !dateFrom || !dateTo) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isFetching ? '⏳ Extracting IDs...' : '🚀 Fast: IDs Only'}
+              </button>
+
+              <button
                 onClick={handleEnrichFromSupabase}
                 disabled={isProcessing}
                 title="Pull full data from Intercom for every Conversation ID already in Supabase"
@@ -1298,6 +1457,7 @@ const TopicAnalyzerAdmin = () => {
           <li><strong>Clear Intercom Topic:</strong> Deletes all existing rows (optional – do this first for a fresh run)</li>
           <li><strong>Reset Data (Keep IDs):</strong> Clears Transcript, Product, Email, Region, etc. but keeps Conversation IDs. Use this to re-fetch data with updated logic</li>
           <li><strong>Fetch & Save:</strong> Uses the date/time range above. Phase 1 – pulls 150 Conversation IDs per page from Intercom and saves only ID + created_at. Phase 2 – for each row, pulls full data from Intercom and updates the row</li>
+          <li><strong>Fast: IDs Only:</strong> Extracts ONLY Conversation IDs (no transcript/product). Fast bulk extraction with rate limit handling. Use "Check & populate" after to enrich.</li>
           <li><strong>Pull data by Chat ID from Supabase:</strong> No date range. Reads all Conversation IDs from Supabase and for each pulls full data from Intercom, then updates the row</li>
           <li><strong>Check & populate missing data:</strong> Finds rows where Email, Transcript, Product, Region or CX Score Rating is empty, then fetches full data from Intercom for only those rows and updates them</li>
           <li><strong>Analyze Unanalyzed:</strong> Finds rows with empty Main-Topics and runs AI analysis</li>
