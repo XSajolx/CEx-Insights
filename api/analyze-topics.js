@@ -142,7 +142,7 @@ async function fetchIntercom(endpoint, options = {}) {
             'Authorization': `Bearer ${process.env.INTERCOM_ACCESS_TOKEN}`,
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Intercom-Version': '2.10'
+            'Intercom-Version': '2.14'
         },
         body: options.body
     });
