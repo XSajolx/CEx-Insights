@@ -356,6 +356,128 @@ module.exports = async function handler(req, res) {
             });
         }
         
+        // Action: List available datasets from Reporting Data Export API
+        if (action === 'list-datasets') {
+            try {
+                const resp = await fetchIntercom('/export/reporting_data/get_datasets');
+                if (!resp.ok) {
+                    return res.status(200).json({
+                        success: false,
+                        error: `Intercom returned ${resp.status}: ${JSON.stringify(resp.data)}`
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    datasets: resp.data
+                });
+            } catch (e) {
+                return res.status(200).json({
+                    success: false,
+                    error: 'Failed to fetch datasets: ' + (e.message || String(e))
+                });
+            }
+        }
+
+        // Action: Enqueue a reporting data export job
+        if (action === 'enqueue-export') {
+            const { dataset, attributes, dateFrom, dateTo } = req.body;
+            if (!dataset) {
+                return res.status(400).json({ error: 'dataset required (e.g., "conversations")' });
+            }
+            
+            const exportBody = {
+                dataset,
+                attributes: attributes || undefined,
+                filters: {}
+            };
+            
+            // Add date range if provided
+            if (dateFrom) {
+                const fromTs = Math.floor(new Date(dateFrom).getTime() / 1000);
+                exportBody.filters.created_at = exportBody.filters.created_at || {};
+                exportBody.filters.created_at.gte = fromTs;
+            }
+            if (dateTo) {
+                const toTs = Math.floor(new Date(dateTo).getTime() / 1000);
+                exportBody.filters.created_at = exportBody.filters.created_at || {};
+                exportBody.filters.created_at.lte = toTs;
+            }
+            
+            try {
+                const resp = await fetchIntercom('/export/reporting_data/enqueue', {
+                    method: 'POST',
+                    body: JSON.stringify(exportBody)
+                });
+                if (!resp.ok) {
+                    return res.status(200).json({
+                        success: false,
+                        error: `Intercom returned ${resp.status}: ${JSON.stringify(resp.data)}`
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    job: resp.data
+                });
+            } catch (e) {
+                return res.status(200).json({
+                    success: false,
+                    error: 'Failed to enqueue export: ' + (e.message || String(e))
+                });
+            }
+        }
+
+        // Action: Check export job status
+        if (action === 'export-status') {
+            const { jobId } = req.body;
+            if (!jobId) {
+                return res.status(400).json({ error: 'jobId required' });
+            }
+            try {
+                const resp = await fetchIntercom(`/export/reporting_data/${jobId}`);
+                if (!resp.ok) {
+                    return res.status(200).json({
+                        success: false,
+                        error: `Intercom returned ${resp.status}: ${JSON.stringify(resp.data)}`
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    job: resp.data
+                });
+            } catch (e) {
+                return res.status(200).json({
+                    success: false,
+                    error: 'Failed to check status: ' + (e.message || String(e))
+                });
+            }
+        }
+
+        // Action: Download completed export
+        if (action === 'download-export') {
+            const { jobId } = req.body;
+            if (!jobId) {
+                return res.status(400).json({ error: 'jobId required' });
+            }
+            try {
+                const resp = await fetchIntercom(`/download/reporting_data/${jobId}`);
+                if (!resp.ok) {
+                    return res.status(200).json({
+                        success: false,
+                        error: `Intercom returned ${resp.status}: ${JSON.stringify(resp.data)}`
+                    });
+                }
+                return res.status(200).json({
+                    success: true,
+                    data: resp.data
+                });
+            } catch (e) {
+                return res.status(200).json({
+                    success: false,
+                    error: 'Failed to download export: ' + (e.message || String(e))
+                });
+            }
+        }
+
         // Action: Debug - return raw conversation and contact data to inspect field structure
         if (action === 'debug') {
             if (!conversationId) {

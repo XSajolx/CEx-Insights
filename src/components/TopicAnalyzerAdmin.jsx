@@ -18,6 +18,8 @@ const TopicAnalyzerAdmin = () => {
   const [isFetching, setIsFetching] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
+  const [datasets, setDatasets] = useState(null); // For Reporting Data Export datasets
+  const [showDatasets, setShowDatasets] = useState(false);
   
   // Progress tracking
   const [progress, setProgress] = useState({
@@ -781,6 +783,33 @@ const TopicAnalyzerAdmin = () => {
     stopRequestedRef.current = true;
   };
 
+  // List available datasets from Intercom Reporting Data Export API
+  const handleListDatasets = async () => {
+    setError('');
+    setDatasets(null);
+    setShowDatasets(true);
+    setProgress(prev => ({ ...prev, status: '🔍 Fetching available datasets from Intercom...' }));
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'list-datasets' })
+      });
+      const result = await parseJson(res);
+      if (!result.success) {
+        setError(result.error || 'Failed to fetch datasets');
+        setProgress(prev => ({ ...prev, status: `❌ ${result.error || 'Failed'}` }));
+        return;
+      }
+      setDatasets(result.datasets);
+      setProgress(prev => ({ ...prev, status: '✅ Datasets loaded. See below.' }));
+    } catch (err) {
+      setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
+    }
+  };
+
   const isProcessing = isFetching || isAnalyzing;
 
   return (
@@ -1103,6 +1132,24 @@ const TopicAnalyzerAdmin = () => {
                 {isAnalyzing ? '⏳ Analyzing...' : '🤖 Analyze Unanalyzed'}
               </button>
 
+              <button
+                onClick={handleListDatasets}
+                disabled={isProcessing}
+                title="List available datasets from Intercom Reporting Data Export API"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(16, 185, 129, 0.5)',
+                  background: 'transparent',
+                  color: '#10B981',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                📊 List Export Datasets
+              </button>
+
               {isProcessing && (
                 <button
                   onClick={handleStop}
@@ -1254,9 +1301,55 @@ const TopicAnalyzerAdmin = () => {
           <li><strong>Pull data by Chat ID from Supabase:</strong> No date range. Reads all Conversation IDs from Supabase and for each pulls full data from Intercom, then updates the row</li>
           <li><strong>Check & populate missing data:</strong> Finds rows where Email, Transcript, Product, Region or CX Score Rating is empty, then fetches full data from Intercom for only those rows and updates them</li>
           <li><strong>Analyze Unanalyzed:</strong> Finds rows with empty Main-Topics and runs AI analysis</li>
+          <li><strong>List Export Datasets:</strong> Shows available datasets from Intercom Reporting Data Export API</li>
           <li><strong>Stop:</strong> Safely stops the current operation after the current item completes</li>
         </ul>
       </div>
+
+      {/* Datasets Display */}
+      {showDatasets && (
+        <div style={{
+          marginTop: '1.5rem',
+          padding: '1rem',
+          background: 'rgba(16, 185, 129, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '8px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ color: '#10B981', margin: 0 }}>📊 Available Reporting Datasets</h3>
+            <button
+              onClick={() => setShowDatasets(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94A3B8',
+                fontSize: '1.2rem',
+                cursor: 'pointer'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          
+          {!datasets ? (
+            <p style={{ color: '#94A3B8' }}>Loading...</p>
+          ) : (
+            <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+              <pre style={{
+                background: 'rgba(0,0,0,0.3)',
+                padding: '1rem',
+                borderRadius: '6px',
+                color: '#E2E8F0',
+                fontSize: '0.75rem',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}>
+                {JSON.stringify(datasets, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
