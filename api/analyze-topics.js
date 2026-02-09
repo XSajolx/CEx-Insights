@@ -396,6 +396,40 @@ module.exports = async function handler(req, res) {
             });
         }
         
+        // Action: Test Intercom connection - list recent conversations without date filter
+        if (action === 'test-intercom') {
+            try {
+                // Simple test: list conversations without any filters
+                const listResp = await fetchIntercom('/conversations?per_page=5');
+                console.log('Test Intercom response:', { ok: listResp.ok, status: listResp.status });
+                
+                if (!listResp.ok) {
+                    return res.status(200).json({
+                        success: false,
+                        error: `Intercom API error: ${listResp.status}`,
+                        details: listResp.data
+                    });
+                }
+                
+                const conversations = listResp.data.conversations || [];
+                return res.status(200).json({
+                    success: true,
+                    message: `Token is working! Found ${conversations.length} recent conversations.`,
+                    totalCount: listResp.data.total_count || 0,
+                    sampleIds: conversations.slice(0, 3).map(c => ({ 
+                        id: c.id, 
+                        created_at: c.created_at,
+                        created_date: new Date(c.created_at * 1000).toISOString()
+                    }))
+                });
+            } catch (e) {
+                return res.status(200).json({
+                    success: false,
+                    error: 'Test failed: ' + (e.message || String(e))
+                });
+            }
+        }
+
         // Action: List available datasets from Reporting Data Export API
         if (action === 'list-datasets') {
             try {

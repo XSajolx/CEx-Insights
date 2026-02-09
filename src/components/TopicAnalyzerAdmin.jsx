@@ -970,6 +970,33 @@ const TopicAnalyzerAdmin = () => {
     stopRequestedRef.current = true;
   };
 
+  // Test Intercom connection
+  const handleTestIntercom = async () => {
+    setError('');
+    setProgress(prev => ({ ...prev, status: '🔍 Testing Intercom connection...' }));
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'test-intercom' })
+      });
+      const result = await parseJson(res);
+      console.log('Test Intercom result:', result);
+      if (result.success) {
+        setProgress(prev => ({ ...prev, status: `✅ ${result.message} Total: ${result.totalCount}` }));
+        if (result.sampleIds) {
+          console.log('Sample conversations:', result.sampleIds);
+        }
+      } else {
+        setError(result.error || 'Test failed');
+        setProgress(prev => ({ ...prev, status: `❌ ${result.error}` }));
+      }
+    } catch (err) {
+      setError(err.message);
+      setProgress(prev => ({ ...prev, status: `❌ ${err.message}` }));
+    }
+  };
+
   // List available datasets from Intercom Reporting Data Export API
   const handleListDatasets = async () => {
     setError('');
@@ -1335,6 +1362,24 @@ const TopicAnalyzerAdmin = () => {
                 }}
               >
                 {isAnalyzing ? '⏳ Analyzing...' : '🤖 Analyze Unanalyzed'}
+              </button>
+
+              <button
+                onClick={handleTestIntercom}
+                disabled={isProcessing}
+                title="Test if Intercom API token is working"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(251, 191, 36, 0.5)',
+                  background: 'transparent',
+                  color: '#FBBF24',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: isProcessing ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🔧 Test Intercom
               </button>
 
               <button
