@@ -589,8 +589,14 @@ const TopicAnalyzerAdmin = () => {
           recordCount: data.data?.length, 
           totalCount: data.totalCount,
           hasMore: data.hasMore,
-          nextStartingAfter: data.nextStartingAfter ? 'yes' : 'no'
+          nextStartingAfter: data.nextStartingAfter ? 'yes' : 'no',
+          debug: data.debug
         });
+        
+        // Show debug info on first page
+        if (pageNum === 1 && data.debug) {
+          console.log('Query date range:', data.debug.queryFromDate, 'to', data.debug.queryToDate);
+        }
         
         if (!data.success) {
           throw new Error(data.error || 'API returned success: false');

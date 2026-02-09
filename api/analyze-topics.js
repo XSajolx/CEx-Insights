@@ -303,10 +303,20 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
             
-            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00Z';
-            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59Z';
+            // Build timestamp - don't add Z suffix, let it be interpreted as local time
+            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00';
+            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59';
             const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
             const toTs = Math.floor(new Date(toStr).getTime() / 1000);
+            
+            // Debug logging
+            console.log('fetch-ids request:', { 
+                dateFrom, dateTo, timeFrom, timeTo,
+                fromStr, toStr,
+                fromTs, toTs,
+                fromDate: new Date(fromTs * 1000).toISOString(),
+                toDate: new Date(toTs * 1000).toISOString()
+            });
             
             const searchBody = {
                 query: {
@@ -323,16 +333,27 @@ module.exports = async function handler(req, res) {
                 searchBody.pagination.starting_after = startingAfter;
             }
             
+            console.log('Intercom search body:', JSON.stringify(searchBody));
+            
             const searchResp = await fetchIntercom('/conversations/search', {
                 method: 'POST',
                 body: JSON.stringify(searchBody)
             });
             
+            console.log('Intercom search response:', { 
+                ok: searchResp.ok, 
+                status: searchResp.status,
+                totalCount: searchResp.data?.total_count,
+                conversationsCount: searchResp.data?.conversations?.length
+            });
+            
             if (!searchResp.ok) {
-                console.error('Intercom search failed:', searchResp.status, searchResp.data);
-                return res.status(500).json({ 
+                console.error('Intercom search failed:', searchResp.status, JSON.stringify(searchResp.data));
+                return res.status(200).json({ 
+                    success: false,
                     error: 'Failed to search conversations',
-                    details: searchResp.data
+                    details: searchResp.data,
+                    debug: { fromTs, toTs, fromStr, toStr }
                 });
             }
             
@@ -352,7 +373,14 @@ module.exports = async function handler(req, res) {
                 data,
                 totalCount,
                 nextStartingAfter,
-                hasMore: !!nextStartingAfter
+                hasMore: !!nextStartingAfter,
+                debug: {
+                    queryFromTs: fromTs,
+                    queryToTs: toTs,
+                    queryFromDate: new Date(fromTs * 1000).toISOString(),
+                    queryToDate: new Date(toTs * 1000).toISOString(),
+                    intercomResponseCount: conversations.length
+                }
             });
         }
         
