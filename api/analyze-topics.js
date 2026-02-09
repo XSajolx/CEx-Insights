@@ -303,19 +303,27 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
             
-            // Build timestamp - don't add Z suffix, let it be interpreted as local time
-            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00';
-            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59';
-            const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
-            const toTs = Math.floor(new Date(toStr).getTime() / 1000);
+            // Parse dates properly - dateFrom is like "2026-02-07", timeFrom is like "00:00"
+            // Use UTC to avoid timezone issues
+            const [fromYear, fromMonth, fromDay] = dateFrom.split('-').map(Number);
+            const [toYear, toMonth, toDay] = dateTo.split('-').map(Number);
+            const [fromHour, fromMin] = (timeFrom || '00:00').split(':').map(Number);
+            const [toHour, toMin] = (timeTo || '23:59').split(':').map(Number);
+            
+            // Create UTC timestamps
+            const fromDate = new Date(Date.UTC(fromYear, fromMonth - 1, fromDay, fromHour, fromMin, 0));
+            const toDate = new Date(Date.UTC(toYear, toMonth - 1, toDay, toHour, toMin, 59));
+            const fromTs = Math.floor(fromDate.getTime() / 1000);
+            const toTs = Math.floor(toDate.getTime() / 1000);
             
             // Debug logging
             console.log('fetch-ids request:', { 
                 dateFrom, dateTo, timeFrom, timeTo,
-                fromStr, toStr,
+                parsedFrom: { year: fromYear, month: fromMonth, day: fromDay, hour: fromHour, min: fromMin },
+                parsedTo: { year: toYear, month: toMonth, day: toDay, hour: toHour, min: toMin },
                 fromTs, toTs,
-                fromDate: new Date(fromTs * 1000).toISOString(),
-                toDate: new Date(toTs * 1000).toISOString()
+                fromDateISO: fromDate.toISOString(),
+                toDateISO: toDate.toISOString()
             });
             
             const searchBody = {
@@ -375,10 +383,14 @@ module.exports = async function handler(req, res) {
                 nextStartingAfter,
                 hasMore: !!nextStartingAfter,
                 debug: {
+                    inputDateFrom: dateFrom,
+                    inputDateTo: dateTo,
+                    inputTimeFrom: timeFrom,
+                    inputTimeTo: timeTo,
                     queryFromTs: fromTs,
                     queryToTs: toTs,
-                    queryFromDate: new Date(fromTs * 1000).toISOString(),
-                    queryToDate: new Date(toTs * 1000).toISOString(),
+                    queryFromDate: fromDate.toISOString(),
+                    queryToDate: toDate.toISOString(),
                     intercomResponseCount: conversations.length
                 }
             });
