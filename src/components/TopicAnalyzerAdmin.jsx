@@ -97,17 +97,41 @@ const TopicAnalyzerAdmin = () => {
   }
 
   // Insert minimal record (Phase 1: Conversation ID + created_at only)
+  // Uses upsert to handle duplicates - only updates if record exists
   const insertIdsBatch = async (records) => {
-    if (!records || records.length === 0) return { inserted: 0, errors: 0 };
-    const { data, error } = await supabase
-      .from('Intercom Topic')
-      .insert(records)
-      .select();
-    if (error) {
-      console.error('Supabase insert error:', error);
-      return { inserted: 0, errors: records.length };
+    if (!records || records.length === 0) return { inserted: 0, errors: 0, skipped: 0 };
+    
+    try {
+      // Use upsert with onConflict to handle duplicates
+      const { data, error } = await supabase
+        .from('Intercom Topic')
+        .upsert(records, { 
+          onConflict: 'Conversation ID',
+          ignoreDuplicates: true 
+        })
+        .select();
+      
+      if (error) {
+        console.error('Supabase upsert error:', error);
+        // Try regular insert as fallback (may fail on duplicates)
+        const { data: insertData, error: insertError } = await supabase
+          .from('Intercom Topic')
+          .insert(records)
+          .select();
+        
+        if (insertError) {
+          // Check if it's a duplicate error - count how many actually got inserted
+          console.error('Supabase insert fallback error:', insertError);
+          return { inserted: 0, errors: records.length, skipped: 0 };
+        }
+        return { inserted: insertData?.length ?? 0, errors: 0, skipped: records.length - (insertData?.length ?? 0) };
+      }
+      
+      return { inserted: data?.length ?? records.length, errors: 0, skipped: 0 };
+    } catch (e) {
+      console.error('insertIdsBatch exception:', e);
+      return { inserted: 0, errors: records.length, skipped: 0 };
     }
-    return { inserted: data?.length ?? records.length, errors: 0 };
   };
 
   // Update row by Conversation ID with full data (Phase 2)
@@ -545,7 +569,8 @@ const TopicAnalyzerAdmin = () => {
 
             if (!response.ok) {
               const errData = await parseJson(response);
-              throw new Error(errData.error || `HTTP ${response.status}`);
+              console.error('API error:', response.status, errData);
+              throw new Error(errData.error || errData.details?.message || `HTTP ${response.status}`);
             }
 
             // Success - reset backoff
@@ -559,17 +584,32 @@ const TopicAnalyzerAdmin = () => {
         }
 
         const data = await parseJson(response);
+        console.log(`Page ${pageNum} response:`, { 
+          success: data.success, 
+          recordCount: data.data?.length, 
+          totalCount: data.totalCount,
+          hasMore: data.hasMore,
+          nextStartingAfter: data.nextStartingAfter ? 'yes' : 'no'
+        });
+        
+        if (!data.success) {
+          throw new Error(data.error || 'API returned success: false');
+        }
+        
         totalAvailable = data.totalCount ?? totalAvailable;
         const pageRecords = data.data || [];
         
-        if (pageRecords.length === 0) break;
+        if (pageRecords.length === 0) {
+          console.log('No records in this page, stopping');
+          break;
+        }
 
         // Collect IDs
         allIds = allIds.concat(pageRecords);
         setProgress(prev => ({ ...prev, totalAvailable, fetched: allIds.length }));
 
         if (!data.hasMore || !data.nextStartingAfter) {
-          console.log(`No more pages after page ${pageNum}`);
+          console.log(`No more pages after page ${pageNum} (hasMore: ${data.hasMore}, nextStartingAfter: ${data.nextStartingAfter})`);
           break;
         }
         startingAfter = data.nextStartingAfter;
