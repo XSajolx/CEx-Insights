@@ -211,7 +211,7 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({ error: 'INTERCOM_ACCESS_TOKEN not configured' });
     }
     
-    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, startingAfter } = req.body || {};
+    const { action, conversationId, dateFrom, dateTo, timeFrom, timeTo, timezoneOffset, startingAfter } = req.body || {};
     
     try {
         // Action: Analyze a single conversation with AI
@@ -297,35 +297,46 @@ module.exports = async function handler(req, res) {
             });
         }
         
+        // Filter timezone: 0 = GMT+0 (UTC), 6 = GMT+6 (Bangladesh). Your From/To = this timezone.
+        const TZ_OFFSET_HOURS = typeof timezoneOffset === 'number' ? timezoneOffset : 0;
+        function parseTime(str, defaultHour, defaultMin, defaultSec) {
+            if (!str || typeof str !== 'string') return { hour: defaultHour, min: defaultMin, sec: defaultSec };
+            const parts = str.trim().split(':').map(Number);
+            return {
+                hour: Number.isNaN(parts[0]) ? defaultHour : parts[0],
+                min: Number.isNaN(parts[1]) ? defaultMin : parts[1],
+                sec: Number.isNaN(parts[2]) ? defaultSec : (parts[2] ?? defaultSec)
+            };
+        }
+        // (date + time in selected TZ, currently GMT+0) -> Unix seconds
+        function filterDateTimeToUnix(y, m, d, hour, min, sec) {
+            const ms = Date.UTC(y, m - 1, d, hour - TZ_OFFSET_HOURS, min, sec);
+            return Math.floor(ms / 1000);
+        }
+
         // Action: Fetch conversation IDs only (fast) - for pagination
+        // Query uses precise UNIX range: From/To = your date+time in GMT+0 (UTC).
         if (action === 'fetch-ids') {
             if (!dateFrom || !dateTo) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
             
-            // Parse dates properly - dateFrom is like "2026-02-07", timeFrom is like "00:00"
-            // Use UTC to avoid timezone issues
             const [fromYear, fromMonth, fromDay] = dateFrom.split('-').map(Number);
             const [toYear, toMonth, toDay] = dateTo.split('-').map(Number);
-            const [fromHour, fromMin] = (timeFrom || '00:00').split(':').map(Number);
-            const [toHour, toMin] = (timeTo || '23:59').split(':').map(Number);
+            const tFrom = parseTime(timeFrom, 0, 0, 0);
+            const tTo = parseTime(timeTo, 23, 59, 59);
+            const fromTs = filterDateTimeToUnix(fromYear, fromMonth, fromDay, tFrom.hour, tFrom.min, tFrom.sec);
+            const toTs = filterDateTimeToUnix(toYear, toMonth, toDay, tTo.hour, tTo.min, tTo.sec);
+            const fromDate = new Date(fromTs * 1000);
+            const toDate = new Date(toTs * 1000);
+            const tzLabel = TZ_OFFSET_HOURS === 6 ? 'GMT+6' : 'GMT+0';
+            const fromLabel = `${dateFrom} ${timeFrom || '00:00'} ${tzLabel}`;
+            const toLabel = `${dateTo} ${timeTo || '23:59'} ${tzLabel}`;
+            console.log('fetch-ids (filter window):', { start: fromLabel, end: toLabel, fromTs, toTs });
             
-            // Create UTC timestamps
-            const fromDate = new Date(Date.UTC(fromYear, fromMonth - 1, fromDay, fromHour, fromMin, 0));
-            const toDate = new Date(Date.UTC(toYear, toMonth - 1, toDay, toHour, toMin, 59));
-            const fromTs = Math.floor(fromDate.getTime() / 1000);
-            const toTs = Math.floor(toDate.getTime() / 1000);
-            
-            // Debug logging
-            console.log('fetch-ids request:', { 
-                dateFrom, dateTo, timeFrom, timeTo,
-                parsedFrom: { year: fromYear, month: fromMonth, day: fromDay, hour: fromHour, min: fromMin },
-                parsedTo: { year: toYear, month: toMonth, day: toDay, hour: toHour, min: toMin },
-                fromTs, toTs,
-                fromDateISO: fromDate.toISOString(),
-                toDateISO: toDate.toISOString()
-            });
-            
+            // Search by created_at (= Conversation started at)
+            // For Feb 8 BD (GMT+6): Start = 2026-02-08 00:00:00 BD = 2026-02-07 18:00:00 UTC (1738958400)
+            // End = 2026-02-08 23:59:59 BD = 2026-02-08 17:59:59 UTC (1739044799)
             const searchBody = {
                 query: {
                     operator: 'AND',
@@ -361,37 +372,55 @@ module.exports = async function handler(req, res) {
                     success: false,
                     error: 'Failed to search conversations',
                     details: searchResp.data,
-                    debug: { fromTs, toTs, fromStr, toStr }
+                    debug: { fromTs, toTs, fromDateISO: fromDate.toISOString(), toDateISO: toDate.toISOString() }
                 });
             }
             
-            const conversations = searchResp.data.conversations || [];
-            const totalCount = searchResp.data.total_count || 0;
+            let conversations = searchResp.data.conversations || [];
+            const totalCountRaw = searchResp.data.total_count || 0;
             const pages = searchResp.data.pages;
             const nextStartingAfter = pages?.next?.starting_after || null;
             
-            // Return minimal records for Phase 1: Conversation ID + created_at (150 per page)
-            const data = conversations.map(c => ({
-                'Conversation ID': String(c.id),
-                'created_at': c.created_at != null ? String(c.created_at) : null
-            }));
+            // Normalize created_at to seconds (API may return seconds or ms); filter to exact Dhaka day.
+            function toSeconds(ts) {
+                if (ts == null || typeof ts !== 'number') return null;
+                return ts > 1e12 ? Math.floor(ts / 1000) : ts;
+            }
+            conversations = conversations.filter(c => {
+                const createdSec = toSeconds(c.created_at);
+                return createdSec != null && createdSec >= fromTs && createdSec <= toTs;
+            });
+            
+            // Return minimal records for Phase 1: Conversation ID + created_at + created_at_bd (150 per page)
+            const data = conversations.map(c => {
+                const createdSec = toSeconds(c.created_at);
+                return {
+                    'Conversation ID': String(c.id),
+                    'created_at': createdSec != null ? String(createdSec) : null,
+                    'created_at_bd': createdSec != null ? new Date(createdSec * 1000).toISOString() : null
+                };
+            });
             
             return res.status(200).json({
                 success: true,
                 data,
-                totalCount,
+                totalCount: totalCountRaw,
+                filteredCount: data.length,
                 nextStartingAfter,
                 hasMore: !!nextStartingAfter,
                 debug: {
                     inputDateFrom: dateFrom,
                     inputDateTo: dateTo,
-                    inputTimeFrom: timeFrom,
-                    inputTimeTo: timeTo,
                     queryFromTs: fromTs,
                     queryToTs: toTs,
                     queryFromDate: fromDate.toISOString(),
                     queryToDate: toDate.toISOString(),
-                    intercomResponseCount: conversations.length
+                    timezone: TZ_OFFSET_HOURS === 6 ? 'GMT+6 (Bangladesh)' : 'GMT+0 (UTC)',
+                    filterBy: 'Conversation started at (created_at)',
+                    timeFrom: timeFrom || '00:00',
+                    timeTo: timeTo || '23:59',
+                    intercomResponseCount: searchResp.data.conversations?.length ?? 0,
+                    afterBDFilter: data.length
                 }
             });
         }
@@ -465,16 +494,22 @@ module.exports = async function handler(req, res) {
                 filters: {}
             };
             
-            // Add date range if provided
-            if (dateFrom) {
-                const fromTs = Math.floor(new Date(dateFrom).getTime() / 1000);
-                exportBody.filters.created_at = exportBody.filters.created_at || {};
-                exportBody.filters.created_at.gte = fromTs;
+            // Add date range if provided (interpret as BD: start of from-date, end of to-date)
+            if (dateFrom && typeof dateFrom === 'string') {
+                const parts = dateFrom.split('T')[0].split('-').map(Number);
+                if (parts.length >= 3) {
+                    const fromTs = filterDateTimeToUnix(parts[0], parts[1], parts[2], 0, 0, 0);
+                    exportBody.filters.created_at = exportBody.filters.created_at || {};
+                    exportBody.filters.created_at.gte = fromTs;
+                }
             }
-            if (dateTo) {
-                const toTs = Math.floor(new Date(dateTo).getTime() / 1000);
-                exportBody.filters.created_at = exportBody.filters.created_at || {};
-                exportBody.filters.created_at.lte = toTs;
+            if (dateTo && typeof dateTo === 'string') {
+                const parts = dateTo.split('T')[0].split('-').map(Number);
+                if (parts.length >= 3) {
+                    const toTs = filterDateTimeToUnix(parts[0], parts[1], parts[2], 23, 59, 59);
+                    exportBody.filters.created_at = exportBody.filters.created_at || {};
+                    exportBody.filters.created_at.lte = toTs;
+                }
             }
             
             try {
@@ -741,6 +776,7 @@ module.exports = async function handler(req, res) {
             const record = {
                 'Conversation ID': String(conv.id),
                 'created_at': conv.created_at,
+                'created_at_bd': conv.created_at != null ? new Date(conv.created_at * 1000).toISOString() : null,
                 'Email': conv.source?.author?.email || null,
                 'Transcript': transcript || null,
                 'User ID': contactData['User ID'] || conv.source?.author?.id || null,
@@ -764,10 +800,12 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'dateFrom and dateTo required' });
             }
             
-            const fromStr = dateFrom.includes('T') ? dateFrom : dateFrom + 'T' + (timeFrom || '00:00') + ':00Z';
-            const toStr = dateTo.includes('T') ? dateTo : dateTo + 'T' + (timeTo || '23:59') + ':59Z';
-            const fromTs = Math.floor(new Date(fromStr).getTime() / 1000);
-            const toTs = Math.floor(new Date(toStr).getTime() / 1000);
+            const [fromYear, fromMonth, fromDay] = dateFrom.split('-').map(Number);
+            const [toYear, toMonth, toDay] = dateTo.split('-').map(Number);
+            const tFrom = parseTime(timeFrom, 0, 0, 0);
+            const tTo = parseTime(timeTo, 23, 59, 59);
+            const fromTs = filterDateTimeToUnix(fromYear, fromMonth, fromDay, tFrom.hour, tFrom.min, tFrom.sec);
+            const toTs = filterDateTimeToUnix(toYear, toMonth, toDay, tTo.hour, tTo.min, tTo.sec);
             
             const searchBody = {
                 query: {

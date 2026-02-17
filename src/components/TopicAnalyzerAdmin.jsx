@@ -13,7 +13,8 @@ const TopicAnalyzerAdmin = () => {
   const [dateTo, setDateTo] = useState('');
   const [timeFrom, setTimeFrom] = useState('00:00');
   const [timeTo, setTimeTo] = useState('23:59');
-  
+  const [timezoneOffset, setTimezoneOffset] = useState(0); // 0 = GMT+0 (UTC), 6 = GMT+6 (Bangladesh)
+
   // Progress states
   const [isFetching, setIsFetching] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -52,6 +53,28 @@ const TopicAnalyzerAdmin = () => {
       throw new Error(`API returned invalid JSON. From localhost, ensure the API proxy is set up or run "vercel dev".`);
     }
   };
+
+  // Your date + time in selected timezone (offset hours) -> Unix seconds. Same logic as API.
+  const getFilterRange = (from, to, fromTime = '00:00', toTime = '23:59', offsetHours = timezoneOffset) => {
+    if (!from || !to) return null;
+    const [fromY, fromM, fromD] = from.split('-').map(Number);
+    const [toY, toM, toD] = to.split('-').map(Number);
+    const parseT = (str, defH, defM) => {
+      if (!str) return [defH, defM];
+      const p = str.trim().split(':').map(Number);
+      return [Number.isNaN(p[0]) ? defH : p[0], Number.isNaN(p[1]) ? defM : p[1]];
+    };
+    const [fh, fm] = parseT(fromTime, 0, 0);
+    const [th, tm] = parseT(toTime, 23, 59);
+    const fromTs = Math.floor(Date.UTC(fromY, fromM - 1, fromD, fh - offsetHours, fm, 0) / 1000);
+    const toTs = Math.floor(Date.UTC(toY, toM - 1, toD, th - offsetHours, tm, 59) / 1000);
+    return { fromTs, toTs };
+  };
+
+  const TIMEZONE_OPTIONS = [
+    { value: 0, label: 'GMT+0 (UTC)' },
+    { value: 6, label: 'GMT+6 (Bangladesh)' }
+  ];
 
   // Quick date filters
   const setQuickRange = (preset) => {
@@ -135,28 +158,30 @@ const TopicAnalyzerAdmin = () => {
   };
 
   // Update row by Conversation ID with full data (Phase 2)
-  // Writes to both "CX Score Rating" and "Conversation Rating" so either column name in Supabase gets the value
+  // Writes CX Score Rating, Assigned Channel ID, Email, Product, Transcript and other fields
   const updateRowInSupabase = async (convId, fullRecord) => {
     const rating = fullRecord['CX Score Rating'] ?? fullRecord['Conversation Rating'];
+    const createdAtUnix = fullRecord['created_at'];
+    const createdAtBD = fullRecord['created_at_bd']
+      ?? (createdAtUnix != null ? new Date(Number(createdAtUnix) * 1000).toISOString() : null);
+
     const payload = {
-      created_at: fullRecord['created_at'],
-      Email: fullRecord['Email'],
-      Transcript: fullRecord['Transcript'],
-      'User ID': fullRecord['User ID'],
-      Country: fullRecord['Country'],
-      Region: fullRecord['Region'],
-      'Assigned Channel ID': fullRecord['Assigned Channel ID'],
-      Product: fullRecord['Product'] ?? null
+      'Email': fullRecord['Email'] || null,
+      'Transcript': fullRecord['Transcript'] || null,
+      'User ID': fullRecord['User ID'] || null,
+      'Country': fullRecord['Country'] || null,
+      'Region': fullRecord['Region'] || null,
+      'Assigned Channel ID': fullRecord['Assigned Channel ID'] || null,
+      'Product': fullRecord['Product'] || null,
+      'CX Score Rating': (rating != null && String(rating).trim() !== '') ? String(rating) : null,
+      'Conversation Rating': (rating != null && String(rating).trim() !== '') ? String(rating) : null
     };
-    if (rating != null && String(rating).trim() !== '') {
-      payload['Conversation Rating'] = String(rating);
+
+    // Set created_at_bd if available (timestamptz column)
+    if (createdAtBD) {
+      payload['created_at_bd'] = createdAtBD;
     }
-    
-    // Debug: log what we're trying to update
-    console.log('Updating convId:', convId, 'with payload:', JSON.stringify(payload, null, 2));
-    
-    // Use .select() to verify the update actually affected rows
-    // Column names with spaces need to be quoted in Supabase
+
     const { data, error } = await supabase
       .from('Intercom Topic')
       .update(payload)
@@ -164,17 +189,15 @@ const TopicAnalyzerAdmin = () => {
       .select();
     
     if (error) {
-      console.error('Supabase update error:', error);
+      console.error('Supabase update error for', convId, ':', error.message);
       return false;
     }
     
-    // Check if any rows were actually updated
     if (!data || data.length === 0) {
       console.error('No rows matched for Conversation ID:', convId);
       return false;
     }
     
-    console.log('Updated', data.length, 'row(s) for', convId);
     return true;
   };
 
@@ -283,11 +306,11 @@ const TopicAnalyzerAdmin = () => {
     const MAX_BACKOFF = 10000; // Max 10 second backoff
 
     try {
-      // Get all rows with missing data upfront
+      // Get all rows where any of the 5 key fields are missing (check both NULL and empty string)
       const { data: allMissing, error: countErr } = await supabase
         .from('Intercom Topic')
         .select('"Conversation ID"')
-        .or('Email.is.null,Transcript.is.null,Product.is.null,Region.is.null,"Conversation Rating".is.null');
+        .or('"CX Score Rating".is.null,"CX Score Rating".eq.,"Assigned Channel ID".is.null,"Assigned Channel ID".eq.,Email.is.null,Email.eq.,Product.is.null,Product.eq.,Transcript.is.null,Transcript.eq.');
 
       if (countErr) {
         setError(`Supabase error: ${countErr.message}`);
@@ -498,6 +521,87 @@ const TopicAnalyzerAdmin = () => {
     }
   };
 
+  // Remove rows where Conversation started at is outside the selected date range (GMT+0)
+  const handleRemoveOutsideDateRange = async () => {
+    if (!dateFrom || !dateTo) {
+      setError('Select From and To date first');
+      return;
+    }
+    const range = getFilterRange(dateFrom, dateTo, timeFrom, timeTo);
+    if (!range) return;
+    const { fromTs, toTs } = range;
+    const rangeLabel = timeFrom || timeTo ? `${dateFrom} ${timeFrom || '00:00'} – ${dateTo} ${timeTo || '23:59'}` : `${dateFrom} – ${dateTo}`;
+    const tzLabel = TIMEZONE_OPTIONS.find(o => o.value === timezoneOffset)?.label || 'GMT+0';
+    if (!window.confirm(`Remove conversations where "Conversation started at" is NOT between ${rangeLabel} (${tzLabel})? This will delete those rows from Supabase.`)) return;
+
+    setIsFetching(true);
+    setError('');
+    setProgress(prev => ({ ...prev, status: '🔍 Loading rows to check...' }));
+
+    try {
+      const { data: rows, error: fetchErr } = await supabase
+        .from('Intercom Topic')
+        .select('"Conversation ID", created_at, created_at_bd');
+
+      if (fetchErr) {
+        setError(`Supabase error: ${fetchErr.message}`);
+        return;
+      }
+      if (!rows?.length) {
+        setProgress(prev => ({ ...prev, status: '✅ No rows to check.' }));
+        return;
+      }
+
+      const toSeconds = (v) => {
+        if (v == null) return null;
+        const n = typeof v === 'string' ? parseInt(v, 10) : v;
+        if (Number.isNaN(n)) return null;
+        return n > 1e12 ? Math.floor(n / 1000) : n;
+      };
+
+      const outside = [];
+      for (const r of rows) {
+        const convId = r['Conversation ID'] ?? r['"Conversation ID"'];
+        let ts = toSeconds(r.created_at);
+        if (ts == null && r.created_at_bd) {
+          const d = new Date(r.created_at_bd);
+          if (!Number.isNaN(d.getTime())) ts = Math.floor(d.getTime() / 1000);
+        }
+        if (ts == null) continue;
+        if (ts < fromTs || ts > toTs) outside.push(convId);
+      }
+
+      if (outside.length === 0) {
+        setProgress(prev => ({ ...prev, status: `✅ All ${rows.length} rows are within ${dateFrom}–${dateTo} (Dhaka). Nothing removed.` }));
+        return;
+      }
+
+      setProgress(prev => ({ ...prev, status: `🗑️ Removing ${outside.length} rows outside date range...` }));
+
+      const chunkSize = 100;
+      let removed = 0;
+      for (let i = 0; i < outside.length; i += chunkSize) {
+        const chunk = outside.slice(i, i + chunkSize);
+        const { error } = await supabase
+          .from('Intercom Topic')
+          .delete()
+          .in('"Conversation ID"', chunk);
+        if (error) {
+          setError(`Delete failed: ${error.message}`);
+          return;
+        }
+        removed += chunk.length;
+        setProgress(prev => ({ ...prev, status: `🗑️ Removed ${removed}/${outside.length}...` }));
+      }
+
+      setProgress(prev => ({ ...prev, status: `✅ Removed ${removed} conversations outside ${dateFrom}–${dateTo} (${TIMEZONE_OPTIONS.find(o => o.value === timezoneOffset)?.label || 'GMT+0'}).` }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
   // FAST: Extract ONLY Conversation IDs (no enrichment) - for bulk ID extraction
   const handleFetchIdsOnly = async () => {
     if (!dateFrom || !dateTo) {
@@ -554,6 +658,7 @@ const TopicAnalyzerAdmin = () => {
                 dateTo,
                 timeFrom,
                 timeTo,
+                timezoneOffset,
                 startingAfter
               })
             });
@@ -605,13 +710,9 @@ const TopicAnalyzerAdmin = () => {
         totalAvailable = data.totalCount ?? totalAvailable;
         const pageRecords = data.data || [];
         
-        if (pageRecords.length === 0) {
-          console.log('No records in this page, stopping');
-          break;
+        if (pageRecords.length > 0) {
+          allIds = allIds.concat(pageRecords);
         }
-
-        // Collect IDs
-        allIds = allIds.concat(pageRecords);
         setProgress(prev => ({ ...prev, totalAvailable, fetched: allIds.length }));
 
         if (!data.hasMore || !data.nextStartingAfter) {
@@ -699,6 +800,7 @@ const TopicAnalyzerAdmin = () => {
             dateTo,
             timeFrom,
             timeTo,
+            timezoneOffset,
             startingAfter
           })
         });
@@ -712,18 +814,17 @@ const TopicAnalyzerAdmin = () => {
         totalAvailable = data.totalCount ?? totalAvailable;
         const pageRecords = data.data || [];
         
-        if (pageRecords.length === 0) break;
-
-        setProgress(prev => ({ 
-          ...prev, 
-          totalAvailable,
-          fetched: totalIdsSaved + pageRecords.length,
-          status: `💾 Phase 1 – Saving ${pageRecords.length} IDs to Supabase...`
-        }));
-
-        const { inserted } = await insertIdsBatch(pageRecords);
-        totalIdsSaved += inserted;
-        setProgress(prev => ({ ...prev, saved: totalIdsSaved }));
+        if (pageRecords.length > 0) {
+          setProgress(prev => ({ 
+            ...prev, 
+            totalAvailable,
+            fetched: totalIdsSaved + pageRecords.length,
+            status: `💾 Phase 1 – Saving ${pageRecords.length} IDs to Supabase...`
+          }));
+          const { inserted } = await insertIdsBatch(pageRecords);
+          totalIdsSaved += inserted;
+          setProgress(prev => ({ ...prev, saved: totalIdsSaved }));
+        }
 
         if (!data.hasMore || !data.nextStartingAfter) break;
         startingAfter = data.nextStartingAfter;
@@ -1235,10 +1336,35 @@ const TopicAnalyzerAdmin = () => {
                   }}
                 />
               </div>
+              <div>
+                <label style={{ display: 'block', color: '#94A3B8', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  Timezone
+                </label>
+                <select
+                  value={timezoneOffset}
+                  onChange={(e) => setTimezoneOffset(Number(e.target.value))}
+                  disabled={isProcessing}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'rgba(15, 23, 42, 0.6)',
+                    color: '#F8FAFC',
+                    fontSize: '0.875rem',
+                    outline: 'none',
+                    minWidth: '200px',
+                    cursor: isProcessing ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {TIMEZONE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <p style={{ color: '#64748B', fontSize: '0.75rem', margin: '0 0 1rem 0' }}>
-              Time period above is used when fetching from Intercom (Fetch & Save). Pull by Chat ID uses existing rows only.
+              From/To date and time are read in the selected timezone ({TIMEZONE_OPTIONS.find(o => o.value === timezoneOffset)?.label ?? 'GMT+0 (UTC)'}). Filter = &quot;Conversation started at&quot; between your From and To. Pull by Chat ID uses existing rows only.
             </p>
 
             {/* Action buttons */}
@@ -1275,6 +1401,23 @@ const TopicAnalyzerAdmin = () => {
                 }}
               >
                 🔄 Reset Data (Keep IDs)
+              </button>
+              <button
+                onClick={handleRemoveOutsideDateRange}
+                disabled={isProcessing || !dateFrom || !dateTo}
+                title="Delete rows where Conversation started at is outside the selected date range (uses selected timezone)"
+                style={{
+                  padding: '0.75rem 2rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  background: 'transparent',
+                  color: '#F87171',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  cursor: (isProcessing || !dateFrom || !dateTo) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                🗑️ Remove outside date
               </button>
               <button
                 onClick={handleFetchAndSave}
@@ -1332,7 +1475,7 @@ const TopicAnalyzerAdmin = () => {
               <button
                 onClick={handlePopulateMissingData}
                 disabled={isProcessing}
-                title="Find rows missing Email, Transcript, Product, Region or CX Score Rating and populate from Intercom"
+                title="Find rows missing CX Score Rating, Assigned Channel ID, Email, Product or Transcript and populate from Intercom"
                 style={{
                   padding: '0.75rem 2rem',
                   borderRadius: '8px',
@@ -1453,16 +1596,18 @@ const TopicAnalyzerAdmin = () => {
             {(isFetching || progress.fetched > 0) && (
               <>
                 <div>
-                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Total Available</div>
-                  <div style={{ color: '#38BDF8', fontSize: '1.5rem', fontWeight: '700' }}>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Intercom returned (raw)</div>
+                  <div style={{ color: '#64748B', fontSize: '1.25rem', fontWeight: '600' }}>
                     {progress.totalAvailable.toLocaleString()}
                   </div>
+                  <div style={{ color: '#64748B', fontSize: '0.65rem', marginTop: '0.125rem' }}>May include extra; we filter below</div>
                 </div>
                 <div>
-                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Fetched</div>
+                  <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>In your date range ({TIMEZONE_OPTIONS.find(o => o.value === timezoneOffset)?.label || 'GMT+0'})</div>
                   <div style={{ color: '#A78BFA', fontSize: '1.5rem', fontWeight: '700' }}>
                     {progress.fetched.toLocaleString()}
                   </div>
+                  <div style={{ color: '#64748B', fontSize: '0.65rem', marginTop: '0.125rem' }}>Conversation started at = matches export</div>
                 </div>
                 <div>
                   <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Saved to Supabase</div>
@@ -1470,9 +1615,9 @@ const TopicAnalyzerAdmin = () => {
                     {progress.saved.toLocaleString()}
                   </div>
                 </div>
-                {isFetching && (
+                {(isFetching || progress.currentPage > 0) && (
                   <div>
-                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Current Page</div>
+                    <div style={{ color: '#64748B', fontSize: '0.75rem', marginBottom: '0.25rem' }}>Page</div>
                     <div style={{ color: '#FBBF24', fontSize: '1.5rem', fontWeight: '700' }}>
                       {progress.currentPage}
                     </div>
@@ -1512,7 +1657,7 @@ const TopicAnalyzerAdmin = () => {
               }}>
                 <div style={{
                   width: isFetching 
-                    ? (progress.totalAvailable > 0 ? `${(progress.fetched / progress.totalAvailable) * 100}%` : '0%')
+                    ? (progress.totalAvailable > 0 ? `${Math.min(100, (progress.fetched / progress.totalAvailable) * 100)}%` : '0%')
                     : (progress.toAnalyze > 0 ? `${(progress.analyzed / progress.toAnalyze) * 100}%` : '0%'),
                   height: '100%',
                   background: 'linear-gradient(135deg, #22C55E, #16A34A)',
@@ -1547,10 +1692,11 @@ const TopicAnalyzerAdmin = () => {
         <ul style={{ color: '#94A3B8', fontSize: '0.8rem', margin: 0, paddingLeft: '1.25rem' }}>
           <li><strong>Clear Intercom Topic:</strong> Deletes all existing rows (optional – do this first for a fresh run)</li>
           <li><strong>Reset Data (Keep IDs):</strong> Clears Transcript, Product, Email, Region, etc. but keeps Conversation IDs. Use this to re-fetch data with updated logic</li>
+          <li><strong>Remove outside date:</strong> Deletes rows where &quot;Conversation started at&quot; is not within the selected From–To date (GMT+0). Use after a run to drop any conversations that slipped in</li>
           <li><strong>Fetch & Save:</strong> Uses the date/time range above. Phase 1 – pulls 150 Conversation IDs per page from Intercom and saves only ID + created_at. Phase 2 – for each row, pulls full data from Intercom and updates the row</li>
           <li><strong>Fast: IDs Only:</strong> Extracts ONLY Conversation IDs (no transcript/product). Fast bulk extraction with rate limit handling. Use "Check & populate" after to enrich.</li>
           <li><strong>Pull data by Chat ID from Supabase:</strong> No date range. Reads all Conversation IDs from Supabase and for each pulls full data from Intercom, then updates the row</li>
-          <li><strong>Check & populate missing data:</strong> Finds rows where Email, Transcript, Product, Region or CX Score Rating is empty, then fetches full data from Intercom for only those rows and updates them</li>
+          <li><strong>Check & populate missing data:</strong> Finds rows where CX Score Rating, Assigned Channel ID, Email, Product or Transcript is empty, then fetches full data from Intercom for only those rows and updates them</li>
           <li><strong>Analyze Unanalyzed:</strong> Finds rows with empty Main-Topics and runs AI analysis</li>
           <li><strong>List Export Datasets:</strong> Shows available datasets from Intercom Reporting Data Export API</li>
           <li><strong>Stop:</strong> Safely stops the current operation after the current item completes</li>

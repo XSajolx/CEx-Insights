@@ -43,53 +43,52 @@ const COUNTRY_TO_REGION = {
 };
 
 const REGIONS = ['Africa', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
-// Helper to get date filter for DB query
+// Helper to get date filter for DB query (created_date_bd = Bangladesh date YYYY-MM-DD or timestamptz)
 const getDbDateFilter = (dateRange) => {
     if (!dateRange) return { start: null, end: null };
 
     const now = new Date();
-
-    // Helper to format date as YYYY-MM-DD
     const fmt = (d) => d.toISOString().split('T')[0];
 
     if (dateRange.startsWith('custom_')) {
         const parts = dateRange.split('_');
         if (parts.length === 3) {
-            return {
-                start: parts[1], // Assuming YYYY-MM-DD
-                end: parts[2]
-            };
+            return { start: parts[1], end: parts[2] };
         }
         return { start: null, end: null };
     }
 
-    let dateLimit;
-    const d = new Date(now);
+    let startLimit;
+    let endLimit = null;
 
     switch (dateRange) {
         case 'today':
-            // start of today 00:00
-            dateLimit = new Date(d.setHours(0, 0, 0, 0));
-            break;
+            startLimit = new Date(now);
+            startLimit.setHours(0, 0, 0, 0);
+            endLimit = new Date(now);
+            endLimit.setHours(23, 59, 59, 999);
+            return { start: fmt(startLimit), end: fmt(endLimit) };
         case 'yesterday':
-            dateLimit = new Date(d.setDate(d.getDate() - 1));
-            // yesterday 00:00
-            dateLimit.setHours(0, 0, 0, 0);
-            break;
+            startLimit = new Date(now);
+            startLimit.setDate(startLimit.getDate() - 1);
+            startLimit.setHours(0, 0, 0, 0);
+            endLimit = new Date(startLimit);
+            endLimit.setHours(23, 59, 59, 999);
+            return { start: fmt(startLimit), end: fmt(endLimit) };
         case 'last_week':
-            dateLimit = new Date(d.setDate(d.getDate() - 7));
-            break;
+            startLimit = new Date(now);
+            startLimit.setDate(startLimit.getDate() - 7);
+            return { start: fmt(startLimit), end: fmt(now) };
         case 'last_month':
-            dateLimit = new Date(d.setMonth(d.getMonth() - 1));
-            break;
+            startLimit = new Date(now);
+            startLimit.setMonth(startLimit.getMonth() - 1);
+            return { start: fmt(startLimit), end: fmt(now) };
         case 'last_3_months':
         default:
-            dateLimit = new Date(d.setMonth(d.getMonth() - 3));
-            break;
+            startLimit = new Date(now);
+            startLimit.setMonth(startLimit.getMonth() - 3);
+            return { start: fmt(startLimit), end: fmt(now) };
     }
-
-    // Return YYYY-MM-DD which works well with most DB date/timestamp columns for 'gte'
-    return { start: fmt(dateLimit), end: null };
 };
 
 // Fetch pre-aggregated topic distribution using server-side RPC (fast!)
@@ -154,22 +153,18 @@ async function getSupabaseData(filters = {}) {
             .from('Intercom Topic')
             .select('created_date_bd,"Conversation ID","Country","Region","Product",assigned_channel_name,"CX Score Rating","Main-Topics","Sub-Topics","Sentiment Start","Sentiment End","Was it in client\'s favor?","Transcript"');
 
-        // Apply Server-Side Date Filtering using created_at_bd (ISO Timestamp) to prevent timeouts
+        // Server-side date filter: created_date_bd = Bangladesh date (YYYY-MM-DD)
         if (filters.dateRangeStart) {
-            query = query.gte('created_at_bd', filters.dateRangeStart);
+            query = query.gte('created_date_bd', filters.dateRangeStart);
         }
         if (filters.dateRangeEnd) {
-            query = query.lte('created_at_bd', filters.dateRangeEnd + 'T23:59:59');
+            query = query.lte('created_date_bd', filters.dateRangeEnd);
         }
 
-        // Note: Server-side filters removed to avoid issues with column names
-        // All filtering is done client-side in applyFilters function
-
-        // OPTIMIZATION: Filter out rows without topics
+        // OPTIMIZATION: Filter out rows without date
         query = query
-            .not('created_at_bd', 'is', null)
-            //.neq('"Topic 1"', '')  // Legacy column check removed
-            .order('created_at_bd', { ascending: false })
+            .not('created_date_bd', 'is', null)
+            .order('created_date_bd', { ascending: false })
             .limit(100000);
 
         const { data: conversations, error: conversationsError } = await query;
@@ -249,45 +244,20 @@ async function getSupabaseData(filters = {}) {
 function applyFilters(data, filters) {
     let filteredData = [...data];
 
-    // Apply date filter
+    // Apply date filter: use date part (YYYY-MM-DD) of created_date_bd to avoid timezone issues
+    const getItemDateStr = (item) => {
+        const v = item.created_date_bd;
+        if (!v) return '';
+        return typeof v === 'string' ? v.slice(0, 10) : (v.toISOString ? v.toISOString().slice(0, 10) : '');
+    };
     if (filters.dateRange) {
-        if (filters.dateRange.startsWith('custom_')) {
-            // Handle custom date range
-            const parts = filters.dateRange.split('_');
-            if (parts.length === 3) {
-                const startLimit = new Date(parts[1]).getTime();
-                const endLimit = new Date(parts[2] + ' 23:59:59').getTime();
-
-                filteredData = filteredData.filter(item => {
-                    const itemDate = new Date(item.created_date_bd).getTime();
-                    return itemDate >= startLimit && itemDate <= endLimit;
-                });
-            }
-        } else {
-            // Handle preset date ranges
-            let dateLimit;
-            const now = new Date();
-
-            switch (filters.dateRange) {
-                case 'today':
-                    dateLimit = new Date(now.setHours(0, 0, 0, 0));
-                    break;
-                case 'yesterday':
-                    dateLimit = new Date(now.setDate(now.getDate() - 1));
-                    dateLimit.setHours(0, 0, 0, 0);
-                    break;
-                case 'last_week':
-                    dateLimit = new Date(now.setDate(now.getDate() - 7));
-                    break;
-                case 'last_month':
-                    dateLimit = new Date(now.setMonth(now.getMonth() - 1));
-                    break;
-                default: // last_3_months
-                    dateLimit = new Date(now.setMonth(now.getMonth() - 3));
-            }
-
+        const range = getDbDateFilter(filters.dateRange);
+        if (range.start) {
             filteredData = filteredData.filter(item => {
-                return new Date(item.created_date_bd).getTime() >= dateLimit.getTime();
+                const d = getItemDateStr(item);
+                if (!d) return false;
+                if (range.end) return d >= range.start && d <= range.end;
+                return d >= range.start;
             });
         }
     }
