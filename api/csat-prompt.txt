@@ -1,0 +1,3601 @@
+Below is an intercom support-chat transcript:
+{{ $json.ExtractedTranscript }}
+
+Instruction:
+the strongest Analyze the full conversation transcript to identify the ONE primary sub-category that represents the client's main source of frustration. This should be the issue the client spent the most time discussing, expressed strongest concern about, or repeatedly mentioned throughout the conversation.
+Use the think tool to provide accurate answers.
+
+Output Rules:
+- Output only ONE sub-category name (use exact spelling and casing)
+- Select the sub-category that represents the client's PRIMARY frustration
+- If no clear frustration-related sub-category applies, output exactly: None
+- Do not include any extra text, explanations, numbering, or formatting
+
+Analysis Criteria:
+1. Read the entire conversation end-to-end
+2. Identify all topics the client discussed with frustration or negative sentiment
+3. Evaluate each frustrated topic by:
+   - Amount of conversation time/messages dedicated to it
+   - Intensity of client's emotional response
+   - Number of times the client returned to or emphasized the issue
+   - Depth of detail the client provided about the problem
+4. Ignore brief one-line complaints or casual mentions
+5. Focus on the issue that dominated the conversation or caused sustained discussion
+6. Select the ONE sub-category that best represents this primary frustration source
+
+Priority: Choose the sub-category representing the issue that consumed the most conversational effort from the client, not necessarily the one mentioned most frequently in passing.
+
+
+**Sub-Category Name:**
+`Unable To Submit KYC Documents/ Veriff Doesn't Accept KYC Documents`
+
+**Description:**
+“Client is trying to submit the document from the Dashboard's KYC Verification Center and the document gets rejected by the system. There can be multiple scenarios regarding the issue-
+
+1. If the client is Nigerian NIN Card sometimes does not get accepted by the system.
+
+2. If the client is Iranian, their National ID Card or other documents are required to be submitted via SumSub as Veriff do not accept the documents.
+
+3. The document is laminated or client is trying to submit a digital copy.
+
+4. If the client is submitting an invalid or expired document.
+
+5. The client is using Voter Card instead of the National ID card.”
+
+---
+
+**Sub-Category Name:**
+`Unable to Submit KYC documents via SumSub after gettling link from CR`
+
+**Description:**
+“Client previously tried for three times to submit the KYC Documents from the Dashboard but was not accepted. Hence, they received a new SumSub link for verification.
+
+Client is trying to submit his NIN ID, sometimes NIN ID is not accepted by the system so he received email to be submit his documents”
+
+---
+
+**Sub-Category Name:**
+`Eligible For KYC But Did Not Get Pop-Up Message`
+
+**Description:**
+"This issue arises when client is eligible for KYC but
+
+Scenarios:
+
+1. When the client does not see pop-up text due to technical issue.
+
+2. We create ticket to Technology Team"
+
+---
+
+**Sub-Category Name:**
+`Client not submitting original documents`
+
+**Description:**
+The client has not submitted the original document and this communiction usually comes from the Priority Solution Task Force as resolution of a ticket. Otherwise, we are unable to provide a verdict.
+Also agent asked for the documents so that he can investigate. After investigating he found out that client is not submitting his valid documents, then he ask the client to submit his original document
+
+---
+
+**Sub-Category Name:**
+`Already submitted document but Dashboard is showing "Verification Required"`
+
+**Description:**
+When the client completes the SWIFT KYC, this issue arises when he completes the Minimum Trading Days requirement.
+
+.
+
+---
+
+**Sub-Category Name:**
+`KYC Done, Yet To Receive FundedNext Account`
+
+**Description:**
+The usual communication of getting a FundedNext Account after a successful completion of the KYC is that it will take 24 to 48 Hours. When the period exceeds the timeframe, clients are frustrated and shows their concern.
+
+We create a ticket to Priority Solution Task Force if find out that he actually didnt receive the account within 48 hours
+
+---
+
+**Sub-Category Name:**
+`Couldn't find contract/facing issue signing the contract from the Dashboard`
+
+**Description:**
+Contracts are required to be signed before submitting the documents for the KYC Verification but he tried to find the contract but he is not seeing any contract , if that happens we create a ticket to Business Operations Team
+
+---
+
+**Sub-Category Name:**
+`Facing issues while completing the interview`
+
+**Description:**
+The interview process is crutial step of the KYC Verification process. If the interview is AI Interview regarding KYC, he will receive an email from HireFlix. Client tends to mention the word "Interview", "AI", "AI Interview" "Meeting" when they reach out regarding this issue. A keyword to be on the look out is HireFlix.
+
+Be on the look up for the following terms/keywords:
+• Compliance Session
+• Interview
+• Verification Session
+• KYC Interview
+
+---
+
+**Sub-Category Name:**
+`No one joined the interview from FN side`
+
+**Description:**
+"The interview is an important step in the verification process. We hold live interviews with clients and the clients need to join the interview using the link that they receive. However, sometimes no one joins the interview from FundedNext's side, so the situation can be summed up with this one line "Client joined the interview but no one from FundedNext showed up."
+
+If the interview is Live Interview regarding KYC, he will receive an email from Trading Ethics & Standards Team. Client tends to mention the word "Interview" when they reach out regarding this issue and they usually say "I am here and no one from your side joined the Live".
+
+Be on the look up for the following terms/keywords:
+• Compliance Session
+• Interview
+• Verification Session
+• KYC Interview"
+
+---
+
+**Sub-Category Name:**
+`Client missed the interview email`
+
+**Description:**
+"The interview is an important step in the verification process. We hold live interviews with clients and the clients need to join the interview using the link that they receive. However, sometimes clients miss the interview email or forget to join the interview, so the situation can be summed up with this one line "Client did not join the interview to complete the verification Process."
+
+They are required to reply to the email that was sent."
+
+---
+
+**Sub-Category Name:**
+`Received email from TRM`
+
+**Description:**
+"Whenever there is a discrepency in some aspects of our TOS, client's are notified via email from our Trading Ethics & Standards Team. They are requires to reply to the email. Support Agents are unable to provide assistance. They can only guide them to the Trading Ethics & Standards Team.
+
+This can be related to the following issues:
+• IP address
+• Location mismatch
+• Strategy related issue
+• Margin Related Issue
+
+A very common aspect of these conversations are that if the support agent redirects the client to Trading Ethics & Standards Team or ask them to reach our to Trading Ethics & Standards Team it will fall under this category."
+
+---
+
+**Sub-Category Name:**
+`Client didn't reply to explanation email`
+
+**Description:**
+Client received emails from the Trading Ethics & Standards Team regarding KYC Verification but did not respond and our agent will guide the client to reply to the email that they received and suggest that they explain the issue properly and it should be a direct communciation with the Trading Ethics & Standards Team.
+
+—
+**Sub-Category Name:**
+
+Delayed in providing verdict regarding KYC
+
+**Description:**
+The client provided late response to any communication from Trading Ethics & Standards Team and the agent should guide them through the issue.
+
+As a result, the client is yet to receive the FundedNext Account.
+
+Another issue could be the client did not receive any update on a ticket that was created as "KYC Done, Yet to Receive FundedNext Account”
+—
+
+**Sub-Category Name:**
+`Not eligble for KYC due to underage`
+
+**Description:**
+One of our TOS is that you must be an adult to use our services and products. So, if a client mentions that they are under 18 years old or not yet an adult, and this is the reason they are unable to complete KYC verification, classify the conversation under the 'KYC_Issue' category and the 'Not eligible for KYC due to underage' Sub Category Name.
+
+---
+
+**Sub-Category Name:**
+`Not eligible for swift KYC verification`
+
+**Description:**
+What usually happens is that once the client has completed all the requirements of a Challenge Account, their account's get paused and they proceed with the KYC Verificaiton. This is the regular process. However, there is another process called "Swift KYC," the requirements for this process are as follows:
+
+• Need to complete the profit target of the account
+• Must trade for 3 days or fewer
+
+However, sometimes clients are not eligible for this process as they may not have completed one of the requiments, so they are frustrated regarding this.
+
+---
+** Sub-Category Name**
+
+Name Change
+
+Description:
+"If a client requests to change their name on their FundedNext account, classify the conversation under the “Account Related Issue” category and the “Name Change” sub-category.
+
+Look for phrases where clients explicitly mention wanting to change their name, such as:
+
+“I want to change my name on my account.”
+
+“Can I update my name in the system?”
+
+“I need to change the name on my account details.”
+
+Definition: This issue occurs when a client requests a name change on their account, either due to personal reasons or administrative updates, which typically require validation of the new details."
+---
+
+Sub-Category Name:
+Minimum trading days is not fulfilled
+
+Description:
+If a client mentions that the 'Next Phase' button is missing or not showing, and it is due to not completing the required minimum trading days, classify the conversation under the 'Next Phase Button Missing' category and the 'Minimum trading days is not fulfilled' Sub Category Name. Check if they mention completing fewer days than required or express confusion about the number of days needed.
+
+Sub-Category Name:
+Not getting next phase button due to Technical issue
+
+Description:
+If a client mentions that they have completed the Minimum Trading Days and reached the Profit Target but still do not see the 'Next Phase' button or pop-up—especially in a second-phase account—classify the conversation under the 'Next Phase Button Missing' category and the 'Not getting next phase button due to Technical issue' Sub Category Name. These cases are typically escalated to the Technology Team, so also check if the issue was forwarded to or mentions the Technology Team.
+
+Sub-Category Name:
+Elite Trader
+
+Description:
+If a client mentions that they are eligible for the Elite Trader certificate or are inquiring about receiving it, classify the conversation under the 'Certificate Issue' category and the 'Elite Trader' Sub Category Name. This includes cases where the client believes they have met the requirements but have not received the certificate yet.
+
+Sub-Category Name:
+Payout Certificate
+
+Description:
+If the client is asking for certificates regarding payout then it will be considered as payout certificates, the client will get a resolution that you payout certificates has been provided.
+
+Sub-Category Name:
+Client was checking Elite trader certificate on Phase 2/FN account
+
+Description:
+If a client is trying to access the Elite Trader Certificate from the Phase 2 account or FundedNext (FN) account instead of the correct Phase 1 account, classify the conversation under the 'Certificate Issue' category and the 'Client was checking Elite trader certificate on Phase 2/FN account' Sub Category Name. This includes cases where the certificate is not found because they are looking in the wrong phase.
+
+Sub-Category Name:
+Dissatisfied regarding 21-character limitation on the name format of certificate
+
+Description:
+If a client asks about their full name is not shown on the certificate, this only happens due to character limit of 21 characters in the certificates. classify the conversation under the 'Certificate Issue' category and the 'Certificate Name Issue' Sub Category Name.
+
+Sub-Category Name:
+Client was asking for a Certificate for passing the Challenge Phase 2/receiving the FN account
+
+Description:
+If a client is asking whether they will receive a certificate after passing Phase 2 or after receiving their FundedNext Account, classify the conversation under the 'Certificate Issue' category and the 'Client was asking for a Certificate for passing the Challenge Phase 2/ receiving the FN account' Sub Category Name.
+
+Sub-Category Name:
+Max Allocation
+
+Description:
+If a client mentions that they have fulfilled the criteria for Max Allocation but have not received the Max Allocation certificate, classify the conversation under the 'Certificate Issue' category and the 'Max Allocation' Sub Category Name.
+
+Sub-Category Name:
+Dissatisfied eventhough platform has been changed.
+
+Description:
+"Client's primary concern is switching between trading platforms. The request can be identified by various typical client phrases, depending on the platform involved:
+
+MT4 to MT5:
+Typical language includes: “please switch me from MT4 to MT5,” “upgrade my MT4 account,” or “I selected MT4 by mistake; I want MT5 instead.”
+
+MT5 to MT4:
+Typical phrases: “I want to downgrade from MT5 to MT4,” “picked MT5 mistakenly, need MT4,” or “change my MT5 account to MT4.”
+
+MT4 to cTrader:
+Typical expressions include: “move my MT4 account to cTrader,” “prefer cTrader over MT4,” or “switch me to cTrader from MT4.”
+
+MT5 to cTrader:
+Typical wording: “convert MT5 to cTrader,” “switch platform to cTrader from MT5,” or “I'd like to migrate my MT5 account to cTrader.”
+
+cTrader to MT4:
+Common phrases: “change my cTrader account to MT4,” “move from cTrader back to MT4,” or “I'd prefer MT4 instead of cTrader.”
+
+cTrader to MT5:
+Common client wording includes: “switch me from cTrader to MT5,” “upgrade cTrader account to MT5,” or “need MT5 instead of cTrader.”"
+
+
+Sub-Category Name:
+Not eligible to change due to placing trades
+
+Description:
+Client requests to change their trading platform from cTrader to MT5, cTrader to MT4, MT5 to cTrader, MT4 to cTrader, MT5 to MT4, MT4 to MT5, or vice versa.
+
+The request cannot be approved because the client has already placed trades, reset the account, or is using a FundedNext account.
+
+To be eligible for a platform change, the client must have a new Challenge Phase account.
+
+
+Sub-Category Name:
+Can't login due to technical glitch
+Description:
+If a client is unable to log in to their account due to a technical error or glitch—such as loading issues, error messages, or the login page not working.
+
+"If a client reports that their trading account is showing as breached even though they have not placed any trades yet,
+
+you may also look for phrases like these
+
+“My account says breached but I haven’t started trading.”
+
+“Why is my account breached when I didn’t place any trades?”
+
+“It shows breached even though my balance is untouched.”
+
+“I just opened my account but it already says breach.”
+
+Clients also mention block or inactive instead of breach.
+
+They can also get a message saying invalid login due to this error.
+
+Definition: This issue occurs when a technical error causes an account to display a breach status despite no trading activity, often requiring backend investigation and correction."
+
+Sub-Category Name:
+Not following proper guidelines while logging into platform
+
+Description:
+If a client is unable to log in to the Match-Trader, MT4, MT5,MT5 Web Terminal or cTrader platform because they did not follow the correct login steps, classify the conversation under this sub category. This includes cases where clients provide screen recordings, videos, or screenshots that show improper login attempts.
+
+
+Sub-Category Name:
+Free Trial Breach Concern
+
+Description:
+If a client has breached a Free Trial account by exceeding the Daily Loss Limit or Overall Loss Limit, classify the conversation under the 'Free Trial' category and the 'Free Trial Breach Concern' Sub Category.
+
+Sub-Category Name:
+Client wants Free Trial for Futures
+
+Description:
+If a client is requesting or asking about a Free Trial account specifically for FundedNext Futures, classify the conversation under the 'Free Trial' category and the 'Client wants Free Trial for Futures' Sub Category.
+
+Sub-Category Name:
+Unable to use EA in Free Trial
+
+Description:
+If a client mentions that they are unable to use an Expert Advisor (EA) or trading bot in their Free Trial account, classify the conversation under the 'Free Trial' category and the 'Unable to use EA' Sub Category. We do not allow the usage of EA on our Free Trial Account.
+
+Sub-Category Name:
+Expecting reward after completing the Free Trial account
+
+Description:
+Client cannot login for choosing wrong server in a Free Trial Account.If a client is expecting a reward, payout, or any financial benefit after successfully completing a Free Trial account, classify the conversation under the 'Free Trial' category and the 'Expecting reward after completing the Free Trial account' Sub Category.
+
+
+"Sub-Category Name:
+Free Trial Expired
+
+Description:
+If a client’s Free Trial account has exceeded the 14-day validity period and is now expired, In this case the client might want to take a new free trail or ask about what why his free trial has been breached.
+
+
+Sub-Category Name:
+Wants to reset Free Trial
+
+Description:
+If a client requests to reset their Free Trial account after it has been breached or expired, classify the conversation under the 'Free Trial' category and the 'Wants to reset Free Trial' Sub Category.
+
+Sub-Category Name:
+Free Trial Profit Target Reached
+
+Description:
+If a client mentions that they have reached or achieved the profit target on their Free Trial account, classify the conversation under the 'Free Trial' category and the 'Free Trial Profit Target Reached' Sub Category.
+
+Sub-Category Name:
+Can't reset master password
+Description:
+If a client is unable to change or reset the Master Password of the Free Trial or Test Account.
+
+Sub-Category Name:
+Crypto Trading not available in Free Trail
+
+Description:
+If a client mentions that they are unable to trade cryptocurrency pairs in their Free Trial account, classify the conversation under the 'Free Trial' category and the 'Crypto Trading not available' Sub Category. We do not offer crypto pairs for our Free Trial Accounts.
+
+
+Sub-Category Name:
+Client is claiming high Commission
+
+Description:
+If a client complains or expresses concern about high commission fees being deducted from their trades, especially if they mention unexpected charges, confusion about the amount per contract, or compare it with other platforms, classify the conversation under the 'Commission' category and the 'Client is claiming high Commission' Sub Category. This includes phrases like "why is my commission so high?" or "I was charged more than expected in fees."
+
+Sub-Category Name:
+Wrong amount of Commission
+
+Description:
+If a client reports that the commission charged on their trade was incorrect, such as being higher or lower than expected, or not matching the published rates, classify the conversation under the 'Commission' category and the 'Wrong amount of Commission' Sub Category. This includes situations where the client refers to a specific trade, questions the accuracy of the deduction, or believes the platform miscalculated the commission.
+
+Sub-Category Name:
+Client is claiming high Swap
+
+Description:
+If a client complains about high swap fees being charged on their trades, especially for overnight or weekend-held positions, classify the conversation under the 'Swap' category and the 'Client is claiming high Swap' Sub Category. This includes cases where the client expresses surprise at the fee, compares it with other platforms, or asks for clarification on why the swap amount was so high.
+
+Sub-Category Name:
+Wrong amount of swap
+
+Description:
+If a client reports that the swap fee charged on their trade is incorrect or inconsistent with the expected value—such as being higher or lower than what was shown or calculated—classify the conversation under the 'Swap' category and the 'Wrong amount of swap' Sub Category. This includes cases where clients provide trade details or mention discrepancies between swap rates displayed and what was actually deducted.
+
+
+Sub-Category Name:
+Platform Freeze
+
+Description:
+If a client reports that the trading platform is frozen, stuck, or not responding—such as charts not moving, trades not executing, or the interface being unresponsive—classify the conversation under the 'Platform Issue' category and the 'Platform Freeze' Sub Category. This includes phrases like “platform not working,” “screen is frozen,” or “can't do anything on the platform.”
+
+Sub-Category Name:
+Chart/Price discrepancy
+
+Description:
+If a client reports that the chart is showing incorrect data or price movements—such as mismatched prices, delayed charts, unusual spikes, or differences compared to other platforms—classify the conversation under the 'Platform Issue' category and the 'Chart/Price discrepancy' Sub Category. This includes concerns like “the price didn't match,” “the chart was off,” or “the candle spiked suddenly,” or "market trend is off track"
+
+Sub-Category Name:
+Can not find old chart data (3/more than 3 months)
+
+Description:
+If a client mentions that they are unable to view or access old chart data—specifically for timeframes like M1, M5, M15, or M30—and states that historical data older than 3 months is missing or unavailable on the platform, classify the conversation under the 'Platform Issue' category and the 'Can not find old chart data (3/more than 3 months)' Sub Category. This includes messages like “I can't see past candles” or “old data is missing.”
+
+Sub-Category Name:
+Unable to use indicator
+
+Description:
+If a client reports that they are unable to use or access trading indicators on the platform—such as being unable to add, view, or modify indicators like RSI, Moving Average, or Bollinger Bands—classify the conversation under the 'Platform Issue' category and the 'Unable to use indicator' Sub Category. This includes complaints like “indicator not loading,” “can't apply indicator,” or “Indicator tool not working.”
+
+
+Sub-Category Name:
+Unable to use EA
+
+Description:
+If a client reports that they are unable to use Expert Advisors (EA) or trading bots on the platform—such as issues with uploading, activating, or running automated strategies—classify the conversation under the 'Platform Issue' category and the 'Unable to use EA' Sub Category. This includes phrases like “my EA is not working,” “can't run the bot,” or “automation is not functioning.” The support agent might tell the client to contact their EA provider.
+
+Sub-Category Name:
+TradingView not available for CFD
+
+Description:
+If a client mentions that the price shown on TradingView does not match the price on our platform—especially when trading CFD instruments—classify the conversation under the 'Platform Issue' category and the 'TradingView not available for CFD' Sub Category. This includes statements like “prices are different on TradingView” or “the chart doesn’t match with your platform.”
+
+Sub-Category Name:
+SL Did Not Hit at the desired price
+
+Description:
+If a client reports that their Stop Loss (SL) order was not executed at the expected price, and instead got triggered at a worse or different price, classify the conversation under the 'Slippage' category and the 'SL Did Not Hit at the desired price' Sub Category. This includes concerns like “SL triggered early,” "SL was not respected," “SL slipped,” or “my SL hit at a wrong price.”
+
+Sub-Category Name:
+TP Did Not Hit at the desired price
+
+Description:
+If a client reports that their Take Profit (TP) did not trigger at the expected price—especially if they mention that the TP was missed and the account was later breached as a result—classify the conversation under the 'Slippage' category and the 'TP Did Not Hit at the desired price' Sub Category. This includes phrases like “TP was not hit,” "TP was not respected," “price reached TP but didn’t close,” or “TP missed and account got breached.”
+
+Sub-Category Name:
+Regular slippage
+
+Description:
+If a client reports experiencing minor or regular slippage—such as a small difference between the expected and executed price when closing a trade—classify the conversation under the 'Slippage' category and the 'Regular slippage' Sub Category. This includes general mentions of “slippage,” “order didn’t close at exact price,” or “small price difference while exiting the trade.”
+
+Sub-Category Name:
+Due to high lot size
+
+Description:
+If a client reports that the slippage occurred because they used a high lot size—resulting in partial fills, delayed execution, or price differences—classify the conversation under the 'Slippage' category and the 'Due to high lot size' Sub Category. This includes statements like “slippage happened because of large position size” or “big lots caused delay in execution.”
+
+Sub-Category Name:
+Due to high impact news trading
+
+Description:
+If a client reports slippage issues that occurred while trading during high-impact news events—such as major economic releases, interest rate decisions, or NFP (Non-Farm Payroll)—classify the conversation under the 'Slippage' category and the 'Due to high impact news trading' Sub Category.
+
+During high-impact news, market volatility increases significantly. This leads to price gaps, rapid movement in bid/ask spreads, and reduced liquidity, which often results in trades being executed at prices far from the expected value. These are natural market conditions and not a platform malfunction.
+
+Typical Client Phrases:
+
+“My SL/TP didn’t work properly during news.”
+
+“Price jumped and caused a huge slippage.”
+
+“I placed a trade just before the news and got filled at a very different price.”
+
+“My account breached due to slippage after news.”
+
+Sub-Category Name:
+Due to server issue (date)
+
+Description:
+If a client reports slippage, execution delays, or incorrect price fills caused by a server-related issue on our trading platform—especially if they mention a specific date or refer to a known outage—classify the conversation under the 'Slippage' category and the 'Due to server issue (date)' Sub Category. This includes statements like “the server was slow,” “trade didn’t go through due to server error,” or “platform lag caused slippage.”
+
+Sub-Category Name:
+Volume Surge
+
+Description:
+If a client reports slippage or execution issues caused by a sudden surge in market volume—where many orders are being placed at once, leading to rapid price movement and liquidity gaps—classify the conversation under the 'Slippage' category and the 'Volume Surge' Sub Category. Volume surges often occur during news events, market openings, or volatile periods, and can result in the client not getting the expected SL/TP or entry/exit price.
+
+Look for phrases like:
+
+“The price jumped suddenly and skipped my TP/SL.”
+
+“There was too much movement and my order didn’t get filled properly.”
+
+“Market spiked due to heavy volume and I faced slippage.”
+
+“It happened so fast I didn’t even get to close my trade.”
+
+A volume surge refers to a sudden increase in trading activity, usually due to major market events, institutional orders, or shifts in sentiment. When too many trades happen in a short time, price can move rapidly, often leading to slippage because there's not enough liquidity to execute every order at the expected price.
+
+Sub-Category Name:
+Client is dissatisfied regarding the adjustment made by PO
+
+Description:
+If a client expresses dissatisfaction with the slippage-related adjustment or verdict provided by the Platform Operations (PO) Team—such as partial compensation, rejected claims, or justification of market behavior—classify the conversation under the 'Slippage' category and the 'Client is dissatisfied regarding the adjustment made by PO' Sub Category. This includes complaints like “the PO decision was unfair,” “adjustment doesn't cover my loss,” or “I’m not satisfied with the resolution.”
+
+Sub-Category Name:
+Adjustment denied
+
+Description:
+If a client’s slippage-related adjustment request has been reviewed and denied by the Platform Operations (PO) Team—meaning no compensation or correction will be made—classify the conversation under the 'Slippage' category and the 'Adjustment denied' Sub Category. This includes situations where the client has been informed that the trade followed normal market behavior or that no error was found.
+
+Sub-Category Name:
+Midnight Slippage
+
+Description:
+If a client reports slippage that occurred while trading around midnight server time—when daily market rollovers, low liquidity liquidity gaps, and spread widening often happen—classify the conversation under the 'Slippage' category and the 'Slippage due to midnight trading' Sub Category.
+
+Explanation of Midnight Slippage:
+Around midnight, many liquidity providers reset their systems, spreads widen, and fewer orders are available in the market. This can cause orders to execute at prices significantly different from what the trader sees on their charts, resulting in slippage. This is a market-driven phenomenon and is not considered a platform malfunction.
+
+Sub-Category Name:
+
+Not eligible to change account model due to placing trades
+
+Description:
+The client wants to change/switch their account model/account plan but it will not be possible if as the client has already opened trades with the account that they wish to change.
+
+
+Sub-Category Name:
+Infinity Points Verification Pending
+
+Description:
+If a client states that they have completed or submitted a task required to earn Infinity Points, but the task is still showing as unverified, pending approval, or not yet confirmed from the company’s side, classify the conversation under the “Infinity Points issue” category and the “Verification Pending”sub category.
+
+Look for phrases like:
+
+“I have submitted the task but it’s still pending.”
+
+“My task hasn’t been verified yet.”
+
+“It’s been a while and my submission is not approved.”
+
+“I finished the task but my points haven’t been added.”
+
+Definition: A verification pending issue occurs when the client has fulfilled the task conditions for earning Infinity Points, but the internal review or approval process has not yet confirmed or credited the points to the client’s account.
+
+Sub-Category Name:
+Unable to submit infinity points task proof
+
+Description:
+If a client reports being unable to submit proof or upload evidence from the Dashboard after completing a task related to earning Infinity Points, classify the conversation under the “Infinity Points issue” category and the “Unable to submit task proof”sub category.
+
+Look for phrases like:
+
+“I can’t upload my proof after finishing the task.”
+
+“The Dashboard won’t let me submit my task proof.”
+
+“I completed the task but can’t provide evidence.”
+
+“There’s no option to upload the proof after I did the task.”
+
+Definition: This issue occurs when the client is prevented from submitting required documentation or screenshots via the Dashboard to validate task completion for earning Infinity Points.
+
+**Sub-Category Name:**
+Trade Disappear
+
+**Description:**
+If a client reports that a trade has disappeared from the trading platform—that is, an open or closed position is missing from their account history, positions list, or platform records—classify the conversation under the “Trade Issue” category and the “Trade Disappear”sub category.
+
+Look for phrases like:
+
+“My trade disappeared from the platform.”
+
+“I can’t find my open position anymore.”
+
+“The trade I placed is missing.”
+
+“I had a position open but it’s gone now.”
+
+Definition: A trade disappearance occurs when a client’s order or position is no longer visible on the trading platform due to potential technical errors, synchronization issues, or platform glitches. The open trades can be closed by the EA as well.
+---
+
+**Sub-Category Name:**
+Unauthorized Trade
+
+**Description:**
+If a client claims that trades were placed on their account by someone else without their permission—indicating possible unauthorized access or account compromise—classify the conversation under the “Trade Issue” category and the “Unauthorized Trade”sub category.
+
+Look for phrases like:
+
+“Someone else took trades on my account.”
+
+“I didn’t place these trades.”
+
+“My account was used without my permission.”
+
+“These trades were executed without me knowing.”
+
+Definition: An unauthorized trade issue occurs when a client asserts that trading activity was performed on their account by another person or without their consent, potentially signaling security concerns or account breaches.
+
+Look for phrases like:
+
+* “Someone else took trades on my account.”
+* “I didn’t place these trades.”
+* “My account was used without my permission.”
+* “These trades were executed without me knowing.”
+
+**Definition:**
+An unauthorized trade issue occurs when a client asserts that trading activity was performed on their account by another person or without their consent, potentially signaling security concerns or account breaches.
+
+---
+
+**Sub-Category Name:**
+Trading hour related issue
+
+**Description:**
+If, after agent investigation, it is determined that the client’s issue occurred because they were attempting to trade during quote time, off-market hours, or while the market was closed—even if the client does not explicitly mention the words “quote time,” “market closed,” or similar terms—classify the conversation under the “Trader Issue” category and the “Trading hour related issue”sub category.
+
+Examples of situations that should fall under this category include:
+
+Orders being rejected because the market was closed.
+
+Client confused about why they couldn’t place trades outside trading hours.
+
+Client complaining of price feed not moving during off-market times.
+
+Any issue traced back to quote time restrictions after agent review.
+
+Look for indirect client phrases like:
+
+“My trade wouldn’t open.”
+
+“Nothing was happening when I clicked buy.”
+
+“Prices were stuck and not moving.”
+
+Agents might explain to the client about quote time and trade time.
+
+
+
+Definition: A trading hour-related issue arises when a client tries to place trades or execute actions during times when the market is closed, only running on quote time, or outside the trading schedule. Clients might not explicitly reference market hours, so categorization often depends on the agent’s findings after checking system logs or trading schedules.
+
+---
+
+**Sub-Category Name:**
+Not Enough Money
+
+**Description:**
+If a client states they are unable to open a trade even though their account is active, and they receive a message such as “Not enough money” when attempting to open a position, classify the conversation under the “Trade Issue” category and the “Not Enough Money”sub category.
+
+The client may not explicitly mention “margin” or funds, but expressions of being blocked from opening trades due to insufficient balance should be included.
+
+Look for phrases like:
+
+“I cannot open a trade; my account is active.”
+
+“Why does it say ‘Not enough money’ when I try to open a position?”
+
+“I’m getting an error about insufficient funds.”
+
+“My balance shows, but I can’t place trades.”
+
+“My order kept getting rejected.”
+
+agent might try to explain to the client how free margin works.
+
+Definition: This issue occurs when the client’s available margin or free funds are insufficient to cover the margin requirements for a new trade, even if the account status appears active.
+
+---
+
+**Sub-Category Name:**
+Pending Order didn't execute
+
+**Description:**
+If a client reports that they placed a pending order (such as a buy limit, sell limit, buy stop, or sell stop), but the trade did not open even though the market price reached the specified order level, classify the conversation under the “Trade Issue” category and the “Pending Order didn't execute”sub category.
+
+Look for phrases like:
+
+“My pending order didn’t trigger even though price hit the level.”
+
+“I placed a pending trade, but it was not opened.”
+
+“The market reached my order price but my trade didn’t execute.”
+
+“My buy stop/sell stop was not activated despite price reaching it.”
+
+Definition: A pending order execution issue occurs when a trade set to trigger at a specific price fails to execute, often due to factors like spreads, liquidity gaps, price spikes, or platform-related delays.
+
+---
+
+**Sub-Category Name:**
+Trade got closed at cycle's end
+
+**Description:**
+If a client reports that a trade was closed automatically and questions why it happened—especially if it might be related to the end of the trading cycle in their FundedNext Account—classify the conversation under the “Trade Issue” category and the “Trade got closed at cycle's end”sub category.
+
+Look for phrases like:
+
+“Why was my trade closed?”
+
+“My trade closed by itself.”
+
+“I opened a trade, and it was closed automatically.”
+
+“Did my trade close because of the cycle ending?”
+
+Definition: FundedNext accounts operate in defined trading cycles. At the end of a cycle, open positions may be force-closed according to account rules or platform protocols. Clients experiencing this issue often seek clarification as to why their positions were closed without manual intervention.
+
+---
+
+**Sub-Category Name:**
+We do not offer his required pair for trading
+
+**Description:**
+If a client requests to trade a specific cryptocurrency pair that is not available on the platform, or mentions that the pair they want to trade does not exist in the trading instruments list, classify the conversation under the “Trade Issue” category and the “We do not offer his required cryptocurrency pair for trading”sub category.
+
+Look for phrases like:
+
+“I want to trade [crypto pair] but it’s not available.”
+
+“Do you offer trading in [specific coin/crypto pair]?”
+
+“I can’t find [crypto pair] in your platform.”
+
+“Why isn’t [crypto pair] listed for trading?”
+
+Definition: This issue arises when clients inquire about or attempt to trade cryptocurrency pairs that are not supported or listed on the trading platform.
+
+---
+
+**Sub-Category Name:**
+Trade closed outside of the candle during news time
+
+**Description:**
+If a client complains about a significant, unexpected loss on a trade, especially during news times, and the situation might involve the trade closing at a price outside the visible candle range on the chart, classify the conversation under the “Trade Issue” category and the “Trade closed outside of the candle during news time”sub category.
+
+Clients rarely mention this technical term directly. Instead, look for indications of high losses, confusion about why the price closed far from what was visible on the chart, or sudden spikes during news events.
+
+Look for phrases like:
+
+“I lost a huge amount during the news.”
+
+“My trade closed at a price that wasn’t even visible on the chart.”
+
+“There was a big spike and my position was closed unexpectedly.”
+
+“How did my SL/TP get hit so far away from the candle?”
+
+“I was watching the chart and the price never went there.”
+
+Definition: This issue occurs when, during volatile news periods, market gaps or rapid price movements result in a trade closing outside the visible candle range on the client’s chart. Such cases are typically forwarded to the Platform Operation Team for investigation.
+
+---
+
+**Sub-Category Name:**
+Delay in reaching out to us (4 weeks)
+
+**Description:**
+If a client reports a trade-related issue—such as a breach, technical error, trade discrepancy, or suspected miscalculation—but has delayed reaching out for several weeks (typically 3 weeks or longer), classify the conversation under the “Trade Issue” category and the “Delay in reaching out to us (4 weeks)”sub category.
+
+Note: Clients often do not explicitly mention the timeframe of their delay. Agents should investigate conversation context or system records to determine if the issue is being reported more than 3 weeks after it occurred. Delays of this length make it extremely challenging to retrieve historical data, verify trade outcomes, or recalculate account status accurately.
+
+Look for clues or situations such as:
+
+The client is describing an issue from a trade that took place weeks ago.
+
+The client says they “just noticed this issue” but references older trades.
+
+The conversation reveals that the problem was not reported promptly.
+
+The agent discovers through internal investigation that the complaint relates to events older than 3 weeks.
+
+Definition: Trade issues reported after 3 or more weeks create significant difficulties in resolving breaches or verifying technical errors, due to data retention limits and the dynamic nature of market conditions. Timely reporting (within 24-48 hours) ensures fair and accurate resolutions.
+
+---
+
+**Sub-Category Name:**
+Client received 1% risk restriction email
+
+**Description:**
+If a client mentions receiving an email from the Trading Ethics & Standards Team notifying them about a 1% risk restriction on their account, classify the conversation under the “Trade Issue” category and the “Client received 1% risk restriction email”sub category.
+
+Look for phrases like:
+
+“I got an email from the Trading Ethics & Standards Team.”
+
+“They told me I have a 1% risk restriction.”
+
+“My account is limited to 1% risk per trade.”
+
+“Why did I receive this risk limit email?”
+
+Definition: A 1% risk restriction means the client is now limited to risking a maximum of 1% of their account balance per trade, usually due to concerns about trading behavior or compliance with firm policies.
+
+---
+
+**Sub-Category Name:**
+Confused about swap charge
+
+**Description:**
+If a client expresses confusion, uncertainty, or seeks clarification regarding swap charges—such as how swaps are calculated, why they were charged, or why certain amounts appear in their account—classify the conversation under the “Trade Issue” category and the “Confused about swap charge”sub category.
+
+Look for phrases like:
+
+“I don’t understand the swap fee on my trade.”
+
+“Why was I charged a swap?”
+
+“Can you explain how swap charges work?”
+
+“My account shows a swap, but I’m not sure what it’s for.”
+
+In some cases, the client calculates the PnL without considering the Swap Charge
+
+Definition: A swap charge (also known as overnight fee or rollover) is the interest charged or paid for holding a trading position overnight, based on the difference in interest rates between currency pairs or instruments.
+
+---
+
+**Sub-Category Name:**
+Confusion about ASK and BID price (when opening or closing trade)
+
+**Description:**
+If a client expresses confusion or misunderstanding about price differences when opening or closing trades—particularly why their trade opens at a price slightly different from what they see on the chart, or why there’s a gap between buying and selling prices—classify the conversation under the “Trade Issue” category and the “Confusion about ASK and BID price (when opening or closing trade)”sub category.
+
+Important Note: Clients may not explicitly mention the terms “BID” or “ASK” because they are unaware of the technical names. Instead, they might describe the issue in general terms, such as prices not matching, unexpected execution prices, or differences between their expected price and the order price.
+
+Look for phrases like:
+
+“Why did my trade open at a different price than I saw?”
+
+“The price was here, but my buy order started higher.”
+
+“I closed my sell but didn’t get the price I expected.”
+
+“There’s a difference between the chart price and my trade price.”
+
+Definition / Explanation:
+
+The ASK price is the price at which you can buy.
+
+The BID price is the price at which you can sell.
+
+There’s always a small difference between these prices called the spread.
+
+When placing a BUY trade, it opens at the ASK price and closes at the BID price.
+
+When placing a SELL trade, it opens at the BID price and closes at the ASK price.
+This explains why trades often execute at a price different from the one displayed on the chart, which usually shows only one of these prices (often the BID).
+
+---
+
+**Sub-Category Name:**
+Market gap due to weekend
+
+**Description:**
+If a client mentions that there was a price gap in the market caused by the weekend closure—meaning the market closed at one price on Friday and opened at a significantly different price on Monday—classify the conversation under the “Trade Issue” category and the “Market gap due to weekend”sub category.
+
+Clients might not explicitly state “market gap” but may express concern about unexpected price jumps or chart movements between the market close and open after the weekend.
+
+Look for phrases like:
+
+“There was a gap in the chart after the weekend.”
+
+“Price opened much higher/lower than where it closed on Friday.”
+
+“My trade was affected because the market jumped after the weekend.”
+
+“Charts are showing a gap from Friday to Monday.”
+
+Definition: A market gap due to the weekend happens when markets are closed and prices adjust upon reopening, creating visible gaps on charts and potentially affecting open positions or pending orders.
+
+---
+
+**Sub-Category Name:**
+Cannot trade crypto on weekend
+
+**Description:**
+If a client expresses confusion, complaint, or inquiry about being unable to place trades on cryptocurrencies during the weekend, classify the conversation under the “Trade Issue” category and the “Cannot trade crypto on weekend”sub category.
+
+Clients may not mention this directly. Instead, look for messages indicating surprise, frustration, or questioning why crypto trading is unavailable, such as:
+
+“Why can’t I open my crypto trade right now?”
+
+“Crypto market seems closed — is there a problem?”
+
+“I’m trying to trade BTC/ETH but it’s not letting me.”
+
+“Are crypto markets closed on weekends?”
+
+“My trades on crypto are not going through this weekend.”
+
+Definition: Trading on crypto pairs is unavailable on weekends because the market is closed for all assets, including cryptocurrencies. Clients may not explicitly mention the market closure and might simply describe being unable to execute trades or orders during the weekend period.
+
+---
+
+**Sub-Category Name:**
+Client is claiming high spread
+
+**Description:**
+If a client complains about experiencing unusually high spreads on their trades—meaning the difference between the bid and ask price is significantly larger than expected—classify the conversation under the “Trade Issue” category and the “Client is claiming high spread”sub category.
+
+Look for phrases like:
+
+“The spread was too high when I opened my trade.”
+
+“Why is the spread so big on this pair?”
+
+“I’m losing money because of huge spreads.”
+
+“The spread widened unexpectedly.”
+
+Definition: High spread refers to a larger-than-normal gap between the buy (ask) and sell (bid) prices, which can increase trading costs and affect profitability. This can happen during volatile markets, low liquidity periods, or specific news events.
+
+---
+
+**Sub-Category Name:**
+Unable to close trade during News time
+
+**Description:**
+If a client reports facing execution delays or is unable to close trades during news events or high-impact announcements,
+
+News releases often cause sudden volatility, fast price movements, and reduced liquidity, which can result in delays when executing trade orders. During these periods, brokers or liquidity providers may widen spreads, impose restrictions, or face technical congestion, leading to the client’s inability to close a position promptly.
+
+Look for phrases like:
+
+“I tried to close my trade during the news but it didn’t execute.”
+
+“There was a delay when I wanted to exit my trade during news time.”
+
+“The platform froze or became slow during the news announcement.”
+
+“My order was stuck and wouldn’t close while the news was happening.”
+
+Definition: Execution delays during news time occur because the market experiences extreme volatility and rapid price fluctuations, making it harder to process orders instantly. This can result in trades remaining open longer than intended, sometimes at unfavorable prices.
+
+Sub-Category Name:
+Calculator is not working
+
+Description:
+If a client reports that the calculator tool on the platform or Dashboard is not working, malfunctioning, or failing to load, classify the conversation under the “Tech Issue” category and the “Calculator is not working”sub category.
+
+Look for phrases like:
+
+“The calculator is not working.”
+
+“I can’t use the calculator on the Dashboard.”
+
+“The calculator page won’t load.”
+
+“There’s an error when I try to open the calculator.”
+
+Definition: This issue occurs when the platform’s calculator feature (e.g., margin calculator, pip calculator) fails to function properly, preventing clients from performing necessary calculations.
+
+Sub-Category Name:
+Error in Dashboard due to upgradation (7th & 8th June)
+
+Description:
+If a client reports encountering errors, issues, or unexpected behavior in the Dashboard around the period of 7th or 8th June, classify the conversation under the “Tech Issue” category and the “Error in Dashboard due to upgradation (7th & 8th June)”sub category.
+
+Important: Clients may describe general Dashboard problems (e.g. login errors, missing features, loading issues) without mentioning any “upgrade” or knowing the reason behind it. Do not mention any internal details about security breaches in your response.
+
+Additionally, if clients inquire about how to enable Two-Factor Authentication (2FA) for logging into the FundedNext Dashboard, this relates to the same period. In those cases, classify under this same category andsub category, but follow operational instructions to use the dedicated macro “Enable 2FA” to guide the client appropriately.
+
+Look for phrases like:
+
+“I’m getting an error on the Dashboard.”
+
+“Dashboard is not loading properly.”
+
+“Some features are missing in my Dashboard.”
+
+“I can’t log in or access my Dashboard.”
+
+“How do I enable 2FA for my account?”
+
+Definition: This category covers technical errors in the Dashboard that occurred around the 7th and 8th of June due to platform updates. Clients may not know about the upgrade but may face related technical issues or ask about newly required security measures like 2FA.
+
+Sub-Category Name:
+Payout Button Missing
+
+Description:
+If a client reports being unable to request a payout because the payout button is missing, not If a client reports being unable to request a payout because the payout button is missing, not visible, or not appearing on their Dashboard or platform, classify the conversation under the “Tech Issue” category and the “Payout Button Missing”sub category.
+
+Look for phrases like:
+
+“I can’t find the payout button.”
+
+“The option to request payout has disappeared.”
+
+"I can not request payout from my account"
+
+“Payout button is missing from my Dashboard.”
+
+“I’m unable to request withdrawal because there’s no payout button.”
+
+Definition: This issue occurs when a technical glitch, display error, or account-related condition prevents the payout request button from appearing, stopping the client from initiating their withdrawal process.
+
+Sub-Category Name:
+eBook was not sent
+
+If a client reports that they did not receive an eBook they were supposed to get—whether after a purchase, registration, or as part of a promotion—classify the conversation under the “Tech Issue” category and the “eBook was not sent”sub category.
+
+Look for phrases like:
+
+“I didn’t get the eBook.”
+
+“The eBook was not sent to my email.”
+
+“I signed up but never received the eBook.”
+
+“Where is my eBook download link?”
+
+Definition: This issue occurs when the system fails to deliver an eBook automatically, leaving clients unable to access the promised digital content.
+
+Sub-Category Name:
+Confusion Regarding Changing Password (special characters)
+
+Description:
+If a client expresses confusion, uncertainty, or difficulty related to changing their password—particularly due to the use of special characters like “@,” “#,” “$,” etc.—even if they don’t mention the problem directly or use technical terms, classify the conversation under the “Password issue” category and the “Confusion Regarding Changing Password (special characters)”sub category.
+
+Look for indirect indications or questions such as:
+
+“I’m not sure which characters I can use in my password.”
+
+“Do I have to include symbols like @ or #?”
+
+“Why won’t it let me save my new password?”
+
+“Is there a rule for special characters when changing my password?”
+
+Definition: This issue arises when clients are confused about password requirements, especially regarding whether special characters are allowed, required, or causing errors during a password change. The confusion may be implied rather than explicitly stated.
+
+Sub-Category Name:
+Confusion Regarding the Investor Password
+
+Description:
+If a client reports that they cannot place trades on their account even though the account status is active—and this may be due to confusion about using the Investor Password instead of the trading password—classify the conversation under the “Password issue” category and the “Confusion Regarding the Investor Password”sub category.
+
+Look for phrases like:
+
+“My account is active but I can’t trade.”
+
+“I’m logged in but can’t place any trades.”
+
+“I think I only have view access to my account.”
+
+“Why can’t I execute trades even though my account is active?”
+
+Definition: The Investor Password allows read-only access to view trades and account details but does not permit placing trades. Clients may mistakenly log in with the Investor Password, leading them to believe their active account has a problem.
+
+Sub-Category Name:
+Can’t reset master password in the Free Trial and Monthly Competition account
+
+If a client reports that they are unable to reset or change the master password specifically for their Free Trial account or Monthly Competition account, classify the conversation under the “Password issue” category and the “Can’t reset master password in the Free Trial and Monthly Competition account”sub category.
+
+Look for phrases like:
+
+“I can’t reset my master password in the Free Trial account.”
+
+“I’m unable to change my password for the Monthly Competition account.”
+
+“The reset option isn’t working in my Free Trial account.”
+
+“Why can’t I update my master password in the competition account?”
+
+Definition: This issue arises when clients try to reset or change the master password for specific account types like Free Trial or Monthly Competition accounts but encounter system limitations or errors preventing the update.
+
+Sub-Category Name:
+Did not receive password in the email
+
+Description:
+If a client reports that they did not receive their password by email after registration, password reset, or any other process requiring a system-generated password, classify the conversation under the “Password issue” category and the “Did not receive password in the email”sub category.
+
+Look for phrases like:
+
+“I didn’t get my password in the email.”
+
+“No email came with my login details.”
+
+“I registered but never received my password.”
+
+“Where is the email with my password?”
+
+'My login credentials is not arriving in my mail kindly send it to my email'
+
+Definition: This issue occurs when the system fails to send the password email, preventing clients from accessing their account or completing login.
+
+Sub-Category Name:
+Can not log in due to technical issues
+
+Description:
+The client will query about not able to log in to competition account
+
+Customer's competition account is not connecting to MT5
+
+The trading account was disabled from our end, in this case the agent will create a ticket to resolve the issue.
+
+Sub-Category Name:
+Trading Disabled
+
+Description:
+The client will be able to log in to his account but won't be able place any trades, in such cases the client might ask directly my account is disabled, in this case the agent will create a ticket to enable the account.
+
+client might say that they received a message saying "Contact your Broker"
+
+The agent might say 'We have reviewed your issue and are pleased to confirm that your account has been successfully reactivated. We wish you successful trading.'
+
+
+Sub-Category Name:
+Didn't get password mail (Competition)
+
+Description:
+The client may directly ask the agent that he is not getting competition password to his email or unable to get the competition password
+
+He will say something like this 'I can’t find my august competition password'
+
+Sub-Category Name:
+Leaderboard shows wrong data
+
+Description:
+In this case the client might cliam that his name is not on the winner list or he was supppossed to be competition winner, the agent will check the issue and provide him with a verdict regarding the competition leaderboard.
+
+The agent may also create a ticket for him
+
+Sub-Category Name:
+Not satisfied with the winner result
+
+Description:
+He will drag about the competition result with which the agent can not do anything about it, the agent will try to convince the client that this is the final result.
+
+He will ask how much profit the winner of the competition made and agent will ask him to check the leaderboard
+
+Sub-Category Name:
+Client breached competition rule
+
+Description:
+the client will inqure about his competition account has been breached due to EA usage, Multiple account registration., Placed more than 50 trades for a day, exceeds the lot size limit, agent will show empathy but he cant do anything about this, He might ask him to reply to the email received from Trading Ethics & Standards Team
+
+Sub-Category Name:
+Delay in receiving reward
+
+Description:
+If a client says they are a competition winner and asks when they will receive their reward or when the result will be published, classify the conversation under the 'Competition Issue' category and the 'Delay in receiving reward' Sub Category Name. The agent should communicate the expected result timeline or confirm it will be announced within the first week of the month.
+
+Sub-Category Name:
+50 trades Limit Exceeded
+
+Description:
+The client won't be able to open any trade if he has taken 50 trades in a single day in a competition account, then ehe will not be able to open tarde in that perticular day which is a temporary cool down. the agent will clarify the issue and and ask the client to open trades again the next day.
+
+Sub-Category Name:
+Inquiry about winners and prizes after competition ended
+
+Description:
+The client will ask when will the competition result will be published and the agent will communicate to wait for some days
+
+Sub-Category Name:
+Registered for the next month competition
+
+Description:
+The client will be able to log in to his account but won't be able place any trades, in such cases the client might ask directly my account is disabled, in this case the agent will let the client know that the the competition he has registered for has not started yet cause he has registered for the next month.
+
+Sub-Category Name:
+Wanted to reset competition account
+
+Description:
+the client who has breached their competition account might ask to to reset their compitition account which is not possible cause in FundedNext once a compitition account has been breached can not be reset or fix again. The client must wait for the next month's competition.
+
+Sub-Category Name:
+Client is dissatisfied due to the competition starting in delay because of the weekend
+
+Description:
+In this case the client won't be able to open any trades due to forex market off on saturday and Sunday, the agent will apologize for any confusion and suggest the client to trade after the market opens,
+
+Sub-Category Name:
+Not Registered in the Competition but wants to participate
+
+Description:
+The client has not register for a competition but wants to participate, Agent will inform that he must wait for the next competition to start cause the client won't be able to register for a competition once it starts.
+
+Sub-Category Name:
+Not eligible to merge
+
+Description:
+If a client’s message indicates they are unable to merge accounts or have been informed they cannot proceed with merging due to not meeting required criteria—even if they do not explicitly mention “not eligible to merge”—classify the conversation under the “Merging Issue” category and the “Not eligible to merge”sub category.
+
+Look for phrases suggesting rejection or ineligibility for merging, such as:
+
+“They said I can’t merge my accounts.”
+
+“I tried merging, but it’s not allowed for me.”
+
+“My accounts aren’t eligible to be combined.”
+
+“I was told my merge request was denied.”
+
+“Support said I don’t meet the requirements for merging.”
+
+Definition: A client is not eligible to merge if they fail to meet certain criteria—such as trading days, profit targets, or other conditions—required to combine multiple accounts into one. Clients often express this as being refused a merge without explicitly stating the eligibility reason.
+
+Sub-Category Name:
+Not Eligible for Scale-Up
+
+Description:
+If a client’s message indicates they are not eligible for a Scale-Up because they did not meet the required criteria—even if they do not mention “Scale-Up” directly—classify the conversation under the “Scale Up Issue” category and the “Not Eligible for Scale-Up”sub category.
+
+Look for phrases suggesting disappointment, confusion, or questions about not receiving an account increase or higher balance due to performance, trading days, profit targets, consistency, or other requirements, such as:
+
+“Why didn’t my account size increase?”
+
+“I thought I’d get a bigger balance but nothing changed.”
+
+“I traded well but my account wasn’t scaled.”
+
+“I met the profit target, but my account stayed the same.”
+
+“They said I’m not qualified for a higher balance.”
+
+Definition: A client is not eligible for Scale-Up when they fail to meet specific conditions required for account growth, such as profit targets, consistency rules, drawdown limits, or minimum trading days. Clients often describe this indirectly as missing out on an account increase or larger balance.
+
+Sub-Category Name:
+Client dissatisfied regarding not getting the offer after account reset
+
+Description:
+If a client’s message indicates dissatisfaction because an offer, discount, or special benefit used during the original purchase did not carry over after an account reset—even if they do not mention “reset” or “offer” directly—classify the conversation under the “Reset Issue” category and the “Client dissatisfied regarding not getting the offer after account reset”sub category.
+
+Look for phrases suggesting frustration about losing a discount, paying a higher price, or not getting previous benefits after resetting their account, such as:
+
+“My previous benefits or offers disappeared after I reset.”
+
+“I expected the same deal after my account was reset.”
+
+“Why don’t I get the same promo as when I first purchased?”
+
+' Will I get my offer be still available after reset?'
+
+Definition: Clients may become dissatisfied when offers, discounts, or special terms from their initial purchase are not maintained after an account reset, leading to confusion or feelings of unfairness. They may express this indirectly as price differences or lost benefits.
+
+Sub-Category Name:
+Unable to reset Evaluation/Express Account model
+
+Description:
+If a client expresses dissatisfaction or confusion because they cannot reset their account, and the conversation relates to the Evaluation or Express Account models—which are no longer offered—classify the conversation under the “Reset Issue” category and the “Unable to reset Evaluation/Express Account model”sub category.
+
+The client may not mention “Evaluation” or “Express Account” explicitly, but may refer to resetting an old account type, wanting to restart after failure, or questioning why resets are unavailable.
+
+Look for phrases like:
+
+“Why can’t I reset my account anymore?”
+
+“I want to start over but it says I can’t.”
+
+“I’m trying to pay for a reset but it’s not possible.”
+
+“How do I reset after failing my challenge?”
+
+“Before I could reset, now it doesn’t work.”
+
+Definition: FundedNext no longer offers the Evaluation and Express Account models, so resets for those accounts are unavailable. Clients who previously used these models may be dissatisfied or confused about the inability to reset their accounts.
+
+Sub-Category Name:
+Unable to reset as client is from restricted country
+
+Description:
+If a client expresses dissatisfaction or frustration because they are unable to reset their account due to residing in a restricted country—even if they do not mention “restricted country” or “reset” directly—classify the conversation under the “Reset Issue” category and the “Unable to reset as client is from restricted country”sub category.
+
+Look for phrases suggesting clients cannot proceed with resetting their account or are blocked from certain actions because of their country of residence, such as:
+
+“Why can’t I reset my account from my country?”
+
+“I’m not allowed to do a reset because of where I live.”
+
+“My country is blocking me from resetting my account.”
+
+“Support said I can’t reset because of restrictions.”
+
+“I’m stuck because my country is not eligible for this feature.”
+
+Definition: Clients from certain restricted countries are prohibited from using the account reset feature due to regulatory or company policy limitations. Clients may express this indirectly as being blocked or prevented from resetting their account because of their location.
+
+Sub-Category Name:
+Mistakenly reset a different account
+
+Description:
+If a client reports that their account was mistakenly reset, but does not explicitly mention that a different account was reset—classify the conversation under the “Reset Issue” category and the “Mistakenly reset a different account”sub category.
+
+Look for phrases where the client expresses confusion, frustration, or belief that their reset was not intended or occurred on the wrong account, such as:
+
+“I requested a reset for my account, but it seems the wrong one was affected.”
+
+“I lost progress in the wrong account after a reset.”
+
+“My account was reset, but I wasn’t expecting this one to be reset.”
+
+“My account reset, but I didn’t want that one, I wanted a different one.”
+
+“The wrong account got reset. Can you help me recover it?”
+
+Definition: A mistaken reset occurs when a client inadvertently has the wrong account reset—either due to an error in the reset process or a mix-up in identifying the correct account for the reset request.
+
+Sub-Category Name:
+High Reset Price
+
+Description:
+If a client expresses concern, dissatisfaction, or confusion about the reset fee being too high—even if they do not explicitly mention “reset fee” or “high price” directly—classify the conversation under the “Reset Issue” category and the “High Reset Price”sub category.
+
+Look for phrases suggesting that the client feels the reset cost is excessive, unfair, or higher than expected, such as:
+
+“The cost to reset my account feels too much.”
+
+“I didn’t think it would be this expensive to reset.”
+
+“Is this the price for a reset? It’s a lot.”
+
+“I wasn’t expecting such a high fee to start over.”
+
+“Why is the reset fee so steep?”
+
+Definition: A high reset price occurs when a client perceives the cost of resetting their account as too expensive or unreasonable, often feeling the fee is disproportionate to the value or expectations of the reset process.
+
+Sub-Category Name:
+Need to start from phase 1 after resetting phase 2 account
+
+Description:
+If a client indicates that they need to start from Phase 1 after their Phase 2 account has been reset—even if they do not explicitly mention “Phase 1” or “Phase 2”—classify the conversation under the “Reset Issue” category and the “Need to start from phase 1 after resetting phase 2 account”sub category.
+
+Look for phrases suggesting confusion or concern about having to restart their progress due to account resetting, such as:
+
+“Do I have to start all over again after the reset?”
+
+“My account was reset, but why am I not in Phase 2 anymore?”
+
+“It seems like I have to redo everything from the beginning.”
+
+“I’ve been reset but now I’m starting from scratch.”
+
+“After resetting, I was put back at the starting point.”
+
+Definition: This issue occurs when a client, after their Phase 2 account is reset, finds themselves required to begin from Phase 1 again, causing confusion or frustration about the reset process and the progression of their account.
+
+Sub-Category Name:
+Want to switch trading platform after reset
+
+Description:
+If a client expresses a desire to switch their trading platform after a reset—even if they do not directly state it—classify the conversation under the “Reset Issue” category and the “Want to switch trading platform after reset”sub category.
+
+Look for phrases indicating frustration or confusion about switching platforms, such as:
+
+“Can I change to a different platform after my reset?”
+
+“I want to switch platforms now that my account has been reset.”
+
+“I don’t want to use the same platform after the reset.”
+
+“Can I try a different trading platform after I’ve reset my account?”
+
+“I want to move to a new platform but my account was just reset.”
+
+Definition: This issue arises when a client wants to change their trading platform after going through a reset, typically due to platform preference or functionality concerns. Clients may not directly mention it but may express a desire to explore other available platforms after account changes.
+
+Sub-Category Name:
+Reset costs money
+
+Description:
+Look for phrases showing frustration or confusion about the payment requirement for resetting their account, such as:
+
+“I thought I could reset without paying.”
+
+“Why do I have to pay to get my account back?”
+
+“I breached my account, but now I have to pay for the reset.”
+
+“It’s disappointing that a reset costs money after a breach.”
+
+“Can I get a free reset, or why do I need to pay for it?”
+
+Definition: This issue occurs when a client is upset or confused about needing to pay for a reset after breaching their account. They may feel dissatisfied with the reset process, expecting it to be free or not fully understanding the cost.
+
+Sub-Category Name:
+Wanted to purchase a new account with the Reset discount
+
+If a client mentions wanting to use a Reset discount (e.g., 5%/10% off) for purchasing a new account rather than applying it for a reset, even if they do not directly mention the reset—classify the conversation under the “Reset Issue” category and the “Wanted to purchase a new account with the Reset discount”sub category.
+
+Look for phrases that imply the client’s confusion or request for applying a Reset discount to a new account, such as:
+
+“Can I use the reset discount to buy a new account?”
+
+“I thought I could get a new account with the discount for resetting.”
+
+“I want to apply my reset discount to purchase a new account, not reset.”
+
+“Is the reset discount valid for new accounts?”
+
+Definition: This issue arises when a client mistakenly or intentionally attempts to use a reset discount (typically for restoring an account after a breach) to purchase a completely new account, which is against the applicable rules for the discount's usage.
+
+Sub-Category Name:
+Unable to reset account due to internet issue from client's end
+
+Description:
+If a client reports being unable to reset their account or access the reset feature due to internet issues on their end, even if they do not mention internet issues directly, classify the conversation under the “Reset Issue” category and the “Unable to reset account due to internet issue from client's end”sub category.
+
+Look for phrases suggesting trouble with connectivity, system access, or timeout errors during the reset process, such as:
+
+“I can’t reset my account, it keeps timing out.”
+
+“The page isn’t loading, I can’t reset anything.”
+
+“I’m stuck on the reset screen, but nothing’s happening.”
+
+“I’ve tried multiple times but can’t seem to reset my account.”
+
+“It just won’t connect to the server while trying to reset.”
+
+Definition: This issue arises when a client is unable to complete the reset process due to internet connectivity issues or poor connection quality from their side, preventing them from accessing the reset features or loading necessary pages.
+
+The agent will inform him to clear his cache cookie, check his internet connection, use a vpn
+
+Sub-Category Name:
+Client wants to add add-on in Reset account
+
+Description:
+If a client expresses interest in using a new Add-On while resetting their account, classify the conversation under the “Reset Issue” category and the “Client wants to add add-on in Reset account”sub category.
+
+Look for phrases indicating the client’s desire to upgrade or enhance their account with additional features or services during the reset process, such as:
+
+“Can I add the new add-on while resetting my account?”
+
+“I want to use a different add-on for my reset.”
+
+“Can I change my add-on when I reset my account?”
+
+“Is it possible to apply an add-on with the reset?”
+
+Definition: This issue arises when a client requests to include an add-on service or feature in their account during the reset process, which typically involves account adjustments or upgrades.
+
+Sub-Category Name:
+Client is unhappy that the reset returns his account to the initial balance, losing his profits
+
+Description:
+If a client expresses dissatisfaction or frustration about their account being reset to the initial balance, resulting in the loss of any accumulated profits—even if they don’t explicitly mention the reset process directly—classify the conversation under the “Reset Issue” category and the “Client is unhappy that the reset returns his account to the initial balance, losing his profits”sub category.
+
+Look for phrases indicating frustration or confusion about the loss of profits after the reset, such as:
+
+“My account went back to the starting balance, I lost all my profit.”
+
+“I’ve been trading well, but after the reset, I’m back to square one.”
+
+“I was doing great and now my account is back to the initial amount.”
+
+“Why does the reset erase all my gains?”
+
+“I don’t understand why the reset took away my profits.”
+
+Definition: This issue occurs when a client is upset that, after their account is reset (whether due to breaking rules or other reasons), they lose the profits they’ve earned, returning the balance to the initial amount.
+
+The agent will inform him that its the rule that after resetting the account will go back to initial balance
+
+Sub-Category Name:
+Wanted to reset FundedNext account
+
+Description:
+If a client expresses disappointment or frustration over their FundedNext account not being able to be reset—even if they do not explicitly mention "reset"—classify the conversation under the “Reset Issue” category and the “Wanted to reset FundedNext account”sub category.
+
+Look for phrases indicating the client’s desire to start over or reset their account but being unable to do so, such as:
+
+“I wanted to reset my account but I can’t.”
+
+“I’m disappointed that FundedNext accounts can’t be reset.”
+
+“Why can’t I start over with a fresh account?”
+
+“I wish there was an option to reset my account.”
+
+Definition: A Reset Issue arises when a client attempts to restart or reset their FundedNext account, often due to performance issues, and expresses frustration upon discovering that this option is not available under the current account policies.
+
+The agent will show empathy and inform him that FundedNext Account cant be reset
+
+Sub-Category Name:
+Balance Mismatch
+
+Description:
+If a client reports a discrepancy between the balance displayed on the trading platform and the balance shown on the dashboard, classify the conversation under the 'Dashboard Related Issue' category and the 'Balance Mismatch'sub category. This issue often occurs due to delays in syncing the data between the platform and the dashboard or temporary system errors."
+
+Look for phrases like:
+
+"My balance on the platform doesn’t match what I see on the dashboard."
+
+"There’s a mismatch between my account balance in the dashboard and in the trading platform."
+
+"The funds shown on the platform are different from my dashboard balance."
+
+"I noticed a balance discrepancy between my FundedNext Dashboard and MT5."
+
+The agent will say sorry and inform him that the Dashboard takes time to update
+
+Sub-Category Name:
+Not receiving OTP to log into dashboard
+
+If a client reports they are not receiving the OTP (One-Time Password) to log into their FundedNext Dashboard, even if they do not explicitly mention “OTP” or the login process directly, classify the conversation under the “Dashboard Related Issue” category and the “Not receiving OTP to log into dashboard”sub category.
+
+Look for phrases where clients indicate they are unable to log in or haven't received the necessary OTP to complete the process, such as:
+
+“I’m not receiving the code to log in.”
+
+“I didn’t get the verification code for my account.”
+
+“I can’t log in because I never got the OTP.”
+
+“I’ve tried multiple times but no code comes through.”
+
+“I’m stuck at the login screen; I never got the OTP email.”
+
+Sub-Category Name:
+When client tries to log into dashboard it shows undefined
+
+Description:
+If a client reports that when they try to log into the FundedNext Dashboard, they see the message “undefined” or encounter an error where the dashboard doesn’t load correctly—even if they do not explicitly mention “undefined”—classify the conversation under the “Dashboard Related Issue” category and the “When client tries to log into dashboard it shows undefined”sub category.
+
+Look for phrases indicating login issues where the dashboard fails to load, such as:
+
+“I’m trying to log in, but it just shows undefined.”
+
+“The dashboard isn’t loading properly, it shows an error.”
+
+“When I try to open the dashboard, it says undefined.”
+
+“I can’t access my dashboard, it just shows a blank page or undefined.”
+
+The agent will ask him to update the profile on the Dashboard
+
+Sub-Category Name:
+Trying to login with wrong Email (Dashboard)
+
+Description:
+If a client mentions that they’ve purchased an account but cannot find it when logging into the FundedNext Dashboard, it’s likely that they are trying to log in with the wrong email address. This often occurs when a client has multiple email addresses registered with FundedNext and is confused about which one to use. Even if the client does not explicitly mention using the wrong email, classify the conversation under the “Dashboard-Related Issue” category and the “Trying to log in with wrong Email (Dashboard)”sub category.
+
+Look for phrases like:
+
+“I purchased an account but can’t find it when I log in.”
+
+“I’m logging in with the wrong email, I can’t see my account.”
+
+“I’ve bought an account but it’s not showing up in the dashboard.”
+
+“Where is my account? I can’t find it after logging in.”
+
+The agent will inform him that there is no account associated with the email also he may asked for the account number
+
+Sub-Category Name:
+Incorrect information regarding trading cycle
+
+Description:
+If a client reports that the trading cycle shown on their FundedNext Dashboard is displaying incorrect data—where the Start date or End date are wrong or the cycle does not reflect the actual trading activity—classify the conversation under the “Dashboard Related Issue” category and the “Incorrect information regarding trading cycle”sub category.
+
+The trading cycle usually begins when the client places their first trade in their FundedNext account. However, if the client has not yet made a trade or there is an error with the system, the trading cycle may show inaccurate information. In such cases, the issue is often escalated to the Tech Team for investigation and alignment between the dashboard and the trading platform.
+
+Look for phrases like:
+
+“My trading cycle shows the wrong start and end dates.”
+
+“The trading cycle isn’t reflecting the trades I’ve made.”
+
+“I haven’t placed a trade yet, but my trading cycle shows dates.”
+
+“My trading cycle data seems to be incorrect on the dashboard.”
+
+Sub-Category Name:
+Dashboard update delay
+Description:
+If a client reports that their Daily Loss Limit is not being updated on the FundedNext Dashboard,
+
+Look for phrases where clients mention the Daily Loss Limit not reflecting the current day’s activity, such as:
+
+“My daily loss limit isn’t updating.”
+
+“The dashboard still shows my old loss limit.”
+
+“I can’t see my new loss limit after today’s trades.”
+
+“The daily loss limit hasn’t refreshed, it still shows yesterday’s value.”
+
+"If a client reports that their FundedNext Dashboard is not being updated in real time and there’s a noticeable delay in seeing recent data or changes,
+
+Look for phrases where clients mention delays or outdated data, such as:
+
+“My dashboard isn’t updating in real time.”
+
+“There’s a delay in seeing my recent trades or balance changes.”
+
+“The data on my dashboard is not reflecting the latest updates.”
+
+“I’m seeing old information on the dashboard, even though I just made a trade.”"
+
+"If a client reports that their trades are not being updated on the FundedNext Dashboard, meaning the trade they executed on the trading platform is not appearing on the dashboard,
+
+Look for phrases where clients mention their trades not being reflected on the dashboard, such as:
+
+“I took a trade, but it’s not showing on my dashboard.”
+
+“My trade doesn’t appear in the dashboard even though I placed it.”
+
+“I made a trade on the platform, but it’s not updating on the dashboard.”
+
+“Why isn’t my recent trade showing up in the dashboard?”"
+
+The agent will show empathy and ask him to wait since dashboard takes time to update
+
+
+
+
+Sub-Category Name:
+Wants to disable 2FA
+
+Description:
+If a client expresses a desire to disable Two-Factor Authentication (2FA) on their FundedNext Dashboard, classify the conversation under the “Dashboard Related Issue” category and the “Wants to disable 2FA”sub category.
+
+Look for phrases where clients specifically mention wanting to remove or disable their 2FA, such as:
+
+“I want to disable 2FA on my account.”
+
+“Can I turn off Two-Factor Authentication?”
+
+“How do I disable 2FA for my FundedNext account?”
+
+“I’d like to remove 2FA from my dashboard settings.”
+
+The agent will show empathy and ask the client to set the 2FA since it is necessary. If the client insists agent will create a ticket to Priority Solution Task Force
+
+Sub-Category Name:
+Invalid 2FA code (TT issue)
+Description:
+If a client reports that their Two-Factor Authentication (2FA) code is invalid, and the issue is determined to be on the Tech Team’s end, classify the conversation under the “Dashboard Related Issue” category and the “Invalid 2FA code (TT issue)”sub category.
+
+Look for phrases where clients mention receiving an invalid 2FA code, especially when the problem is related to a Tech Team issue, such as:
+
+“The 2FA code isn’t working, it says it’s invalid.”
+
+“I keep getting an invalid 2FA code error.”
+
+“The code isn’t being accepted, it must be a system issue.”
+
+“My 2FA code is not working, I have tried multiple times.”
+
+The agent will show empathy and create a ticket to Technology Team
+
+
+Sub-Category Name:
+Unable to receive the verification code for 2FA in the email
+
+Description:
+If a client reports not receiving the verification code for two-factor authentication (2FA) in their email, classify the conversation under the 'Dashboard Related Issue' category and the 'Unable to Receive the Verification Code for 2FA in the Email'sub category. This issue may be caused by email delivery delays, incorrect email addresses, or spam filtering blocking the verification email."
+
+Look for phrases like:
+
+"I didn’t receive the 2FA code in my email."
+
+"I am unable to get the verification code to complete my login."
+
+"The email with the 2FA code never came through."
+
+"I’ve been waiting for the 2FA code, but it’s not showing up in my inbox."
+
+The agent will show emapthy and ask the client to open the gmail inbox and type notification@fundednext.com in the seacrh bar and send a screenshot . After checking the screenshot the agent may create a ticket to Technology Team
+
+Sub-Category Name:
+Unable to set 2FA in the Dashboard
+
+Description:
+If a client reports being unable to set up two-factor authentication (2FA) on the FundedNext dashboard, classify the conversation under the 'Dashboard Related Issue' category and the 'Unable to Set 2FA in the Dashboard'sub category. This issue can occur due to incorrect setup steps, browser-related issues, or system glitches that prevent the 2FA process from being completed."
+
+Look for phrases like:
+
+"I can’t set up 2FA on my FundedNext dashboard."
+
+"The 2FA setup isn’t working properly on the dashboard."
+
+"I’m unable to enable 2FA on my account."
+
+"The system isn’t letting me complete the 2FA setup."
+
+The agent will show empathy and sent him the procedure to set 2FA
+
+Sub-Category Name:
+Unable to access the Dashboard due to TT issue
+
+Description:
+If a client is unable to access the FundedNext dashboard due to a technical issue on the Tech Team's side, and the issue is affecting only that particular client, classify the conversation under the 'Dashboard Related Issue' category and the 'Unable to Access the Dashboard Due to TT Issue'sub category. This could involve server-side problems, individual account issues, or technical maintenance affecting specific users, and a ticket is typically raised with the Tech Team to resolve it."
+
+Look for phrases like:
+
+"I can’t access the dashboard, is this a problem on your side?"
+
+"It seems like only my account is having this issue. Is your Tech Team aware of it?"
+
+"The dashboard isn’t loading for me specifically, what can be done?"
+
+"I think there’s an issue with my account that your Tech Team needs to fix."
+
+The agent will show empathy after that either he inform the client that the Technology Team is looking into the issue and soon it will be solved or he will create a ticket to Technology Team
+
+Sub-Category Name:
+Unable to register to the Dashboard due to "The Email has already been taken" issue
+
+Description:
+If a client reports being unable to register for the FundedNext dashboard because they receive the message 'The Email Has Already Been Taken,' classify the conversation under the 'Dashboard Related Issue' category and the 'Unable to Register to the Dashboard Due to "The Email Has Already Been Taken" Issue'sub category. This could occur if the email is already associated with an existing account, or it may be a dashboard error where an unregistered email is incorrectly flagged as already in use."
+
+Look for phrases like:
+
+"I’m getting an error saying my email is already taken, but I haven’t registered yet."
+
+"I can’t register because my email is showing as already in use."
+
+"It says my email is already associated with an account, but I’ve never signed up before."
+
+"The system says my email is already taken, but I’m trying to create a new account."
+
+The agent will show empathy and ask the client to login instead of registering
+
+Sub-Category Name:
+Can't update Dashboard Information
+
+Description:
+If a client reports being unable to update their information on the FundedNext dashboard, classify the conversation under the 'Dashboard Related Issue' category and the 'Can't Update Dashboard Information'sub category. This issue may be caused by system glitches, incomplete form submissions, or restrictions on updating specific fields on the dashboard."
+
+Look for phrases like:
+
+"I can't update my information on the dashboard."
+
+"The changes I made aren’t being saved on the dashboard."
+
+"I’m unable to update my account details on the platform."
+
+"The dashboard won’t allow me to change my information."
+
+Sub-Category Name:
+Can't find the account in the breached/inactive section
+
+Description:
+If a client reports being unable to locate their account in the 'Breached' or 'Inactive' section of the dashboard, classify the conversation under the 'Dashboard Related Issue' category and the 'Can't Find the Account in the Breached/Inactive Section'sub category. This may happen due to system sync delays, a dashboard error, or an account status update that hasn’t been reflected in the dashboard."
+
+Look for phrases like:
+
+"I can’t find my account in the breached/inactive section."
+
+"My account doesn’t show up under breached or inactive, but I thought it was."
+
+"I’m unable to locate my account in the proper section of the dashboard."
+
+"Why is my account not appearing in the breached/inactive list?"
+
+The agent will show emapthy and ask the client to clear cache-cookie/use a vpn/ check internet after that he may create a ticket
+
+Sub-Category Name:
+Verdict from CPM
+Description:
+If a client’s conversation involves a verdict or decision that originates from the Partner Management team (CPM), even if the client does not directly mention CPM, classify the conversation under the “Verdict from different team” category and the “Verdict from CPM”sub category.
+
+The Partner Management team is often referred to as CPM, but clients may not specifically mention CPM. Instead, they may refer to the decision as coming from the Partner Management team, which is tracked based on the agent’s responses.
+
+Look for phrases where the agent mentions the decision coming from Partner Management, such as:
+
+“The decision has been made by the Partner Management team.”
+
+“Partner Management has provided their verdict on this matter.”
+
+“This response is from the Partner Management team.”
+
+“The outcome was decided by Partner Management.”
+
+Definition: This issue arises when the verdict or decision affecting the client is communicated as coming from the Partner Management team (CPM), even though clients may not explicitly mention CPM. This is typically tracked through agent responses, not client reports.
+
+
+Sub-Category Name:
+Verdict from Trading and Ethics
+Description:
+If a client’s issue is related to a verdict from the Trading Ethics & Standards Team, and the client does not directly mention TRM but the agent identifies the issue as originating from that team, classify the conversation under the “Verdict from different team” category and the “Verdict from Trading and Ethics”sub category.
+
+Note that clients do not explicitly mention Trading Ethics & Standards Team or TRM, so it is the agent’s responsibility to investigate and confirm the involvement of this team. The communication regarding the verdict is often tracked based on agent responses rather than direct client reporting.
+
+Look for phrases where the agent provides information about the Trading Ethics & Standards Team’s involvement, such as:
+
+“The decision has been made by the Trading Ethics & Standards Team.”
+
+“The verdict comes from the Trading Ethics & Standards Team after a thorough review.”
+
+“The Trading Ethics & Standards Team reviewed your case and provided their judgment.”
+
+Definition: This issue refers to a verdict or decision made by the Trading Ethics & Standards Team, which is typically related to a review of trading behavior, compliance with rules, or ethical standards. The agent needs to confirm this through investigation and communicate it to the client accordingly.
+
+Sub-Category Name:
+Verdict from PO
+Description:
+If a client contacts support after being frustrated and is informed that the issue has been resolved by the Platform Operation Team (PO)—even if the client does not explicitly mention the Platform Operation Team—classify the conversation under the “Verdict from different team” category and the “Verdict from Platform Operation Team”sub category.
+
+The phrase typically used by agents when communicating this decision is:
+
+“I am sorry to inform you that, based on the decision made by the appropriate team, I am currently unable to offer any help regarding this issue.”
+
+Other similar phrases to look for might include:
+
+“Unfortunately, the Platform Operation Team has made a final decision, and I am unable to assist further.”
+
+“I regret to inform you that the Platform Operation Team has provided a verdict, and there’s nothing more I can do at this point.”
+
+“The issue was resolved by the Platform Operation Team, and I can’t offer any additional support on this matter.”
+
+Definition: This situation arises when the client has already been through an internal review process with the Platform Operation Team, and the agent communicates that they are unable to assist further based on the final decision made by that team. The agent typically communicates the resolution after a ticket has been resolved.
+
+
+Sub-Category Name:
+"Address not found" issue while reaching our Trading Ethics & Standards Team
+
+Description:
+If a client reports encountering an "Address not found" error while trying to reach the Trading Ethics & Standards Team—indicating that their attempt to contact this team via email or communication method fails—classify the conversation under the “Verdict from different team” category and the “"Address not found" issue while reaching our Trading Ethics & Standards Team”sub category.
+
+Look for phrases where clients mention errors related to contacting or reaching the Trading Ethics & Standards Team, such as:
+
+“I tried emailing the Trading Ethics Team but got an address not found error.”
+
+“The email address for the Trading Ethics Team doesn’t seem to work.”
+
+“I’m getting an address not found message when trying to contact Trading Ethics.”
+
+“I can’t reach the Trading Ethics & Standards Team, the address is not valid.”
+
+Definition: This issue occurs when a client attempts to contact the Trading Ethics & Standards Team through an incorrect or outdated communication address, resulting in an “Address not found” error.
+
+The agent will say sorry ask for screenshot and after that he will create a ticket Case Resolution Team
+
+Sub-Category Name:
+Delay in getting resolution from the ticket created in different department
+
+Description:
+If a client reaches out asking for an update on a ticket or issue that was created with a different department, especially after a period of 24 or 48 hours or similar timeframes, classify the conversation under the “Verdict from different team” category and the “Delay in getting resolution from the ticket created in different department”sub category. Clients may not directly mention the word "ticket" but will express frustration due to the delay in receiving a resolution.
+
+Look for phrases indicating frustration or a request for an update after a certain period of time, such as:
+
+“I haven’t heard back from them in over 48 hours, any updates?”
+
+“It’s been a day or two, and I haven’t received a resolution yet.”
+
+“Why is it taking so long to get an answer?”
+
+“I’ve been waiting for an update for over 24 hours.”
+
+Definition: This issue arises when a client is frustrated by the delay in receiving a resolution from a different department or team. They may reference the time passed without receiving an update, though they rarely explicitly mention the term "ticket."
+
+The agent will show empathy and ask the client to have patience and they will receive the update soon
+
+
+
+Sub-Category Name:
+Unable to submit payment form (TC Pay)
+
+Description:
+If a client reports being unable to submit the payment form after purchasing an account using TC Pay, classify the conversation under the “Other Payment Issues” category and the “Unable to submit payment form (TC Pay)”sub category. Clients may not specifically mention TCPay, but the issue arises when they are unable to complete the payment submission process through the Dashboard.
+
+Look for phrases where clients mention difficulty with submitting payment forms or experiencing errors after completing a purchase, such as:
+
+“I can’t submit the payment form after purchasing the account.”
+
+“The payment form won’t go through after using TC Pay.”
+
+“I’ve completed the payment but the form is not submitting.”
+
+“I’m stuck at the payment submission screen after my TC Pay purchase.”
+
+Definition: This issue occurs when a client is unable to submit the payment form after purchasing an account using TC Pay, typically due to system or form submission issues on the Dashboard.
+
+Sub-Category Name:
+Account not provided Instantly (TC Pay)
+
+Description:
+If a client reports that they did not receive their account immediately or their account was not reset after making a payment via TC Pay, but they do not directly mention TC Pay in their communication, classify the conversation under the “Other Payment Issues” category and the “Account not provided Instantly (TC Pay)”sub category.
+
+The client’s communication will often be indirect, and they will express concern or confusion about the status of their account without explicitly mentioning the payment method. However, look for context that can indicate TC Pay as the payment method.
+
+Look for phrases such as:
+
+“I made a payment, but I still don’t have access to my account.”
+
+“My account wasn’t reset after the payment went through.”
+
+“I paid, but there’s no account available yet.”
+
+“It’s been a while since I paid, and I’m still waiting for my account.”
+
+Definition: This issue arises when a client makes a payment (via TC Pay) but does not receive their account immediately, or the account is not reset as expected. While the client may not always explicitly mention TC Pay, the categorization can be determined from the context of the payment issue.
+
+The agent will show emapthy and sometimes they will ask the client to wait for 12 hours
+
+Sub-Category Name:
+Account not provided Instantly (Local Payment)
+
+Description:
+If a client reports that they have not received their account instantly after making a payment, and the communication does not explicitly mention the payment method, but it is inferred that the payment was made via local payment methods (such as M-Pesa, D-Local, PayProcc, etc.),
+
+Look for phrases where the client expresses concern or frustration about delays in receiving their account after making a payment, without directly mentioning the payment method, such as:
+
+“I’ve made the payment but haven’t received my account yet.”
+
+“It’s been a while since I paid, why isn’t my account active?”
+
+“I expected my account to be created immediately, but it’s still pending.”
+
+“I’ve made the payment, why am I still waiting for my account?”
+
+Definition: This issue arises when clients use local payment methods (like M-Pesa, D-Local, PayProcc) and do not receive their account immediately after payment. The client may express concern or worry, but the payment method is not always explicitly mentioned in their communication.
+
+They agent will show empathy and may ask which payment method he used and he may also ask for bank statement
+
+Sub-Category Name:
+Facing error while trying to make payment
+
+Description:
+If a client reports being unable to make a payment from the FundedNext Dashboard due to various errors or issues, classify the conversation under the “Other Payment Issues” category and the “Facing error while trying to make payment”sub category. The client might encounter payment processing errors, failure to proceed with the payment, or other issues preventing the successful completion of the transaction.
+
+Look for phrases indicating payment errors or difficulties completing a transaction, such as:
+
+“I can’t make the payment, something went wrong.”
+
+“The payment isn’t going through on the dashboard.”
+
+“I’m facing an error while trying to pay.”
+
+“I tried paying, but the transaction failed.”
+
+Definition: This issue arises when clients are unable to make payments through the FundedNext Dashboard due to various technical or system-related errors. The client may be trying to process a payment but faces unexpected issues or errors in completing the transaction.
+
+Sub-Category Name:
+UPI payment method not available
+
+Description:
+If a client reports that the UPI payment method is not available in India when trying to make a payment, classify the conversation under the “Other Payment Issues” category and the “UPI payment method not available”sub category.
+
+Look for phrases where clients express frustration or confusion about the unavailability of UPI, such as:
+
+“UPI payment method is not showing up for me.”
+
+“Why can’t I pay using UPI in India?”
+
+“I don’t see UPI as an option for payment.”
+
+“I can’t use UPI for payment, what should I do?”
+
+Definition: This issue occurs when clients from India are unable to use UPI as a payment method on the FundedNext platform, either because it’s not offered as a payment option or there’s a technical limitation preventing its availability.
+
+Sub-Category Name:
+Not able to make partial payment
+
+Description:
+If a client reports that they are unable to make a partial payment and specifically mentions that partial payments are required to be paid via crypto, classify the conversation under the “Other Payment Issues” category and the “Not able to make partial payment” sub-category.
+
+Look for phrases indicating difficulties or inability to complete a partial payment, especially if the client highlights the crypto payment requirement, such as:
+
+“I can’t make a partial payment with crypto.”
+
+“I tried to pay part of the amount using crypto, but it’s not working.”
+
+“I can’t pay the partial amount via crypto, what should I do?”
+
+“Why is the system not accepting my crypto for the partial payment?”
+
+"I do not have a crypto wallet"
+
+Always look for the context to decide the category
+
+Definition: This issue occurs when a client is unable to pay the partial amount of their dues via crypto, which is a required payment method for partial payments. The problem could be related to payment gateway issues or restrictions on the platform.
+
+
+Sub-Category Name:
+No payment found issue (UPI)
+
+Description:
+If a client reports that they have made a payment via UPI but it is not reflecting on their account, meaning no payment is found on your end, classify the conversation under the “Other Payment Issues” category and the “No payment found issue (UPI)” sub-category.
+
+Look for phrases where clients mention completing a payment but no record is found, such as:
+
+“I made the payment via UPI but it’s not showing up in my account.”
+
+“I’ve already paid, but the system doesn’t reflect it.”
+
+“The payment I made through UPI is not appearing anywhere.”
+
+“I completed the transaction, but I see no payment has been received.”
+
+Definition: This issue occurs when a client claims to have completed a payment through UPI, but no payment is found on the system's end, preventing the transaction from being recorded properly.
+
+Sub-Category Name:
+Payment rejected from Client's end
+
+Description:
+If a client reports an issue with a payment rejection that is determined to be from the client’s end (e.g., payment failed, declined by bank, or blocked by payment provider), classify the conversation under the “Other Payment Issues” category and the “Payment rejected from Client's end” sub-category.
+
+This issue may not always be communicated directly by the client. Often, agents will mention that the payment was rejected from the client's end based on system logs or troubleshooting.
+
+Look for phrases indicating payment rejection, such as:
+
+“The payment didn’t go through.”
+
+“I’m having trouble completing the payment.”
+
+“The payment is not being accepted, can you help?”
+
+“It says the payment failed, but I don’t know why.”
+
+“I tried again, but the payment was still rejected.”
+
+Agent Communication Context:
+
+“It seems the payment was rejected from your end. Please check with your bank or payment provider.”
+
+“The system is showing that the payment was blocked on your side. Can you try again or contact your payment provider?”
+
+Definition: This issue arises when a payment attempt is rejected or declined due to reasons on the client’s end. This could be due to issues like insufficient funds, payment provider restrictions, or card blocking, but the rejection is not caused by the FundedNext system
+
+Sub-Category Name:
+Payment Method not available
+
+Description:
+If a client reports that their preferred payment method is not available or cannot be selected during the payment process, classify the conversation under the “Other Payment Issues” category and the “Payment Method not available” sub-category.
+
+Look for phrases where clients express difficulty accessing or using a specific payment method, such as:
+
+“I don’t see my payment method listed.”
+
+“The payment option I want to use isn’t available.”
+
+“I can’t choose my preferred payment method.”
+
+“My payment method is missing from the options.”
+
+Definition: This issue arises when the client’s preferred payment method is not available in the payment options provided, causing difficulties during the transaction process.
+
+
+
+
+Sub-Category Name:
+Digit number exceeded
+
+Description:
+If a client reports that their Personal Identification Number (PIN) exceeds the allowed digit limit when trying to fill it out—especially for Kenyan clients—classify the conversation under the “Other Payment Issues” category and the “Digit number exceeded” sub-category.
+
+Look for phrases where the client mentions the PIN being too long or exceeding the system’s limit, such as:
+
+“My PIN has too many digits, it won’t let me submit it.”
+
+“I’m trying to enter my PIN, but it exceeds the limit.”
+
+“I can’t fill in my PIN because it’s too long.”
+
+“I’m from Kenya, and my PIN doesn’t fit in the required space.”
+
+Definition: This issue occurs when clients, particularly those from Kenya, try to enter a Personal Identification Number (PIN) that exceeds the allowed digit limit on the payment or registration form.
+
+Sub-Category Name:
+Payment not found (local)
+
+Description:
+If a client claims to have made a payment on their end, but the payment cannot be found in the system, classify the conversation under the “Other Payment Issues” category and the “Payment not found (local)” sub-category. This is typically the case with local payments made via methods such as Payprocc, D-Local, or M-pesa.
+
+Look for mentions of the following local payment methods:
+
+Payprocc
+
+D-Local
+
+M-pesa
+
+If any of these payment methods are mentioned, proceed with categorizing the conversation under this sub-category. Look for phrases like:
+
+“I made the payment, but it’s not showing on my account.”
+
+“I used M-pesa to pay, but I don’t see it reflected.”
+
+“The payment via Payprocc was made, but it hasn’t been received.”
+
+“I paid through D-Local, but the payment is missing.”
+
+Definition: This issue arises when the client has completed a local payment using one of the specified payment methods, but the payment is not reflected in the system or found on the FundedNext platform.
+
+
+Sub-Category Name:
+Payout on hold
+
+Description:
+If a client reports that their payout is on hold but does not explicitly mention the 24-hour brand promise of a guaranteed payout, classify the conversation under the “Payout related issue” category and the “Payout on hold” sub-category.
+
+This issue occurs when a payout is delayed or put on hold for various reasons, and clients may express frustration about the hold without mentioning the specific guarantee.
+
+Look for phrases indicating a delay or hold on the payout, such as:
+
+“My payout is on hold, and I haven’t received it yet.”
+
+“I’ve been waiting for my payout, but it’s still on hold.”
+
+“Is there an issue with my payout? It’s not coming through.”
+
+“My payment is delayed; it’s showing as on hold.”
+
+Definition: This issue arises when a client’s payout is on hold due to internal processes, verification, or other reasons. The client may not directly reference the 24-hour payout guarantee but will often inquire or express frustration about the delay.
+
+Sub-Category Name:
+Client wants Challenge Phase Profit Share immediately after getting the FundedNext Account
+
+Description:
+If a client requests to receive their Challenge Phase Profit Share immediately after receiving the FundedNext Account, before completing the trading cycle, classify the conversation under the “Payout related issue” category and the “Client wants Challenge Phase Profit Share immediately after getting the FundedNext Account” sub-category.
+
+Clients may not explicitly mention the trading cycle, but agents should explain that the Profit Share is typically available only after completing the trading cycle. Look for phrases where the client is asking for immediate payout without considering the necessary cycle or milestones.
+
+Look for phrases like:
+
+“Can I get the Profit Share right after I receive the account?”
+
+“I want my profit share now that I have my account.”
+
+“Why can’t I receive my Profit Share as soon as I get the account?”
+
+“How soon can I get my Profit Share after receiving the FundedNext Account?”
+
+Agent Response Example:
+
+“The Profit Share for the Challenge Phase is typically paid after completing the full trading cycle, not immediately after receiving the FundedNext Account.”
+
+“Please note that the trading cycle needs to be completed before any Profit Share can be processed. The trading cycle includes hitting specific profit milestones and other conditions.”
+
+Definition: This issue arises when a client requests to receive their Profit Share from the Challenge Phase immediately after being allocated the FundedNext Account, before fulfilling the trading cycle requirements. The Profit Share can only be processed once the cycle has been completed.
+
+
+Sub-Category Name:
+Payout Discrepancy
+
+Description:
+If a client reports that a payout was disbursed from FundedNext's end but they did not receive it or there is an amount discrepancy between what was sent and what they received, classify the conversation under the “Payout related issue” category and the “Payout Discrepancy” sub-category.
+
+Look for phrases where the client mentions issues with the payout not being received or discrepancies in the payout amount, such as:
+
+“I haven’t received the payout that was sent from your end.”
+
+“The amount you sent is different from what I expected.”
+
+“I got a payout, but the amount doesn’t match what was promised.”
+
+“I received the payout, but it’s not the correct amount.”
+
+Definition: This issue arises when there’s a discrepancy in the payout amount that was disbursed from FundedNext’s side or when the client has not received the payout at all. The client may also express frustration due to the difference in the payout amount.
+
+Important Notes: Be sure to include the client’s and agent’s communication to verify the details of the payout discrepancy, and ensure that the amount and timeline mentioned align with what was communicated between both parties.
+
+Sub-Category Name:
+Client shared Invalid Wallet Address
+
+Description:
+If a client shares an invalid wallet address for a payout, preventing the transaction from being processed, classify the conversation under the “Payout related issue” category and the “Client shared Invalid Wallet Address” sub-category.
+
+Look for phrases where the client has provided a wallet address that is invalid, leading to an issue in processing the payout. The conversation may include requests for the client to correct or provide an alternative address.
+
+Look for communication from both the client and the agent, such as:
+
+Client: “I provided the wallet address but it hasn’t worked for the payout.”
+
+Client: “I’m getting an error when I try to provide my wallet details.”
+
+Agent: “It seems the wallet address you provided is invalid. Please verify it and send the correct one.”
+
+Agent: “We couldn’t process the payout due to the incorrect wallet address shared. Could you provide a valid one?”
+
+Definition: This issue occurs when the client shares a wrong or invalid wallet address, preventing the payout from being processed successfully. The agent typically requests the correct address to proceed with the payout.
+
+
+
+Sub-Category Name:
+RiseWorks issue
+
+Description:
+If a client reports that their payout is on hold, and the reason is related to the incomplete RiseWorks registration, but they do not explicitly mention RiseWorks registration, classify the conversation under the “Payout related issue” category and the “RiseWorks issue” sub-category.
+
+Look for context indicating that the payout is on hold due to the incomplete registration process for RiseWorks. Even if the client does not directly mention the registration status, they may communicate the issue through phrases about the payout being delayed or on hold.
+
+Client’s communication examples:
+
+“My payout is on hold and I’m not sure why.”
+
+“I’m waiting for my payout, but it’s been delayed.”
+
+“Why is my payout on hold? There seems to be an issue.”
+
+Agent’s communication examples:
+
+“It looks like your payout is on hold because your RiseWorks registration hasn’t been completed yet.”
+
+“Your payout can’t be processed until your RiseWorks registration is finalized.”
+
+“Please ensure that your RiseWorks account is fully registered to proceed with the payout.”
+
+Definition: This issue occurs when a payout is delayed or held due to the client’s incomplete registration with RiseWorks, which is required for processing the payout. This often happens if the client has not finalized their account details or submitted necessary documents.
+
+Sub-Category Name:
+Client is claiming processing fee is very high
+
+Description:
+If a client claims that the processing fee for their payout is very high, classify the conversation under the “Payout related issue” category and the “Client is claiming processing fee is very high” sub-category. This issue typically arises when clients feel the processing charges are higher than expected or compared to other platforms.
+
+Look for phrases where clients express concern or frustration over the processing fee, such as:
+
+“The processing fee is too high for my payout.”
+
+“I didn’t expect such a high fee on my withdrawal.”
+
+“Why is the fee so expensive for this payout?”
+
+“The fees for processing my payout are unreasonable.”
+
+Definition: This issue arises when clients feel that the payout processing fee is disproportionately high or not clearly explained, leading to dissatisfaction with the transaction.
+
+Client and Agent Communication: Make sure to include the communication between the client and the agent to fully understand the context of the claim and verify if any explanations or justifications were provided by the agent regarding the processing fee.
+
+Sub-Category Name:
+Client is asking for an Invoice
+
+Description:
+If a client requests a payout invoice—which FundedNext does not provide—classify the conversation under the “Payout related issue” category and the “Client is asking for an Invoice” sub-category.
+
+Look for phrases where the client is asking for an invoice or similar documentation related to their payout, such as:
+
+“Can you provide an invoice for my payout?”
+
+“I need a payout invoice for my records.”
+
+“Could I get a detailed invoice for my recent payout?”
+
+“Please send me an invoice for the payout I received.”
+
+Definition: This issue arises when a client requests a payout invoice, but FundedNext does not provide this type of documentation. The agent should inform the client that payout invoices are not issued, and further clarification may be provided on what FundedNext offers for payout tracking.
+
+Important Notes: Always include both the client’s communication and the agent’s response to ensure clarity on the request and response process.
+
+Sub-Category Name:
+Payout deducted (TRM Email Sent)
+
+Description:
+If a client reports that their payout has been deducted and they received less than expected, classify the conversation under the “Payout related issue” category and the “Payout deducted (TRM Email Sent)” sub-category. The client may reference receiving a reduced amount and will likely mention an email from the Trading Ethics & Standards Team regarding the deduction.
+
+Look for phrases where the client mentions receiving a reduced payout, such as:
+
+“I received less than expected in my payout.”
+
+“My payout was deducted, and I don’t know why.”
+
+“I was paid less than I should have received.”
+
+“I got an email from Trading Ethics & Standards about the deduction.”
+
+Definition: This issue occurs when a payout is deducted from a client's account, resulting in a lower amount than expected. The deduction is typically explained in an email sent by the Trading Ethics & Standards Team. Agents will communicate with the client regarding the deduction and provide relevant details from the email sent.
+
+Client’s communication may look like:
+
+“Why was my payout amount lower than I expected?”
+
+“I got an email from Trading Ethics, but I don’t understand the deduction.”
+
+Agent’s communication will include:
+
+“Thank you for reaching out. I understand your concern regarding the deduction, and I’ve checked your account. The deduction was explained in the email sent by the Trading Ethics & Standards Team. Let me know if you'd like further details.”
+
+Sub-Category Name:
+Want to take payout from breached FundedNext Account
+
+Description:
+If a client requests a payout from a breached FundedNext account, where the account has been breached due to exceeding the Overall Loss Limit (OLL) or other reasons, and they are unaware that payouts are not possible from such an account, classify the conversation under the “Payout Related Issue” category and the “Want to take payout from breached FundedNext Account” sub-category.
+
+Look for phrases where clients are unaware that they cannot take a payout from a breached account, such as:
+
+“I want to withdraw funds from my breached account.”
+
+“Can I get a payout even though my account is breached?”
+
+“My account is breached, but I still want to take my payout.”
+
+“Is it possible to withdraw from a breached account?”
+
+Definition: Clients in this scenario are seeking a payout from an account that has been breached due to excessive losses or other policy violations, which prevents them from withdrawing funds. Agents should explain that payouts are not allowed from breached accounts, and the account must be reinstated or reset before any payouts can be processed.
+
+Note:
+
+Client’s Communication: "I want to take a payout from my breached account. Can you help me with that?"
+
+Agent’s Response: "Unfortunately, payouts cannot be processed from breached accounts. The account must be reinstated or reset to allow any withdrawals. Let me know if you'd like more details on how to proceed."
+
+Sub-Category Name:
+Profit Share is under $20
+
+Description:
+If a client reports being unable to request a payout because their profit share is under $20, classify the conversation under the “Payout related issue” category and the “Profit Share is under $20” sub-category. According to FundedNext policy, clients are ineligible for a payout if their balance is lower than this threshold.
+
+Look for phrases indicating the client’s frustration or confusion about not being able to request a payout, such as:
+
+“I can’t request a payout because the amount is under $20.”
+
+“Why can’t I withdraw? My profit share is below $20.”
+
+“I tried requesting a payout, but it didn’t go through.”
+
+“The system says I’m ineligible for a payout because my balance is under $20.”
+
+Definition: This issue occurs when the client attempts to request a payout, but their profit share is below the $20 minimum threshold, making them ineligible for withdrawal according to FundedNext’s payout policy.
+
+Communication Examples:
+Client: "I made some profits, but I can't request a payout."
+Agent: "According to FundedNext's policy, payouts are only allowed when the profit share is $20 or more. Since your current balance is under $20, you are ineligible to request a payout at the moment."
+
+Sub-Category Name:
+ECM Issue
+
+Description:
+If a client reports that they are not eligible for a payout or are receiving less than expected payout due to an ECM issue, classify the conversation under the “Payout related issue” category and the “ECM Issue” sub-category. The email from the Trading Ethics & Standards Team typically outlines the issue that affects their payout.
+
+Look for phrases indicating the client’s payout has been impacted or reduced because of the ECM (Eligibility Criteria Monitoring) issue, such as:
+
+“I haven’t received my full payout, is it because of an ECM issue?”
+
+“I was told I’m not eligible for a payout due to ECM.”
+
+“My payout amount is lower than expected due to ECM problems.”
+
+“I got an email from the Trading Ethics & Standards Team about ECM affecting my payout.”
+
+Definition: This issue occurs when a client is either ineligible for a payout or receives a reduced payout because of an ECM issue, which is typically flagged by the Trading Ethics & Standards Team based on account performance or behavior.
+
+Provide client’s and agent’s communication: Ensure that any communication between the client and the Trading Ethics & Standards Team regarding ECM is included, as this will help clarify the reason behind the payout adjustment.
+
+
+
+Sub-Category Name:
+Not following proper guidelines while logging into platform
+
+Description:
+This issue occurs when a client is unable to log in to trading platforms such as Match-Trader, MT4, MT5, MT5 Web Terminal, or cTrader due to not following the correct login procedures. This includes cases where clients enter incorrect credentials, select the wrong server, or skip necessary steps during the login process.
+
+Clients may provide screen recordings, videos, or screenshots that clearly show improper login attempts. These cases should be classified under this sub-category, as the issue is not technical but procedural.
+
+Sub-Category Name:
+Verdict from CPM
+
+Description:
+This issue arises when a verdict or decision impacting the client is communicated as coming from the Partner Management team (CPM). Clients may not explicitly mention CPM in their messages; however, the classification is based on the agent’s response confirming that the decision came from CPM.
+
+Common agent phrases indicating CPM involvement:
+
+“The decision has been made by the Partner Management team.”
+
+“Partner Management has provided their verdict on this matter.”
+
+“This response is from the Partner Management team.”
+
+“The outcome was decided by Partner Management.”
+
+Classify such cases under the "Verdict from different team" category and the “Verdict from CPM” sub-category.
+
+Sub-Category Name:
+Verdict from Trading and Ethics
+
+Description:
+This issue refers to a verdict or decision made by the Trading Ethics & Standards Team (TRM), typically involving a review of trading behavior, compliance violations, or ethical concerns. Clients usually do not mention this team directly; instead, the agent is expected to confirm and communicate the involvement of the Trading Ethics & Standards Team.
+
+Common agent phrases include:
+
+“The decision has been made by the Trading Ethics & Standards Team.”
+
+“The verdict comes from the Trading Ethics & Standards Team after a thorough review.”
+
+“The Trading Ethics & Standards Team reviewed your case and provided their judgment.”
+
+Classify these cases under the "Verdict from different team" category and the “Verdict from Trading and Ethics” sub-category.
+
+Sub-Category Name:
+Verdict from PO
+
+Description:
+This issue arises when a decision or resolution has already been made by the Platform Operation Team (PO), and the agent communicates that no further support can be provided. Although clients often don’t mention PO directly, agents convey the outcome based on internal ticket resolutions.
+
+Common agent phrases include:
+
+“Unfortunately, the Platform Operation Team has made a final decision, and I am unable to assist further.”
+
+“I regret to inform you that the Platform Operation Team has provided a verdict, and there’s nothing more I can do at this point.”
+
+“The issue was resolved by the Platform Operation Team, and I can’t offer any additional support on this matter.”
+
+These cases should be classified under the "Verdict from different team" category and the “Verdict from Platform Operation Team” sub-category.
+
+Sub-Category Name:
+Dashboard update delay
+
+Description:
+This issue occurs when the FundedNext Dashboard is not updating in real time or reflecting the latest account activity. It can involve delays or inaccuracies in key data points such as the Daily Loss Limit, recent trades, or account balance. Clients typically report that the dashboard shows outdated or incorrect information, even after executing trades or reaching thresholds.
+
+This may require backend synchronization or technical investigation to resolve.
+
+Common client-reported scenarios include:
+
+Daily Loss Limit Not Updating:
+
+“My daily loss limit isn’t updating.”
+
+“The dashboard still shows my old loss limit.”
+
+“I can’t see my new loss limit after today’s trades.”
+
+“The daily loss limit hasn’t refreshed, it still shows yesterday’s value.”
+
+Dashboard Not Updating in Real Time:
+
+“My dashboard isn’t updating in real time.”
+
+“There’s a delay in seeing my recent trades or balance changes.”
+
+“The data on my dashboard is not reflecting the latest updates.”
+
+“I’m seeing old information on the dashboard, even though I just made a trade.”
+
+Trades Not Reflected on Dashboard:
+
+“I took a trade, but it’s not showing on my dashboard.”
+
+“My trade doesn’t appear in the dashboard even though I placed it.”
+
+“I made a trade on the platform, but it’s not updating on the dashboard.”
+
+“Why isn’t my recent trade showing up in the dashboard?”
+
+Sub-Category Name:
+Not eligible for 50% Payout after breaching FundedNext Account
+
+Description:
+If a client reports that they are not eligible for the 50% payout after breaching their FundedNext Account, classify the conversation under the “Payout related issue” category and the “Not eligible for 50% Payout after breaching FundedNext Account” sub-category.
+
+Look for communication from the client expressing confusion or frustration about the 50% payout eligibility after account breach, such as:
+
+“Why am I not eligible for the 50% payout after the breach?”
+
+“I thought I’d still get the 50% payout even after my account was breached.”
+
+“Can I still get the payout after breaching my account?”
+
+“I breached my account, but I’m being told I don’t qualify for the payout.”
+
+In communication between the client and agent, the agent might explain that breaching the FundedNext account disqualifies the client from receiving the 50% payout, as per FundedNext’s terms and conditions.
+
+Agent response examples:
+
+“Once the account is breached, the 50% payout is no longer applicable as per our terms.”
+
+“Unfortunately, breaching the account means you are no longer eligible for the payout.”
+
+“The payout is only available if the account remains active and within the limits.”
+
+Definition: This issue occurs when clients are not eligible for the 50% payout due to breaching their FundedNext account, meaning their account went beyond the predefined loss limits, leading to the disqualification of the payout.
+Sub-Category Name:
+Claiming Brand Promise
+Description:
+If a client is claiming the Brand Promise but is not eligible to receive it, classify the conversation under the “Payout related issue” category and the “Claiming Brand Promise” sub-category. The Brand Promise guarantees a payout within 24 hours from the time the payout request is made, but only if the client meets the eligibility criteria.
+
+Look for situations where the client is frustrated about not receiving the payout within the promised time but does not qualify for it. Phrases to look for:
+
+“I requested my payout, but it’s not processed within 24 hours.”
+
+“Why didn’t I get my payout as promised?”
+
+“I was expecting the payout within a day, but it hasn’t come through.”
+
+“I heard about the Brand Promise, but my payout isn’t being processed.”
+
+Definition: The Brand Promise guarantees that a payout will be processed within 24 hours of the request, but clients must meet certain eligibility criteria. If the client claims this but is ineligible, the issue should be categorized under this sub-category.
+
+Client's and Agent’s Communication Example:
+
+Client: “I requested my payout but I still haven’t received it. What’s going on?”
+
+Agent: “I see that your request has been made, but unfortunately, you do not meet the eligibility requirements for the Brand Promise, which ensures payouts within 24 hours. Let me assist you with your payout status and guide you on the next steps.”
+
+Sub-Category Name:
+Client's preferred payout method is not available
+If a client reports that their preferred payout method is not available for withdrawal, classify the conversation under the “Payout related issue” category and the “Client's preferred payout method is not available” sub-category. The available payout methods include:
+
+USDT (ERC20, TRC20)
+
+USDC (ERC20)
+
+RiseWorks
+
+Look for phrases where clients express dissatisfaction or confusion because their preferred payout method is not listed or available, such as:
+
+“I wanted to withdraw via my preferred method, but it’s not available.”
+
+“I can’t see my preferred payout method in the options.”
+
+“Why can’t I withdraw using my usual payment method?”
+
+“Is there a way to use [preferred method] for my payout?”
+
+Definition: This issue occurs when the client’s preferred payout method is not available in the current list of payout options, which include USDT (ERC20, TRC20), USDC (ERC20), and RiseWorks. The client may need to use an alternative method or request assistance from the support team to resolve this.
+
+Client's communication:
+
+“I want to withdraw using [client's preferred method], but it’s not listed.”
+
+“Is there a reason why [preferred method] isn’t available for payout?”
+
+Agent's communication:
+
+“Currently, we can only process payouts via USDT (ERC20, TRC20), USDC (ERC20), or RiseWorks. Could you please use one of these methods for your payout?”
+
+“I apologize, but [preferred method] is not available at this time. Please choose one of the listed methods.”
+
+Sub-Category Name:
+Payout Delay Issue
+Description:
+If a client reports a delay in receiving their payout, classify the conversation under the “Payout related issue” category and the “Payout Delay Issue” sub-category.
+
+Look for phrases indicating the client’s concern about a delayed payout, such as:
+
+“I haven’t received my payout yet.”
+
+“It’s been longer than expected, where is my payout?”
+
+“I’m still waiting for the payout that was due.”
+
+“Why is my payout delayed?”
+
+Provide the client’s and agent’s communication:
+
+Client’s message: Should mention the delay and express concern or frustration about the payout not being received.
+
+Agent’s response: May provide an update, explanation, or ask for further details regarding the payout process and possible reasons for the delay.
+
+Definition: This issue arises when a client’s payout, which was expected within a certain timeframe, is delayed, and the client reaches out for an update or clarification regarding the delay.
+
+Sub-Category Name:
+Not eligible for Payout
+
+Description:
+If a client reports that they are not eligible for a payout, and it is discovered that the Profit Checker did not run or the trading cycle did not end, classify the conversation under the “Payout related issue” category and the “Not eligible for Payout” sub-category.
+
+Look for phrases where clients mention not being able to claim or receive their payout due to system or cycle issues, such as:
+
+“I can’t get my payout; the Profit Checker didn’t run.”
+
+“My trading cycle isn’t complete, so I’m not eligible for the payout.”
+
+“I haven’t received my payout because my cycle isn’t finished.”
+
+“Why isn’t my payout being processed? The Profit Checker didn’t run.”
+
+Definition: This issue occurs when the client is not eligible for a payout because the system was unable to run the Profit Checker or the trading cycle did not end, preventing the payout from being processed.
+
+Notes: Provide both the client’s and the agent’s communication around the issue, specifically mentioning the Profit Checker and the trading cycle.
+
+Sub-Category Name:
+Not eligible for 15% Profit Share from Challenge Phase
+
+Description:
+If a client requests the 15% Profit Share from the Challenge Phase but they are not eligible for it, classify the conversation under the “Payout related issue” category and the “Not eligible for 15% Profit Share from Challenge Phase” sub-category.
+
+Look for phrases like:
+
+“I’m eligible for the 15% profit share, why haven’t I received it?”
+
+“Why am I not getting the profit share from the Challenge Phase?”
+
+“I thought I qualified for the 15% profit share but I haven’t received anything.”
+
+Definition: This issue arises when clients mistakenly believe they are eligible for the 15% Profit Share from the Challenge Phase, but the terms or their performance do not meet the eligibility criteria.
+
+Sub-Category Name:
+Client dissatisfied regarding not getting 15% profit share for Stellar Lite Challenge
+
+Description:
+If a client expresses dissatisfaction about not receiving the 15% profit share for the Stellar Lite Challenge, even though they are not eligible for it, classify the conversation under the “Payout related issue” category and the “Client dissatisfied regarding not getting 15% profit share for Stellar Lite Challenge” sub-category.
+
+Look for phrases like:
+
+“I’m disappointed that I didn’t get the profit share for Stellar Lite.”
+
+“Why don’t I qualify for the 15% profit share in the Stellar Lite Challenge?”
+
+“I’ve been expecting the 15% profit share, but I haven’t received anything.”
+
+Definition: This issue arises when clients are dissatisfied with the non-receipt of the 15% profit share from the Stellar Lite Challenge, which is not offered as part of the plan for this particular account type.
+
+Sub-Category Name:
+Didn't receive OTP while requesting Payout
+
+Description:
+If a client reports that they did not receive the OTP (One-Time Password) while trying to request a payout, classify the conversation under the “Payout related issue” category and the “Didn't receive OTP while requesting Payout” sub-category.
+
+Look for phrases like:
+
+“I didn’t get the OTP to confirm my payout request.”
+
+“The OTP didn’t arrive when I tried to request a payout.”
+
+“I can’t complete the payout process because I never received the OTP.”
+
+Definition: This issue occurs when a client is unable to proceed with their payout request due to not receiving the OTP, which is typically required for security verification.
+
+Sub-Category Name:
+Payout disbursed but client did not receive it
+
+Description:
+If a client reports that the payout was disbursed from FundedNext’s end, but they did not receive it, classify the conversation under the “Payout related issue” category and the “Payout disbursed but client did not receive it” sub-category.
+
+Look for phrases like:
+
+“The payout was processed on your end, but I haven’t received anything.”
+
+“I got a notification that the payout was sent, but it hasn’t arrived.”
+
+“The payment was disbursed, but I still haven’t received the funds.”
+
+Definition: This issue occurs when FundedNext confirms that the payout has been disbursed, but the client has not received it, typically due to processing delays or banking issues.
+
+Sub-Category Name:
+Restricted Strategy Related Issue
+
+Description:
+If a client expresses dissatisfaction with the restricted strategies provided by FundedNext, classify the conversation under the “Restriction Related Issue” category and the “Restricted Strategy Related Issue” sub-category.
+
+Look for phrases like:
+
+“I’m not happy with the strategies that are restricted.”
+
+“Why are certain strategies not allowed in the platform?”
+
+“I can’t use the strategy I prefer.”
+
+“Why can’t I trade using this specific strategy?”
+
+The mostly inquire about HFT, Scalping, quick strike, Copy Trading From Others, Hedging or Group Hedging Across Various Accounts, any form of Arbitrage Trading, Grid Trading, Tick Scalping, Latency Trading, Account Rolling, One-sided Betting, Hyperactivity, Use of Platform or Data Freezing Due to Demo Server Errors, Account Sharing/Device Sharing.
+
+Client usually explains his strategy, but we do not provide direct trading suggestions.
+
+Definition: This issue occurs when a client is dissatisfied with the restrictions placed on certain trading strategies in FundedNext’s platform.
+
+Sub-Category Name:
+Location related issue
+
+Description:
+If a client faces issues with their account due to their location (for example, receiving an email from the Trading Ethics & Standards Team about location restrictions), classify the conversation under the “Restriction Related Issue” category and the “Location related issue” sub-category.
+
+Look for phrases where clients mention their location as an issue, such as:
+
+“I received an email saying my location is an issue.”
+
+“My account is facing problems because of my location.”
+
+“I got an email from the Trading Ethics & Standards Team regarding my location.”
+
+Definition: This issue occurs when clients are restricted or encounter issues related to their geographical location, often communicated by the Trading Ethics & Standards Team.
+
+Sub-Category Name:
+Restricted Country Issue
+
+Description:
+If a client mentions trying to trade from a restricted country or expresses concerns about trading from such a location, classify the conversation under the “Restriction Related Issue” category and the “Restricted Country Issue” sub-category.
+
+Look for phrases where clients mention restricted countries, such as:
+
+“I can’t trade because I’m in a restricted country.”
+
+“Can I trade from [restricted country]?”
+
+“My account is blocked because I’m in a restricted country.”
+
+most of the cases, client gets an email from the Trading Ethics & Standards Team and they explain that they only used VPN.
+
+Definition: This issue arises when a client attempts to trade from or has concerns about restricted countries that FundedNext does not support.
+
+Sub-Category Name:
+Concern regarding the usage of EA
+
+Description:
+If a client expresses a concern or confusion about the usage of Expert Advisors (EAs) on their account, classify the conversation under the “Restriction Related Issue” category and the “Concern regarding the usage of EA” sub-category.
+
+Look for phrases where the client seeks clarification or raises concerns, such as:
+
+“Can I use an EA on my account?”
+
+“I’m confused about the rules regarding EA usage.”
+
+“I want to use an EA, but I’m unsure if it’s allowed.”
+
+Definition: This issue occurs when a client has questions or concerns about using Expert Advisors (EAs) on their account, which may be restricted or subject to specific conditions.
+
+Sub-Category Name:
+Restrictions on using EA in cTrader
+
+Description:
+If a client reports being unable to use an EA on the cTrader platform or expresses confusion about the restrictions, classify the conversation under the “Restriction Related Issue” category and the “Restrictions on using EA in cTrader” sub-category.
+
+Look for phrases where clients mention their inability to use EAs on cTrader, such as:
+
+“I can’t use an EA on cTrader.”
+
+“Is EA use allowed on cTrader?”
+
+“I’m unable to activate my EA on cTrader.”
+
+Client also refer to EA by mentioning Bot or Trading Bot.
+
+Definition: This issue arises when a client is restricted from using Expert Advisors (EAs) on the cTrader platform, either due to platform limitations or FundedNext’s policies.
+
+Sub-Category Name:
+Abuser client (Permanently banned)
+
+Description:
+If a client reports being permanently banned from FundedNext due to violating policies or exhibiting abusive behavior, classify the conversation under the “Restriction Related Issue” category and the “Abuser client (Permanently banned)” sub-category.
+
+Look for phrases where clients express frustration about being banned, such as:
+
+“Why was I banned from FundedNext?”
+
+“I’ve been permanently banned for no reason.”
+
+“I didn’t know I violated the rules, why am I banned?”
+
+Gets an email from Trading Ethics & Standards Team regarding the permanent ban.
+
+Definition: This issue occurs when a client is permanently banned from FundedNext due to violating terms or engaging in abusive actions, such as cheating, fraud, or other prohibited behaviors.
+
+Sub-Category Name:
+Leverage Reduction
+
+Description:
+If a client reports that their leverage has been reduced by the Trading Ethics & Standards Team, classify the conversation under the “Restriction Related Issue” category and the “Leverage Reduction” sub-category.
+
+Look for phrases where clients express dissatisfaction or confusion about leverage changes, such as:
+
+“Why was my leverage reduced?”
+
+“My leverage was lowered by the Trading Ethics & Standards Team, what’s going on?”
+
+“I’m unhappy with the reduction in my leverage.”
+
+Definition: This issue arises when a client’s leverage is reduced by the Trading Ethics & Standards Team, usually as a result of risk management measures or policy enforcement.
+
+Sub-Category Name:
+Email Change
+
+Description:
+If a client requests to change their email address associated with their FundedNext account and this change is not possible, classify the conversation under the “Account Related Issue” category and the “Email Change” sub-category.
+
+Look for phrases where clients ask about changing their email, such as:
+
+“Can I change my email address for my account?”
+
+“I want to update my email but it’s not working.”
+
+“Is it possible to change the email associated with my account?”
+
+“I need to change my email but I’m not sure how.”
+
+Definition: This issue occurs when a client requests to change the email address linked to their FundedNext account, but the system or policies do not allow for email address changes.
+
+The agent will inform him that it is not possible to change the email
+
+Sub-Category Name:
+Client did not use coupon code but claiming the offer
+
+Description:
+If a client claims to have received an offer or discount, but they did not use the valid coupon code required for the promotion, classify the conversation under the “Account Related Issue” category and the “Client did not use coupon code but claiming the offer” sub-category.
+
+Look for phrases where clients mention the offer but fail to acknowledge using the coupon code, such as:
+
+“I should’ve received the offer, but I didn’t use a coupon.”
+
+“Why didn’t I get the discount? I thought the offer was applied.”
+
+“I haven’t used the coupon code, but I’m claiming the offer anyway.”
+
+“I should have gotten the promotion, but I didn’t enter the code.”
+
+Client's Communication Example:
+
+“I purchased the account, but I didn’t use the coupon code. Can you apply the offer to my account?”
+
+“I believe I should have received a discount, but I didn’t enter the coupon code. Can I still claim the offer?”
+
+Agent's Communication Example:
+
+“Unfortunately, the offer is only valid if the coupon code is applied during checkout. Since the code was not used, the promotion does not apply to your purchase.”
+
+“To receive the discount, the coupon code must be entered at the time of purchase. Since it was not applied, I cannot retroactively apply the offer.”
+
+Definition: This issue arises when a client claims to have received a specific offer or discount, but they did not follow the necessary steps, such as using the coupon code, to activate the promotion.
+
+Sub-Category Name:
+Giveaway issue (False claim)
+
+Description:
+If a client claims that they are eligible for a giveaway award but is not actually eligible, classify the conversation under the “Account Related Issue” category and the “Giveaway issue (False claim)” sub-category.
+
+Look for phrases where the client claims a giveaway prize, but they do not meet the eligibility criteria, such as:
+
+“I should have won the giveaway, why wasn’t I selected?”
+
+“I’m eligible for the giveaway, where’s my prize?”
+
+“I entered the giveaway but haven’t received anything.”
+
+Agent’s response:
+
+“Thank you for reaching out. I’ve checked your eligibility, and unfortunately, it appears that you do not meet the criteria for this giveaway. Please review the eligibility rules and feel free to reach out if you have any questions.”
+
+“I understand your excitement, but after reviewing your account, it seems that you weren’t selected for this giveaway. Please check the terms and conditions to confirm the eligibility requirements.”
+
+Definition: This issue arises when a client claims to be eligible for a giveaway award but does not meet the necessary criteria for receiving the prize. The client may not be aware of the specific eligibility rules, leading to confusion or dissatisfaction.
+
+Sub-Category Name:
+Account Got Flagged But Email Was Not Sent
+
+Description:
+If a client reports that their account was flagged but they did not receive an email notification about the action, classify the conversation under the “Account Related Issue” category and the “Account Got Flagged But Email Was Not Sent” sub-category.
+
+Look for phrases where clients mention their account being blocked, paused, or that they are unable to trade due to this issue. The client may express confusion or frustration about not receiving an email notification, even though their account status has changed. The categorization can be based on the context of the communication.
+
+Look for phrases like:
+
+“My account is blocked, but I never got an email.”
+
+“Why was my account paused, I didn’t receive any email about it?”
+
+“I can’t trade anymore, but I didn’t get any email.”
+
+“My account was flagged, and I haven’t received any notification.”
+
+Definition: This issue occurs when the client’s account is flagged (blocked, paused, or restricted from trading) but the expected email notification regarding the flagging action was not sent or was not received by the client.
+
+Client's and Agent’s Communication Example:
+Client Communication:
+
+“I tried logging into my account and it says blocked. I can’t trade anymore, but I didn’t get any email about this. What happened?”
+
+Agent Communication:
+
+“I apologize for the inconvenience. It seems your account has been flagged, but we may have missed sending the notification email. Let me verify this issue for you and get back to you with the details shortly.”
+
+Sub-Category Name:
+Max allocation reached (300k)
+
+Description:
+If a client reports that they have reached the maximum allocation fund for their account, specifically 300k or 50k, classify the conversation under the “Account Related Issue” category and the “Max allocation reached (300k)” sub-category.
+
+Look for phrases where the client mentions having reached their max allocation, such as:
+
+“I’ve reached my maximum account allocation, what can I do now?”
+
+“My account has hit the 300k/50k limit.”
+
+“I can’t receive more funds because I’ve hit the max allocation.”
+
+“My account is restricted because I’ve reached the maximum allocation.”
+
+Definition: This issue arises when the client has hit the maximum fund allocation for their account (300k), meaning they can no longer receive additional funds until their allocation is adjusted.
+
+Client's Communication Example:
+“I’ve reached the max limit of 300k on my account, can I increase this limit or do I need to do something else to continue trading?”
+
+
+
+Agent's Communication Example:
+“It looks like you’ve reached your account’s maximum allocation of 300k. To increase your allocation, you’ll need to review your account status with our team or consider upgrading your plan. Let me know if you'd like further assistance with that!”
+
+“Your current allocation limit has been reached. I’d be happy to help you explore options for increasing your limit. Would you like to proceed with that?”
+
+Sub-Category Name:
+Account paused (No payment found. System detected and deactivated the account.)
+
+Description:
+If a client reports that their account has been paused or deactivated without explicitly mentioning that it was due to a no payment found issue, classify the conversation under the “Account Related Issue” category and the “Account paused (No payment found. System detected and deactivated the account.)” sub-category.
+
+Look for phrases where the client expresses confusion or frustration over their account being paused or deactivated, but does not explicitly mention the payment issue, such as:
+
+“I can’t access my account, it’s paused.”
+
+“Why is my account deactivated? I’ve made the payment.”
+
+“My account is not working, and I can’t log in.”
+
+“I’m locked out of my account, what happened?”
+
+Agent’s response example:
+
+“It looks like your account was paused due to no payment being found. The system detected this issue and automatically deactivated the account. Please ensure your payment is processed correctly, and the issue should be resolved.”
+
+Also, after explaining the issue to the client, the agent will ask for the payment proof from the client so that they can escalate the issue to the relevant team for further verification.
+
+Definition: This issue occurs when a client’s account is paused or deactivated by the system due to a payment not being found, but the client is not aware that this is the reason, and the issue is not mentioned directly.
+
+Sub-Category Name:
+Max allocation issue (50k)
+
+Description:
+If a client expresses concern about not receiving a FundedNext account despite being eligible, the likely reason is that they have reached their maximum allocation limit of $50,000 in available funds for accounts. Unless they breach one of their existing FundedNext accounts, they will not be provided with additional accounts.
+
+Look for phrases where the client mentions not receiving a new account or expresses confusion about eligibility, such as:
+
+“I’ve met all the requirements, but I’m not getting a FundedNext account.”
+
+“Why can’t I receive a FundedNext account? I’ve qualified.”
+
+“I’ve reached my maximum fund allocation but didn’t know that would stop me from getting another account.”
+
+“Why am I not getting a FundedNext account when I’m eligible?”
+
+Client’s Communication:
+
+"I’ve qualified for a FundedNext account, but I haven’t received one yet. Can you explain why?"
+
+"I thought I could get more than one FundedNext account, but it seems like I’m stuck."
+
+Agent’s Communication:
+
+"It seems like you’ve reached your maximum fund allocation of $50,000 for FundedNext accounts. Unless you breach one of your current accounts, you won't be eligible for another account at this time."
+
+"Your eligibility for additional accounts is based on your fund allocation limit. Once you’ve used up your $50,000 maximum, no more accounts can be issued unless there’s a breach in one of your current accounts."
+
+"FundedNext permits users to hold up to $300,000 across their accounts. They can reach this limit with just one Challenge or by combining different Challenges. If traders opt to include the Double Up Add-On, they are permitted to hold up to $600,000 across their accounts. It's important to note that for traders in Cambodia, Mongolia, Slovakia, Slovenia, Taiwan, Ukraiane, the Czech Republic, and Pakistan, FundedNext allows a maximum allocation of $50,000 across their accounts. Please refer to the image below for information on the countries with a maximum allocation limit:
+
+For further details and examples, check out the article."
+
+Definition: This issue occurs when a client reaches the maximum fund allocation limit of $50,000 for FundedNext accounts, preventing them from receiving additional accounts unless they breach one of their existing accounts.
+
+Sub-Category Name:
+cTrader not available for 100/200K account
+
+Description:
+If a client reports that cTrader is not available for their 100K or 200K account, meaning they cannot purchase the account or access it on the cTrader platform, classify the conversation under the “Account Related Issue” category and the “cTrader not available for 100/200K account” sub-category.
+
+Look for phrases from the client indicating that they cannot select or access cTrader for these accounts, such as:
+
+“I’m trying to purchase the 100K account, but cTrader is not available.”
+
+“Why can’t I use cTrader with the 200K account?”
+
+“I want to buy a 100K/200K account, but I can’t choose cTrader as my platform.”
+
+Definition: This issue arises when a client is unable to purchase a 100K or 200K account or use cTrader with these specific account types, as cTrader is not available for these larger accounts.
+
+Agent's Response (Example)
+“I’m sorry for the confusion, but cTrader is not available for 100K or 200K accounts. This is a limitation for these account types. You may want to consider using a different platform that is supported, such as MT4 or MT5, for your account size.”
+
+Sub-Category Name:
+Dissatisfaction regarding the Extra payment for cTrader or Match-Trader
+
+Description:
+If a client expresses dissatisfaction regarding the extra payment of $25 for using cTrader or Match-Trader, classify the conversation under the “Account Related Issue” category and the “Dissatisfaction regarding the Extra payment for cTrader or Match-Trader” sub-category.
+
+Look for phrases where clients express frustration or confusion about the additional $25 payment, such as:
+
+“I didn’t know I had to pay an extra $25 for cTrader.”
+
+“Why do I have to pay more for using Match-Trader?”
+
+“I’m not happy with the additional payment for cTrader.”
+
+“Why is there an extra cost for cTrader/Match-Trader?”
+
+Definition: This issue arises when a client is dissatisfied with the additional $25 fee required for using cTrader or Match-Trader, which is mandatory for accessing those platforms.
+
+Sub-Category Name:
+Client was confused regarding our IP rule
+
+Description:
+If a client expresses confusion or asks questions about the IP rule that FundedNext enforces, classify the conversation under the “Account Related Issue” category and the “Client was confused regarding our IP rule” sub-category.
+
+Look for phrases where clients seek clarification on whether they can change their IP address or use different networks, such as:
+
+“Can I change my WiFi?”
+
+“Can I use a different network?”
+
+“I’ll be in another country, can I still access my account?”
+
+“Does the IP rule apply if I switch networks?”
+
+Definition: This issue arises when a client is uncertain or confused about FundedNext’s IP rule, particularly related to changing networks, using WiFi, or accessing the account from a different country.
+
+Client’s communication:
+
+“I’m traveling, and I’ll be in another country soon. Will that affect my account?”
+
+“I want to change my WiFi; will that cause issues with my account?”
+
+“I’m unsure if I can switch my network without getting blocked.”
+
+Agent’s communication:
+
+“Thank you for reaching out! Our IP rule does require you to use a consistent network or location to access the account. Changing your WiFi or network might trigger security measures, but you should still be able to access it as long as you’re within our allowed conditions.”
+
+“If you're traveling, make sure to let us know beforehand so we can ensure access to your account remains uninterrupted.”
+
+Sub-Category Name:
+Increased Price
+
+Description:
+If a client expresses concern or dissatisfaction about the increased price of the Challenge (such as a price hike for a specific account type or challenge package), classify the conversation under the “Account Related Issue” category and the “Increased Price” sub-category.
+
+Look for phrases where clients mention frustration or questions about the price increase, such as:
+
+“Why has the price of the challenge increased?”
+
+“The challenge price seems to have gone up, why is that?”
+
+“I didn’t expect the price increase for the challenge.”
+
+“I’ve been charged more than before for the same challenge.”
+
+Definition: This issue arises when a client notices or is affected by an increase in the price for a specific Challenge or related account offering, which may cause dissatisfaction or confusion about the change.
+
+Example Communication:
+Client:
+
+"I noticed that the price for the challenge has increased. Why is this happening?"
+
+"I was going to sign up for the challenge, but now the price has gone up. What happened?"
+
+"The price for the challenge was different last time. Why has it been increased?"
+
+Agent:
+
+"Thank you for reaching out. The price for the challenge has recently been updated due to [explanation, e.g., market conditions, value improvements, etc.]. Please let me know if you have any further questions regarding this change!"
+
+"I understand your concern regarding the price increase. The new pricing reflects [reason]. Please don’t hesitate to contact us if you need more information."
+
+"I can see the price increase may be frustrating. We’ve updated the challenge pricing due to [reason]. If you need help with the new pricing, feel free to ask."
+
+Sub-Category Name:
+Did not receive new account's credentials email on their registered email address
+
+Description:
+If a client reports that they did not receive the new account’s credentials email on their registered email address, classify the conversation under the “Account Related Issue” category and the “Did not receive new account's credentials email on their registered email address” sub-category.
+
+Look for phrases indicating the client is missing their credentials email, such as:
+
+“I haven’t received the credentials email for my new account.”
+
+“I registered, but I didn’t get the email with my account credentials.”
+
+“Where is the credentials email for my new account? It’s not in my inbox.”
+
+“I’m waiting for the email with my new account details, but nothing has arrived.”
+
+Definition: This issue occurs when a client has purchased/reset an account but has not received the credentials email necessary to access their account. The email might have been delayed, went to spam, or failed to send from the system.
+
+Sub-Category Name:
+Client finds account rules confusing
+
+Description:
+If a client expresses confusion or frustration regarding the account rules, specifically mentioning that they do not understand terms like Minimum Trading Days, Daily Loss Limit, or Overall Loss Limit, classify the conversation under the “Account Related Issue” category and the “Client finds account rules confusing” sub-category.
+
+Look for phrases where clients indicate that they are unsure about these specific rules, such as:
+
+“I don’t understand what the Minimum Trading Days mean.”
+
+“What does the Daily Loss Limit mean, and how does it work?”
+
+“I’m confused about the Overall Loss Limit and how it impacts my account.”
+
+“Can you explain the rules? They seem too complicated for me.”
+
+Definition: This issue arises when a client finds the account rules—such as Minimum Trading Days, Daily Loss Limit, and Overall Loss Limit—difficult to understand or unclear, often leading to confusion regarding their account's operation and restrictions.
+
+Client's Communication:
+
+"I don’t get what ‘Minimum Trading Days’ means. Can you explain?"
+
+"What is the ‘Daily Loss Limit’? I’m not sure how it applies to my trades."
+
+"I’m confused by the ‘Overall Loss Limit’—does it affect my entire account?"
+
+"Can you clarify these rules? I’m not understanding the limits."
+
+Agent's Communication:
+
+"The Minimum Trading Days is the number of days you must trade before your challenge is considered complete."
+
+"The Daily Loss Limit refers to the maximum amount you can lose in a single day before your account is paused."
+
+"The Overall Loss Limit is the total loss limit for your account, including all days. Once this is exceeded, your account is breached."
+
+"Would you like me to provide more detailed examples for any of these rules?"
+
+Sub-Category Name:
+Client wants to add an add-on to his existing account
+
+Description:
+If a client requests to add an add-on to their existing FundedNext account that has already made trades, classify the conversation under the “Account Related Issue” category and the “Client wants to add an add-on to his existing account” sub-category.
+
+Look for phrases like:
+
+“Can I add an add-on to my account now that I’ve made trades?”
+
+“I want to add an add-on to my current FundedNext account.”
+
+“Is it possible to add an add-on to my existing account?”
+
+Agent's Response:
+
+It is not possible to add an add-on to an account that has already made trades. Add-ons can only be added to a newly purchased Challenge Account where trading has not commenced. If you wish to add an add-on, you will need to purchase a new Challenge Account without trading activity.
+
+Definition: Clients often mistakenly believe they can add an add-on to an active FundedNext account that has already started trading. However, add-ons can only be added to new Challenge Accounts before trading activity begins.
+
+Sub-Category Name:
+Country change
+
+Description:
+If a client mentions a change in country for their account, or requests to update their country due to relocation or other reasons, classify the conversation under the “Account Related Issue” category and the “Country change” sub-category.
+
+Look for phrases where clients mention needing to update or change their country, such as:
+
+“I’ve moved to a new country, how can I update my account?”
+
+“I need to change the country associated with my account.”
+
+“How can I update my country information?”
+
+“I’ve relocated, can I change my country for my account?”
+
+Client’s Communication Examples:
+
+“I’m now living in [new country], can I update my country information on the account?”
+
+“I recently moved from [old country] to [new country]. What do I need to do to change this on my account?”
+
+Agent’s Response Examples:
+
+“To update the country on your account, you’ll need to provide proof of your new address and submit a request through our support team. Please send us the necessary documentation.”
+
+“Country changes are subject to verification and approval. Kindly submit your updated address details, and we’ll assist you further.”
+
+Definition: This issue arises when a client wishes to update the country associated with their FundedNext account, typically due to relocation, or when they need to adjust their account details to reflect a change in their country of residence.
+
+Sub-Category Name:
+Client is not getting any email because of the subscription issue
+
+Description:
+If a client reports that they are not receiving any emails from FundedNext due to a subscription issue, classify the conversation under the “Account Related Issue” category and the “Client is not getting any email because of the subscription issue” sub-category.
+
+Look for phrases indicating the client is not receiving important emails, often due to subscription or email settings issues, such as:
+
+“I’m not receiving any emails from FundedNext.”
+
+“I haven’t received any updates or emails even after subscribing.”
+
+“My subscription seems fine, but I’m not getting any emails.”
+
+“I haven’t received any confirmation or notification emails.”
+
+Definition: This issue occurs when a client is not receiving any emails due to subscription issues, which may be related to email preferences, account settings, or subscription status.
+
+Client's Communication Example:
+Client: “I’m not getting any emails from FundedNext, even though I’m subscribed. Can you help me figure out why?”
+
+Agent's Communication Example:
+Agent: “It seems like there may be a subscription issue causing the email delivery failure. I will check your account and ensure your subscription settings are correct so that you start receiving emails again.”
+
+"To help us investigate the issue further, could you kindly provide us with a screenshot of your email inbox by following the steps below?
+
+Steps to Capture the Required Screenshot:
+
+1. Open your email inbox (e.g., Gmail, Outlook, etc.).
+2. In the search bar, type notification@fundednext.com.
+3. Press Enter to view any emails received from FundedNext.
+4. Take a clear screenshot of the search results page showing any relevant messages (or the absence of any)."
+
+Sub-Category Name:
+Account Delete Request
+
+Description:
+If a client requests to delete their account on the FundedNext platform, classify the conversation under the “Account Related Issue” category and the “Account Delete Request” sub-category.
+
+Look for phrases indicating a client's request for account deletion, such as:
+
+“I want to delete my account.”
+
+“Please remove my account from your system.”
+
+“I no longer wish to have an account with FundedNext.”
+
+“Can you delete my account completely?”
+
+Client’s Communication Example:
+
+“I would like to delete my account from FundedNext.”
+
+“Can you remove my account permanently?”
+
+"I want to delete my account based on the right to be forgotten."
+
+Agent’s Communication Example:
+
+“We understand your request to delete your account on our platform. However, due to our current system constraints, we are unable to directly delete accounts from our database. We want to assure you that if the account remains inactive, it will not pose any issues or affect your privacy and security.”
+
+Definition: This issue occurs when a client requests to delete their FundedNext account, and the agent informs them that account deletion is not possible due to system limitations, while assuring the client that an inactive account will not affect privacy or security.
+
+Sub-Category Name:
+Client wants confirmation whether he can use this device/IP or not
+
+Description:
+If a client requests confirmation about whether they can use a specific device or IP address for trading, classify the conversation under the “Account Related Issue” category and the “Client wants confirmation whether he can use this device/IP or not” sub-category.
+
+Look for phrases where the client is seeking clarification on using a device or IP, such as:
+
+“Can I use this device to log in?”
+
+“Is this IP address okay for trading?”
+
+“Can I trade using this network and device?”
+
+Agent’s Communication:
+
+Device-related:
+“As long as you are using the same device, there should be no problem at all. Also, if the device is exclusively owned by you, there should be no issue.”
+
+IP-related:
+“You are allowed to connect your devices to any network, be it public or private Wi-Fi networks or cellular data. Regardless of the network type, it is essential that you use your personal trading device for these connections. If you choose to connect to public Wi-Fi or use a VPN for trading, ensure that the IP address does not originate from restricted countries. To view the list of restricted countries, please refer to the following link: FundedNext Country Restrictions.”
+
+Additional Notes:
+
+Multiple IPs restriction:
+“Please note that using multiple IPs on a monthly competition account is not permissible.”
+
+Definition: This issue arises when a client seeks confirmation on whether they can use a specific device or IP address for trading. The conversation usually involves clarification on what’s allowed, especially in terms of device ownership and IP address restrictions.
+
+Sub-Category Name:
+Dispute Related Issue
+
+Description:
+If a client mentions a dispute regarding their account, whether it’s related to a charge, action taken on the account, or any other issue where the client is in disagreement with FundedNext’s decision or actions, classify the conversation under the “Account Related Issue” category and the “Dispute Related Issue” sub-category.
+
+Look for phrases where clients express dissatisfaction or disagreement, such as:
+
+“I’m disputing this action on my account.”
+
+“I don’t agree with the decision made about my account.”
+
+“This charge isn’t correct, I want to dispute it.”
+
+“I have a dispute regarding my account, can we resolve this?”
+
+Definition: This issue arises when the client is involved in a dispute with FundedNext, whether it’s about an account decision, charge, or other actions, and they seek resolution.
+
+
+
+Sub-Category Name:
+Client wants to receive the additional account for BOGO offer/Double Up Add-on in the Challenge Phase
+
+Description:
+In this case the client will ask for a BOGO account/free account as he has applied a coupon for BOGO account and the agent will reply that he need to get FundedNext Account first then he will be eligible or he is not eligible at all.
+
+In case of BOGO Offer, this is the standard communication from agents "Unfortunately, you will receive the free Challenge Account that is associated with the BOGO Offer once you pass the first account's Challenge Phase and receive the FundedNext Account."
+
+However, clients sometimes wants to receive this additional account rightaway, when you see such conversation, put it in this category.
+
+Sub-Category Name:
+Coupon code/offer is not available anymore
+
+Description:
+Client will ask for discount or coupon and the agent will communicate that currently we do not have any ongoing offers at this moment. or the client might ask for coupon code for CFD but it's only available for Futures. The overall summary is client is asking coupon code for a purchasing a specific account and that is not available at this moment.
+
+Client phrases to look for:
+
+“Do you have any current offers?”
+
+“Can I get a coupon code?”
+
+“I heard about a discount—is it still available?”
+
+Agent response example:
+
+“There are no ongoing offers or coupon codes at this moment. Please stay tuned for future promotions.”
+
+Sub-Category Name:
+Coupon Code not working
+
+Description:
+If there are any ongoing offers and the client try to avail the coupon code and it does not work, the agent might communicate he is not eligible for the offer or contact the person who has provided him with the coupon code.
+
+Sub-Category Name:
+Client dissatisfied with the perks offered with coupon code
+
+Description:
+The client feels the perks are not good enough or not as expected for the current offer. For example:
+
+The discount is too small (e.g. only 5% instead of 15%).
+
+The coupon excludes items the client wants.
+
+The promised free gift is low value or out of stock.
+
+The perks look better in the promotion than in reality.
+
+In short, the customer feels disappointed because the benefit they hoped for with the coupon is not meeting their expectations, or maybe they were hoping to get a 50% discount, but the best discount at the time was 10%.
+
+Sub-Category Name:
+Wants us to add coupon code after purchasing the account
+
+Description:
+The client will mention that he forgot to use the coupon code or may ask queries like I have used the coupon code but it's not showing then he will request to add coupon code to his account he has purchased from us.
+
+Sub-Category Name:
+Did not receive free account for the BOGO offer
+
+Description:
+The client will mention that he did not receive his free account as he was eligilbe for it, he might mention he is eligible for a BOGO account. BOGO account means the additional account from a BOGO Offer. sometimes due to technical errors, the additional account might not be generated right away.
+
+
+**Sub-Category Name:**
+`Paid Less Than the Needed Amount`
+
+**Description:**
+"At first the client will come regarding he has made the payment but it's not been verified yet and the agent will create a ticket based on the payment details, finally the client will receive a verdict from Priority Solution Task Force Team that the client has paid less amount and he needs to pay more. Usually this leads to a dissatisfaction in clients, as the process becomes complicated."
+
+**Sub-Category Name:**
+`Account Not Provided Instantly (Crypto)`
+
+**Description:**
+"The client may mention that he has made the payment via crypto and come to ask that he hasn't got the account yet.
+
+Standard communication from agents: "I'm deeply sorry to hear that you're going through this. However, please be informed that it can take around an hour to verify the payment and deliver the Challenge. Kindly wait for the time being and get back to us if you do not receive the Challenge within the timeframe.""
+
+**Sub-Category Name:**
+`Wrong Network Payment (Crypto)`
+
+**Description:**
+"The client will get a resoltion from a ticket and the agent will clearly mention that the client has paid through a wrong coin which is eventually Wrong network payment only happens for crypto payment."
+
+**Sub-Category Name:**
+`Client's Preferred Network Is Not Available`
+
+**Description:**
+"The client is trying to make a payment but unable to find the method he was trying to pay cause we don't have all the payment methods available you can cross check with the knowledgebase I have added with the AI agent."
+
+**Sub-Category Name:**
+`Unable To Make Crypto Payment Due To Network Issue From Client's End`
+
+**Description:**
+"The client has tried to make the payment and found some issues during the payment, for example his payment is getting rejected, unable to make the payment, unable to find payment page."
+
+**Sub-Category Name:**
+`Double Charged`
+
+**Description:**
+"The client has made payment through their crypto wallet to purchase their account, however, the amount has been deducted twice from their wallet. And the client will mention that he/she was charged twice or more."
+
+**Sub-Category Name:**
+`No Payment Found Issue (Crypto)`
+
+**Description:**
+"It will be clearly mentioned in the ticket resolution that "it has become apparent that we are unable to find the payment you made" or we have not received any payment from your end."
+
+
+**Sub-Category Name:**
+`Client Wants to Receive Offer Rewards After Breaching the Account`
+
+**Description:**
+"Client wishes to receive the offer benefits after breaching their account. However, for a Challenge Account, once the account has been breached, the client will no longer be eligible for the offer benefits. If the breached Challenge Account is reset, the client may resume trading, but the offer benefits will be lost."
+
+**Sub-Category Name:**
+`Unable to Use Affiliate Discount Code`
+
+**Description:**
+"The client has received code from a FundedNext Affiliate, however, the code is not working in the payment page, during purchase. This has led to the client being dissatisfied."
+
+**Sub-Category Name:**
+`Did Not Like the Discount Which Was Offered`
+
+**Description:**
+"The client was dissatisfied with the offer that was provided to them. This usually happens with personalized discount provided during live conversation/chat.
+
+the customer feels disappointed because the benefit they hoped for with the coupon is not meeting their expectations, or maybe they were hoping to get a 50% discount, but the best discount at the time was 10%."
+
+**Sub-Category Name:**
+`No Discount Code Available`
+
+**Description:**
+"There is no personalized discount available for the client at the moment, as a wide offer from the company is running. As long as any wide offer is ongoing, personalized discount option will remain inactive.
+
+Standard communication from agents "I apologize. Unfortunately, we are not offering any kind of discount for the time being. We recommend following our social media accounts to stay updated on any future offers and promotions that may become available.""
+
+
+**Sub-Category Name:**
+`Delay in Processing Refund`
+
+**Description:**
+"The client complained that they have not received their refund, which might be due to four reasons.
+
+Reason 1: It has been more than seven working/business days since the client has filed out the regular refund form, but they still haven't received the their refund yet.
+Reason 2: The client has received email from the Trading Ethics & Standards Team that they will receive their refund, so they will need to get back to them via email reply.
+Reason 3: The client has filled out the wrong wallet address in the regular refund form. In that case, the refund has been disbursed, but to the wrong wallet address that the client has provided.
+Reason 4: The client has already received their refund, but they are not aware of it yet."
+
+**Sub-Category Name:**
+`Confirmo Refund Related Issue`
+
+**Description:**
+"The client made a cryptocurrency payment to the wrong coin address, resulting in the payment not reaching FundedNext. After a thorough review of the transaction, FundedNext has advised the client to contact Confirmo to initiate a refund request, providing all necessary transaction details. It is important to note that Confirmo charges fees for processing refunds, so the client will not receive a full refund of the original payment amount. Consequently, the refunded amount will be less than what the client initially paid."
+
+
+**Sub-Category Name:**
+`Asking About FN Markets`
+
+**Description:**
+"The client is asking about Fnmarkets, referring it to as the broker launched by FundedNext. FundedNext and FNmarkets are two seperate businesses, but clients confuse them to be the same thing."
+
+**Sub-Category Name:**
+`Asking for Money`
+
+**Description:**
+"The client has reached out requesting money; however, FundedNext is a proprietary trading firm that provides funded trading accounts with specific benefits in exchange for a fee, and does not offer direct cash."
+
+**Sub-Category Name:**
+`Client Is Dissatisfied Because He Did Not Win the Giveaway`
+
+**Description:**
+"The client is dissatisfied because the giveaway results were published, and they did not find their name on the list. They were under the impression that, given the significant effort they put in, they should have been selected as a winner."
+
+**Sub-Category Name:**
+`Client Wants Documents for His Tax`
+
+**Description:**
+"The client is dissatisfied because the giveaway results were published, and they did not find their name on the list. They were under the impression that, given the significant effort they put in, they should have been selected as a winner."
+
+
+**Sub-Category Name:**
+`Consistency Rule Not Maintained`
+
+**Description:**
+"The client has not met the consistency rule, as shown in the dashboard. This rule requires that no single day's profit exceeds 40% of the client's total profit, ensuring steady and controlled performance. The dashboard displays the maximum allowable profit per day to maintain consistency, and it will indicate if this threshold has been exceeded. Earning more than 40% of the total profit in a single day signals a performance spike, which violates the consistency rule. To remain compliant, the client’s daily profit must stay below the 40% limit of the total profit."
+
+**Sub-Category Name:**
+`Dashboard Did Not Get Updated EOD`
+
+**Description:**
+"The client has either achieved or made progress toward their profit target, benchmark days, and consistency requirements; however, the dashboard does not reflect this progress, even though the end of day has already passed. Additionally, the KYC pop-up has not appeared despite reaching the target, and the inactivity day counter has not updated accurately, still showing more inactive days than expected, even though the client has recently placed trades."
+
+**Sub-Category Name:**
+`Micro Contract Issue`
+
+*The client is unable to open the sufficient number of micro contracts. According to the account specifications, a 25K account should allow up to 20 micro contracts, a 50K account should allow 30 micro contracts, and a 100K account should allow 50 micro contracts. However, the client is currently unable to open the expected number of micro contracts for their account sizes."
+
+**Sub-Category Name:**
+`Balance Is Showing 0 After Login`
+
+**Description:**
+"The client has logged in using Tradovate, NinjaTrader, or TradingView; however, their account balance is displaying as zero, which should not be the case."
+
+**Sub-Category Name:**
+`NinjaTrader Connection Issue`
+
+**Description:**
+"The client is unable to use NinjaTrader, including the action of placing trades. This issue often occurs when the client attempts to log in to NinjaTrader directly. As per the correct process, the client should first log in to Tradovate, complete the agreement form, and only then proceed to log in to NinjaTrader. Skipping this sequence may result in login or trading restrictions on NinjaTrader."
+
+**Sub-Category Name:**
+`Market Data Delay Issue`
+
+**Description:**
+"The client is experiencing a market data delay, with data appearing with a 10-minute delay or notification showing that there is a 10-minute delay. As a result, they are unable to trade properly."
+
+**Sub-Category Name:**
+`Unable to Login to Tradovate`
+
+**Description:**
+"The client is unable to log in to Tradovate. This issue typically occurs when the email or password is entered incorrectly. In some cases, Tradovate may display an “unsupported location” message, in which case the client will need to use a VPN to access the platform successfully."
+
+**Sub-Category Name:**
+`Unable to Log In to NinjaTrader`
+
+**Description:**
+"The client is either unable to log in to NinjaTrader. This issue often occurs when the client attempts to log in to NinjaTrader directly. As per the correct process, the client should first log in to Tradovate, complete the agreement form, and only then proceed to log in to NinjaTrader. Skipping this sequence may result in login or trading restrictions on NinjaTrader.”
+ 
+**Sub-Category Name:**
+`Client Mistakenly Purchased Futures Account, Now Wants to Change It to CFD (Vice Versa)`
+
+**Description:**
+"The client visited the website and mistakenly purchased a Futures account instead of a CFD account. They would like to change it to a CFD account now; however, unfortunately, this change is not possible. The client will ask to change the account ,model from futures to CFD."
+
+
+- **Challenge vs Competition (rules) disambiguation:**  
+  - If the chat references **competition-specific** terms (e.g., “competition,” “leaderboard,” “winner,” “prize,” “reward,” “50 trades,” “round,” “registered for next month”), prefer **Competition Rule Clarification** over **Challenge Rule Clarification** when the user is asking about rules/eligibility/limits tied to the competition.
+
+### 📐 Rules & Scaling (Inquiry) — with MTD Calibration
+| Sub-Category | Explanation |
+|---|---|
+| Challenge Rule Clarification | DLL/Overall/targets/formulas. |
+| Scaling Rule Clarification | How scaling changes limits/drawdown. |
+| Scale-Up Eligibility Inquiry | Asking criteria/timing for scale-up. |
+| Reset Eligibility Inquiry (Phase 2) | Whether/how Phase-2 can be reset. |
+| Profit Target Reached but Minimum Trading Days Incomplete | Hit target but didn’t meet MTD. |
+| Minimum Trading Days Confusion | What MTD means/how it’s counted; target not claimed. |
+| Challenge Account Query | General questions about Challenge model/rules (no complaint). |
+
+
+🧑‍💼 Support & Response (NEW)
+Sub-Category
+
+Delay in Receiving Customer Support
+
+Explanation
+
+Use this when the customer complains about slow or late support (long wait, delayed reply, agent came late, “24/7 but still slow,” etc.).
+No technical issue or account failure is required—this category is strictly about response delay.
+
+Rule (Priority Override)
+
+If {{ $json.ConversationRatingRemark }} includes any mention of delayed/slow support, such as:
+
+slow response
+
+taking too long to reply
+
+long wait time
+
+agent came late
+
+delayed responses
+
+“24/7 support but still slow”
+
+late follow-up / no timely reply
+
+➡️ Immediately assign:
+Support & Response (NEW) → Delay in Receiving Customer Support
+
+And stop.
+Do not evaluate or assign any other categories in that case.
+
+### 💻 Platform & Trading Performance
+| Sub-Category | Explanation |
+|---|---|
+| Trading Disabled | Account shows disabled/cannot trade (generic; use this instead of “Trading Disabled (Competition)”). |
+| Platform Freeze | Platform/charts frozen. |
+| Price/Chart Discrepancy | Wrong/delayed prices. |
+| **Market Data Delayed Issue** | Quotes/price feed delayed/lagging vs expected real-time. |
+| Missing Old Chart Data | 3+ months of history missing. |
+| Unable to Use Indicator | Indicators fail. |
+| Unable to Use EA | EA/bot blocked/not working. |
+| TradingView not available for CFD | TradingView mismatch/unavailable. |
+| Slippage Issue | SL executed away from intended price. |
+| TP Didn’t Hit Desired Price | TP missed. |
+| Regular Slippage | Small consistent delays. |
+| Due to High Lot Size | Slippage from large position. |
+| During News / High Impact | News-event delay. |
+| Due to Server Issue | Server lag/outage. |
+| Volume Surge | Large volume move. |
+| Dissatisfied with PO Adjustment | Unhappy with PO verdict. |
+| Adjustment Denied | Compensation denied. |
+| Midnight Slippage | Rollover slippage. |
+| Trade Disappeared | Missing trade entries. |
+| Unauthorized Trade | Trade placed without consent. |
+| Off-Market Hour Issue | Attempt during closed hours. |
+| Not Enough Money | Insufficient margin. |
+| Pending Order Didn’t Execute | Price hit but order not triggered. |
+| Trade Closed at Cycle End | Auto-close at cycle end. |
+| Crypto Pair Unavailable | Pair not listed. |
+| Trade Closed Outside Candle (News) | Executed beyond candle. |
+| Reported Late (3+ weeks) | Very late report window. |
+| Swap Charge Confusion | Swap fee confusion. |
+| ASK/BID Confusion | Bid-ask misunderstanding. |
+| Weekend Gap | Weekend gap move. |
+| Crypto Weekend Trading | Crypto disabled weekend. |
+| High Spread | Spread too wide. |
+| Unable to Close During News | Delay closing near news. |
+| Login Technical Glitch | Generic platform login bug. |
+| MT5 Platform Login Issues | MT5-specific login problems. |
+| **Tradovate login Issue** | Can’t log into Tradovate platform (auth/session/credential issues). |
+| **Ninjatrader login issue** | Can’t log into NinjaTrader platform (auth/session/credential issues). |
+| **TradingView login Issue** | Can’t log into TradingView (auth/session/credential issues). |
+| **MT4 Login Issue** | Can’t log into MetaTrader 4 (auth/session/credential issues). |
+

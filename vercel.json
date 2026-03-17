@@ -1,0 +1,14 @@
+{
+    "buildCommand": "vite build",
+    "outputDirectory": "dist",
+    "functions": {
+        "api/**": {
+            "maxDuration": 300
+        }
+    },
+    "routes": [
+        { "handle": "filesystem" },
+        { "src": "/api/(.*)", "dest": "/api/$1" },
+        { "src": "/(.*)", "dest": "/index.html" }
+    ]
+}
