@@ -602,6 +602,42 @@ export const fetchActiveHours = async (filters = {}) => {
 };
 
 /**
+ * Fetches all dashboard data via server-side API.
+ * Server does the Supabase query + aggregation; returns only computed results.
+ */
+const API_URL = '/api/dashboard-data';
+
+export const fetchAllDashboardData = async (filters = {}) => {
+    console.log('📊 Fetching dashboard data via API...');
+    const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            dateRange: filters.dateRange || 'last_30_days',
+            country: filters.country,
+            channel: filters.channel,
+            sentiment: filters.sentiment,
+            agent: filters.agent,
+            product: filters.product,
+            metric: 'FRT'
+        })
+    });
+    const data = await resp.json();
+    if (!data.success) throw new Error(data.error || 'Server returned error');
+    console.log(`📈 Server processed ${data.rowCount} rows`);
+    return {
+        summary: data.summary,
+        trend: data.trend,
+        sentiment: data.sentiment,
+        channels: data.channels,
+        heatmap: data.heatmap,
+        teammates: data.teammates,
+        countries: data.countries,
+        activeHours: data.activeHours
+    };
+};
+
+/**
  * Check if service performance data exists
  */
 export const checkDataExists = async () => {
