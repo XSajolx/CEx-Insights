@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: '/',
     server: {
+      port: 5180,
       // Proxy /api to Vercel so Topic Analyzer Admin works on localhost
       proxy: {
         '/api': {

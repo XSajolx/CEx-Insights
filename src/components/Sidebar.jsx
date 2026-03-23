@@ -95,7 +95,7 @@ const Icons = {
 // Only these emails can see the Topic Analyzer Admin
 const ADMIN_EMAILS = ['sajol@nextventures.io'];
 
-const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, userEmail }) => {
+const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, userEmail, userAvatarUrl }) => {
     // Check if current user is admin
     const isAdmin = userEmail && ADMIN_EMAILS.some(
         email => email.toLowerCase() === userEmail.toLowerCase()
@@ -107,10 +107,7 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, use
         { id: 'feedback', label: 'Feedback and Suggestion', icon: <Icons.Feedback /> },
         { id: 'sentiment', label: 'Sentiment Analysis', icon: <Icons.Sentiment /> },
         { id: 'service-performance', label: 'Service Performance Overview', icon: <Icons.TopicInsights /> },
-        { id: 'inflow', label: 'Conversation Inflow', icon: <Icons.Inflow /> },
-        { id: 'tickets', label: 'Ticket Inflow', icon: <Icons.Ticket /> },
-        { id: 'performance', label: 'Performance Metrics', icon: <Icons.Performance /> },
-        { id: 'country', label: 'Country-wise Performance', icon: <Icons.Country /> }
+        { id: 'sales', label: 'Capacity Management', icon: <Icons.Performance /> }
     ];
 
     // Only add Topic Analyzer Admin for admin users
@@ -150,8 +147,17 @@ const Sidebar = ({ activeTab, onTabChange, isCollapsed, onToggle, onSignOut, use
             {userEmail && (
                 <div className="sidebar-footer">
                     <div className="user-info">
-                        <div className="user-avatar">
-                            <Icons.User />
+                        <div className="user-avatar" style={userAvatarUrl ? { borderRadius: '50%', overflow: 'hidden', padding: 0 } : {}}>
+                            {userAvatarUrl ? (
+                                <img
+                                    src={userAvatarUrl}
+                                    alt=""
+                                    referrerPolicy="no-referrer"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <Icons.User />
+                            )}
                         </div>
                         <span className="user-email" title={userEmail}>
                             {userEmail.split('@')[0]}

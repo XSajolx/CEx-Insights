@@ -58,10 +58,7 @@ export const AuthProvider = ({ children }) => {
   const PRODUCTION_URL = 'https://ce-x-insights-main-1.vercel.app';
   
   const getRedirectUrl = () => {
-    // Check if we're on localhost - use production URL for email verification
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      return PRODUCTION_URL;
-    }
+    // Always redirect back to current origin (works for both localhost and production)
     return window.location.origin;
   };
 
@@ -99,6 +96,19 @@ export const AuthProvider = ({ children }) => {
     return { data, error, needsConfirmation: false, alreadyExists: false };
   };
 
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${getRedirectUrl()}/`,
+        queryParams: {
+          hd: 'nextventures.io',
+        },
+      },
+    });
+    return { data, error };
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (!error) {
@@ -121,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
     resetPassword,
   };
