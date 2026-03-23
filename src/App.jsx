@@ -10,6 +10,7 @@ import FeedbackSuggestions from './components/FeedbackSuggestions';
 import SentimentAnalysis from './components/SentimentAnalysis';
 import ServicePerformanceOverview from './components/ServicePerformanceOverview';
 import TopicAnalyzerAdmin from './components/TopicAnalyzerAdmin';
+import SalesDashboard from './components/SalesDashboard';
 import LoginPage from './components/LoginPage';
 import { useAuth } from './contexts/AuthContext';
 import { fetchConversations, fetchTopics, fetchFilters, fetchMainTopics, fetchTopicDistribution } from './services/api';
@@ -17,6 +18,7 @@ import { subDays, subMonths, isAfter, parseISO } from 'date-fns';
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
+  if (user) console.log('User metadata:', JSON.stringify(user.user_metadata, null, 2));
   // State
   const [loading, setLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -219,6 +221,7 @@ function App() {
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         onSignOut={signOut}
         userEmail={user?.email}
+        userAvatarUrl={user?.user_metadata?.avatar_url || user?.user_metadata?.picture}
       />
 
       <main className="main-content">
@@ -441,6 +444,37 @@ function App() {
             </h1>
           </div>
           <ServicePerformanceOverview />
+        </div>
+
+        {/* Capacity Management Tab */}
+        <div style={{ display: activeTab === 'sales' ? 'block' : 'none' }}>
+          <div style={{
+            background: 'rgba(30, 41, 59, 0.6)',
+            borderRadius: '12px',
+            padding: '1rem 2rem',
+            marginBottom: '1.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem'
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <h1 style={{
+              color: '#F8FAFC',
+              fontSize: '1.35rem',
+              fontWeight: '600',
+              margin: 0,
+              letterSpacing: '0.02em'
+            }}>
+              Capacity Management
+            </h1>
+          </div>
+          <SalesDashboard />
         </div>
 
         {/* Conversation Inflow Tab */}

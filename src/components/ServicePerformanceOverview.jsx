@@ -14,6 +14,7 @@ import { supabase } from '../services/supabaseClient';
 import { calculateDateRanges } from '../services/api';
 import DateRangePicker from './DateRangePicker';
 import SearchableSelect from './SearchableSelect';
+import TicketAnalytics from './TicketAnalytics';
 
 // ============ SCORECARD COMPONENT ============
 const Scorecard = ({ title, value, subtitle, trend, trendValue, isOnHold, isLoading }) => (
@@ -1156,27 +1157,7 @@ const ServicePerformanceOverview = () => {
 
       {/* ============ TICKET SEGMENT ============ */}
       {activeSegment === 'Ticket' && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '4rem 2rem',
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%)',
-          borderRadius: '16px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          marginTop: '1rem'
-        }}>
-          <span style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎫</span>
-          <h2 style={{ color: '#F8FAFC', fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-            Ticket Analytics
-          </h2>
-          <p style={{ color: '#94A3B8', fontSize: '0.9rem', textAlign: 'center', maxWidth: '400px' }}>
-            Support ticket metrics and analytics will be displayed here.
-            <br />
-            <span style={{ color: '#64748B', fontSize: '0.8rem' }}>Coming soon...</span>
-          </p>
-        </div>
+        <TicketAnalytics />
       )}
 
       {/* ============ FUNDEE SEGMENT ============ */}

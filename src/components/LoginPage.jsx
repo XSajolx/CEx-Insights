@@ -2,82 +2,20 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  const { signIn, signUp, resetPassword } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
-  // Only allow @nextventures.io emails to sign up
-  const ALLOWED_DOMAIN = '@nextventures.io';
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleSignIn = async () => {
     setError('');
-    setMessage('');
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        // Validate email domain before allowing sign up
-        if (!email.toLowerCase().trim().endsWith(ALLOWED_DOMAIN)) {
-          throw new Error('Sign up is restricted to @nextventures.io email addresses only.');
-        }
-
-        const { data, error, needsConfirmation, alreadyExists } = await signUp(email, password);
-        
-        if (alreadyExists) {
-          throw new Error('This email is already registered. Please sign in instead.');
-        }
-        
-        if (error) {
-          if (error.message.includes('User already registered')) {
-            throw new Error('This email is already registered. Please sign in instead.');
-          }
-          throw error;
-        }
-        
-        if (needsConfirmation) {
-          setMessage('✅ Account created! Check your email for the confirmation link to activate your account.');
-        } else if (data?.session) {
-          setMessage('Account created successfully! Redirecting...');
-        }
-      } else {
-        const { error } = await signIn(email, password);
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            throw new Error('Invalid email or password. Please try again.');
-          }
-          if (error.message.includes('Email not confirmed')) {
-            throw new Error('Please confirm your email before signing in. Check your inbox for the confirmation link.');
-          }
-          throw error;
-        }
-      }
-    } catch (err) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setError('');
-    setMessage('');
-    setLoading(true);
-
-    try {
-      const { error } = await resetPassword(email);
+      const { error } = await signInWithGoogle();
       if (error) throw error;
-      setMessage('Password reset email sent! Check your inbox.');
     } catch (err) {
-      setError(err.message || 'An error occurred');
-    } finally {
+      setError(err.message || 'An error occurred during sign in');
       setLoading(false);
     }
   };
@@ -88,7 +26,7 @@ const LoginPage = () => {
       <div style={styles.backgroundGrid}></div>
       <div style={styles.gradientOrb1}></div>
       <div style={styles.gradientOrb2}></div>
-      
+
       {/* Login Card */}
       <div style={styles.card}>
         {/* Logo & Branding */}
@@ -109,117 +47,38 @@ const LoginPage = () => {
           <p style={styles.subtitle}>Customer Experience Analytics Platform</p>
         </div>
 
-        {/* Form Section */}
-        {showForgotPassword ? (
-          <form onSubmit={handleForgotPassword} style={styles.form}>
-            <h2 style={styles.formTitle}>Reset Password</h2>
-            <p style={styles.formSubtitle}>Enter your email to receive a reset link</p>
+        {/* Sign In Section */}
+        <div style={styles.form}>
+          <h2 style={styles.formTitle}>Welcome</h2>
+          <p style={styles.formSubtitle}>Sign in with your company Google account</p>
 
-            {error && <div style={styles.errorAlert}>{error}</div>}
-            {message && <div style={styles.successAlert}>{message}</div>}
+          {error && <div style={styles.errorAlert}>{error}</div>}
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                style={styles.input}
-                required
-              />
-            </div>
-
-            <button type="submit" style={styles.submitButton} disabled={loading}>
-              {loading ? (
-                <span style={styles.loadingSpinner}></span>
-              ) : (
-                'Send Reset Link'
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(false)}
-              style={styles.backButton}
-            >
-              ← Back to Login
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <h2 style={styles.formTitle}>{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
-            <p style={styles.formSubtitle}>
-              {isSignUp ? 'Sign up to get started' : 'Sign in to your account'}
-            </p>
-
-            {error && <div style={styles.errorAlert}>{error}</div>}
-            {message && <div style={styles.successAlert}>{message}</div>}
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                style={styles.input}
-                required
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                style={styles.input}
-                required
-                minLength={6}
-              />
-            </div>
-
-            {!isSignUp && (
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                style={styles.forgotLink}
-              >
-                Forgot password?
-              </button>
+          <button
+            onClick={handleGoogleSignIn}
+            style={styles.googleButton}
+            disabled={loading}
+            className="google-button"
+          >
+            {loading ? (
+              <span style={styles.loadingSpinner}></span>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span>Continue with Google</span>
+              </>
             )}
+          </button>
 
-            <button type="submit" style={styles.submitButton} disabled={loading}>
-              {loading ? (
-                <span style={styles.loadingSpinner}></span>
-              ) : isSignUp ? (
-                'Create Account'
-              ) : (
-                'Sign In'
-              )}
-            </button>
-
-            <div style={styles.divider}>
-              <span style={styles.dividerLine}></span>
-              <span style={styles.dividerText}>or</span>
-              <span style={styles.dividerLine}></span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-                setMessage('');
-              }}
-              style={styles.switchButton}
-            >
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
-            </button>
-          </form>
-        )}
+          <p style={styles.domainNote}>
+            Only @nextventures.io accounts are allowed
+          </p>
+        </div>
 
         {/* Footer */}
         <div style={styles.footer}>
@@ -243,17 +102,13 @@ const LoginPage = () => {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        .login-input:focus {
-          border-color: #58A6FF !important;
-          box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15) !important;
-          outline: none;
-        }
-        .login-button:hover:not(:disabled) {
-          background: linear-gradient(135deg, #79C0FF 0%, #B794F6 100%) !important;
+        .google-button:hover:not(:disabled) {
+          background: rgba(48, 54, 61, 0.8) !important;
+          border-color: rgba(88, 166, 255, 0.5) !important;
           transform: translateY(-1px);
-          box-shadow: 0 8px 24px rgba(88, 166, 255, 0.3) !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
         }
-        .login-button:active:not(:disabled) {
+        .google-button:active:not(:disabled) {
           transform: translateY(0);
         }
       `}</style>
@@ -365,58 +220,28 @@ const styles = {
     margin: '0 0 1.5rem',
     textAlign: 'center',
   },
-  inputGroup: {
-    marginBottom: '1.25rem',
-  },
-  label: {
-    display: 'block',
-    fontSize: '0.8125rem',
-    fontWeight: '500',
-    color: '#8B949E',
-    marginBottom: '0.5rem',
-    letterSpacing: '0.02em',
-  },
-  input: {
+  googleButton: {
     width: '100%',
-    padding: '0.875rem 1rem',
+    padding: '0.875rem 1.25rem',
     fontSize: '0.9375rem',
+    fontWeight: '500',
     color: '#F0F6FC',
     background: 'rgba(33, 38, 45, 0.8)',
     border: '1px solid rgba(48, 54, 61, 0.8)',
-    borderRadius: '10px',
-    outline: 'none',
-    transition: 'all 0.2s ease',
-    boxSizing: 'border-box',
-  },
-  forgotLink: {
-    background: 'none',
-    border: 'none',
-    color: '#58A6FF',
-    fontSize: '0.8125rem',
-    cursor: 'pointer',
-    padding: 0,
-    marginBottom: '1.25rem',
-    display: 'block',
-    textAlign: 'right',
-    width: '100%',
-    transition: 'color 0.2s ease',
-  },
-  submitButton: {
-    width: '100%',
-    padding: '0.875rem',
-    fontSize: '0.9375rem',
-    fontWeight: '600',
-    color: '#FFFFFF',
-    background: 'linear-gradient(135deg, #58A6FF 0%, #A371F7 100%)',
-    border: 'none',
     borderRadius: '10px',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.5rem',
-    boxShadow: '0 4px 12px rgba(88, 166, 255, 0.2)',
+    gap: '0.75rem',
+  },
+  domainNote: {
+    fontSize: '0.75rem',
+    color: '#6E7681',
+    textAlign: 'center',
+    marginTop: '1rem',
+    marginBottom: 0,
   },
   loadingSpinner: {
     width: '20px',
@@ -427,48 +252,6 @@ const styles = {
     animation: 'spin 0.8s linear infinite',
     display: 'inline-block',
   },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    margin: '1.5rem 0',
-  },
-  dividerLine: {
-    flex: 1,
-    height: '1px',
-    background: 'rgba(48, 54, 61, 0.8)',
-  },
-  dividerText: {
-    fontSize: '0.75rem',
-    color: '#6E7681',
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-  },
-  switchButton: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: '#8B949E',
-    background: 'rgba(48, 54, 61, 0.3)',
-    border: '1px solid rgba(48, 54, 61, 0.5)',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  backButton: {
-    width: '100%',
-    padding: '0.75rem',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    color: '#58A6FF',
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    marginTop: '1rem',
-    transition: 'color 0.2s ease',
-  },
   errorAlert: {
     padding: '0.875rem 1rem',
     marginBottom: '1.25rem',
@@ -476,16 +259,6 @@ const styles = {
     border: '1px solid rgba(255, 123, 114, 0.3)',
     borderRadius: '10px',
     color: '#FF7B72',
-    fontSize: '0.875rem',
-    textAlign: 'center',
-  },
-  successAlert: {
-    padding: '0.875rem 1rem',
-    marginBottom: '1.25rem',
-    background: 'rgba(63, 185, 80, 0.1)',
-    border: '1px solid rgba(63, 185, 80, 0.3)',
-    borderRadius: '10px',
-    color: '#3FB950',
     fontSize: '0.875rem',
     textAlign: 'center',
   },
