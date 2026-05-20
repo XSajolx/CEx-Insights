@@ -1,0 +1,215 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    # Run at 3:00 AM Dhaka time (GMT+6) = 9:00 PM UTC previous day
+    - cron: '0 21 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
+
+env:
+  API_URL: https://ce-x-insights-main-1.vercel.app/api/analyze-topics
+
+jobs:
+  daily-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Calculate yesterday's date (Dhaka GMT+6)
+        id: date
+        run: |
+          YESTERDAY=$(TZ='Asia/Dhaka' date -d 'yesterday' '+%Y-%m-%d')
+          echo "date=$YESTERDAY" >> $GITHUB_OUTPUT
+          echo "Syncing data for: $YESTERDAY"
+
+      # Step 1: Sync CSAT Ratings
+      - name: Sync CSAT Ratings - Enqueue
+        id: csat-enqueue
+        run: |
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"csat-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
+          echo "$RESP"
+          JOB_ID=$(echo "$RESP" | jq -r '.jobId // .job.job_identifier // empty')
+          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync CSAT Ratings - Poll
+        run: |
+          JOB_ID="${{ steps.csat-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          for i in $(seq 1 60); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"csat-poll\",\"jobId\":\"$JOB_ID\"}")
+            STATUS=$(echo "$RESP" | jq -r '.status // "unknown"')
+            echo "Poll $i: $STATUS"
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
+            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
+            sleep 10
+          done
+
+      - name: Sync CSAT Ratings - Import
+        run: |
+          JOB_ID="${{ steps.csat-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"csat-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+
+      # Step 1b: Patch CSAT Product Type via Intercom team derivation
+      # (Topic-independent — fills any rows the csat-download-import forward-fix
+      # couldn't enrich because Intercom Topic hasn't synced the date yet.)
+      - name: Patch CSAT Product Type
+        run: |
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"csat-patch-product-type\",\"dateFrom\":\"${{ steps.date.outputs.date }}\",\"dateTo\":\"${{ steps.date.outputs.date }}\"}" | jq .
+
+      # Step 2: Sync FIN Data
+      - name: Sync FIN Data - Enqueue
+        id: fin-enqueue
+        run: |
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"it-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
+          echo "$RESP"
+          JOB_ID=$(echo "$RESP" | jq -r '.jobId // .job.job_identifier // empty')
+          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync FIN Data - Poll
+        run: |
+          JOB_ID="${{ steps.fin-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          for i in $(seq 1 60); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"it-poll\",\"jobId\":\"$JOB_ID\"}")
+            STATUS=$(echo "$RESP" | jq -r '.status // "unknown"')
+            echo "Poll $i: $STATUS"
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
+            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
+            sleep 10
+          done
+
+      - name: Sync FIN Data - Import
+        run: |
+          JOB_ID="${{ steps.fin-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"it-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+
+      # Step 3: Sync Conversations (SPO)
+      - name: Sync Conversations - Enqueue
+        id: cd-enqueue
+        run: |
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"cd-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
+          echo "$RESP"
+          JOB_ID=$(echo "$RESP" | jq -r '.jobId // .job.job_identifier // empty')
+          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync Conversations - Poll & Import
+        run: |
+          JOB_ID="${{ steps.cd-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          for i in $(seq 1 60); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"export-status\",\"jobId\":\"$JOB_ID\"}")
+            STATUS=$(echo "$RESP" | jq -r '.job.status // .status // "unknown"')
+            echo "Poll $i: $STATUS"
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
+            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
+            sleep 10
+          done
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"cd-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+
+      # Step 4: Enrich SPO (loop until done)
+      - name: Enrich SPO (FRT/ART/AHT)
+        run: |
+          for i in $(seq 1 200); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d '{"action":"spo-enrich","batchSize":50}')
+            ENRICHED=$(echo "$RESP" | jq -r '.enriched // 0')
+            REMAINING=$(echo "$RESP" | jq -r '.remaining // 0')
+            echo "Batch $i: enriched=$ENRICHED remaining=$REMAINING"
+            if [ "$REMAINING" = "0" ]; then echo "Done!"; break; fi
+            sleep 1
+          done
+
+      # Step 5: Sync Email Replies
+      - name: Sync Email - Enqueue
+        id: email-enqueue
+        run: |
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"email-dataset-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
+          echo "$RESP"
+          JOB_ID=$(echo "$RESP" | jq -r '.jobId // empty')
+          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync Email - Poll & Import
+        run: |
+          JOB_ID="${{ steps.email-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          for i in $(seq 1 60); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"email-dataset-poll\",\"jobId\":\"$JOB_ID\"}")
+            STATUS=$(echo "$RESP" | jq -r '.status // "unknown"')
+            echo "Poll $i: $STATUS"
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
+            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
+            sleep 10
+          done
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"email-dataset-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+
+      # Step 6: Enrich Email (loop until done)
+      - name: Enrich Email (ART)
+        run: |
+          for i in $(seq 1 200); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d '{"action":"spo-enrich-email","batchSize":50}')
+            ENRICHED=$(echo "$RESP" | jq -r '.enriched // 0')
+            REMAINING=$(echo "$RESP" | jq -r '.remaining // 0')
+            echo "Batch $i: enriched=$ENRICHED remaining=$REMAINING"
+            if [ "$REMAINING" = "0" ]; then echo "Done!"; break; fi
+            sleep 1
+          done
+
+      # Step 7: Sync Tickets Dataset
+      - name: Sync Tickets - Enqueue
+        id: tickets-enqueue
+        run: |
+          RESP=$(curl -s -X POST "$API_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"action":"tickets-dataset-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
+          echo "$RESP"
+          JOB_ID=$(echo "$RESP" | jq -r '.jobId // empty')
+          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
+
+      - name: Sync Tickets - Poll & Import
+        run: |
+          JOB_ID="${{ steps.tickets-enqueue.outputs.jobId }}"
+          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
+          for i in $(seq 1 60); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"tickets-dataset-poll\",\"jobId\":\"$JOB_ID\"}")
+            STATUS=$(echo "$RESP" | jq -r '.status // "unknown"')
+            echo "Poll $i: $STATUS"
+            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
+            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
+            sleep 10
+          done
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d "{\"action\":\"tickets-dataset-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+
+      # Step 8: Enrich Tickets
+      - name: Enrich Tickets
+        run: |
+          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+            -d '{"action":"ticket-sync","batchSize":250}' | jq .
+
+      # Step 9: Summary
+      - name: Print Summary
+        run: |
+          echo "============================="
+          echo "Daily sync completed for ${{ steps.date.outputs.date }}"
+          echo "============================="
