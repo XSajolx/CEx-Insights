@@ -62,6 +62,29 @@ jobs:
           curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
             -d "{\"action\":\"csat-patch-product-type\",\"dateFrom\":\"${{ steps.date.outputs.date }}\",\"dateTo\":\"${{ steps.date.outputs.date }}\"}" | jq .
 
+      # Step 1c: Classify CSAT sub-categories (OpenAI Batch API) — loop until none left.
+      # Batch actions already deployed; re-run safe (only rows with a rating and no sub-category).
+      - name: Classify CSAT
+        run: |
+          for pass in $(seq 1 20); do
+            SUB=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d '{"action":"csat-batch-submit","batchSize":100,"model":"gpt-5.4-mini"}')
+            BID=$(echo "$SUB" | jq -r '.batchId // empty')
+            SUBMITTED=$(echo "$SUB" | jq -r '.submitted // 0')
+            echo "Pass $pass: submitted=$SUBMITTED batchId=$BID"
+            if [ -z "$BID" ] || [ "$SUBMITTED" = "0" ]; then echo "No more CSAT rows to classify"; break; fi
+            for i in $(seq 1 120); do
+              ST=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+                -d "{\"action\":\"csat-batch-poll\",\"batchId\":\"$BID\"}" | jq -r '.status // "unknown"')
+              echo "  poll $i: $ST"
+              if [ "$ST" = "completed" ]; then break; fi
+              if [ "$ST" = "failed" ] || [ "$ST" = "expired" ] || [ "$ST" = "cancelled" ]; then echo "batch $ST"; exit 1; fi
+              sleep 15
+            done
+            curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d "{\"action\":\"csat-batch-process\",\"batchId\":\"$BID\"}" | jq -c '{updated}'
+          done
+
       # Step 2: Sync FIN Data
       - name: Sync FIN Data - Enqueue
         id: fin-enqueue
