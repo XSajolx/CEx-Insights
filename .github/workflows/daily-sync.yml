@@ -94,6 +94,20 @@ jobs:
           curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
             -d "{\"action\":\"it-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
 
+      # Step 2b: Classify Intercom Topics (Main/Sub topics, sentiment, feedback) — loop until done.
+      # Server-side batch analyzer (concurrency pool); no browser needed. Re-run safe (only Sub-Topics null/[]).
+      - name: Analyze Intercom Topics
+        run: |
+          for i in $(seq 1 200); do
+            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
+              -d '{"action":"topic-analyze-batch","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}","batchSize":50}')
+            ANALYZED=$(echo "$RESP" | jq -r '.analyzed // 0')
+            REMAINING=$(echo "$RESP" | jq -r '.remaining // 0')
+            echo "Batch $i: analyzed=$ANALYZED remaining=$REMAINING"
+            if [ "$REMAINING" = "0" ] || [ "$ANALYZED" = "0" ]; then echo "Done!"; break; fi
+            sleep 1
+          done
+
       # Step 3: Sync Conversations (SPO)
       - name: Sync Conversations - Enqueue
         id: cd-enqueue
