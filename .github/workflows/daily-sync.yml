@@ -4,16 +4,7 @@ on:
   schedule:
     # Run at 3:00 AM Dhaka time (GMT+6) = 9:00 PM UTC previous day
     - cron: '0 21 * * *'
-  workflow_dispatch:
-    inputs:
-      backfill_from:
-        description: 'Backfill CSAT dates FROM (YYYY-MM-DD) — triggers backfill job only'
-        required: false
-        default: ''
-      backfill_to:
-        description: 'Backfill CSAT dates TO (YYYY-MM-DD)'
-        required: false
-        default: ''
+  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
 
 env:
   API_URL: https://ce-x-insights-main-1.vercel.app/api/analyze-topics
@@ -31,45 +22,43 @@ jobs:
           echo "date=$YESTERDAY" >> $GITHUB_OUTPUT
           echo "Syncing data for: $YESTERDAY"
 
-      # Step 1: Sync CSAT Ratings
-      - name: Sync CSAT Ratings - Enqueue
-        id: csat-enqueue
+      # Step 1: Sync CSAT Ratings via the conversations REST API.
+      # NOTE: Intercom's reporting-data export API (the old csat-enqueue/poll/import
+      # path) silently stopped returning ratings for the conversation_rating_sent
+      # dataset around 2026-07-03 — it returns ~8 rows via the public API even though
+      # the UI Dataset Export still shows thousands. The REST search API is the only
+      # programmatic source with populated ratings. We scan conversations CREATED in a
+      # rolling 4-day window (ratings arrive 1-2 days after the chat) and bucket each by
+      # its RATING submission date. Upsert is idempotent, so re-scanning is safe and
+      # late-arriving ratings get picked up on subsequent nights.
+      - name: Sync CSAT Ratings (REST)
         run: |
-          RESP=$(curl -s -X POST "$API_URL" \
-            -H "Content-Type: application/json" \
-            -d '{"action":"csat-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
-          echo "$RESP"
-          JOB_ID=$(echo "$RESP" | jq -r '.jobId // .job.job_identifier // empty')
-          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
-
-      - name: Sync CSAT Ratings - Poll
-        run: |
-          JOB_ID="${{ steps.csat-enqueue.outputs.jobId }}"
-          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
-          for i in $(seq 1 60); do
-            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-              -d "{\"action\":\"csat-poll\",\"jobId\":\"$JOB_ID\"}")
-            STATUS=$(echo "$RESP" | jq -r '.status // "unknown"')
-            echo "Poll $i: $STATUS"
-            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
-            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
-            sleep 10
+          for BACK in 3 2 1 0; do
+            D=$(TZ='Asia/Dhaka' date -d "${{ steps.date.outputs.date }} - $BACK days" '+%Y-%m-%d')
+            CURSOR=""
+            DAY_RATED=0
+            for pass in $(seq 1 25); do
+              BODY="{\"action\":\"csat-sync-rest\",\"dateFrom\":\"$D\",\"dateTo\":\"$D\",\"maxPages\":40"
+              if [ -n "$CURSOR" ]; then BODY="$BODY,\"cursor\":\"$CURSOR\""; fi
+              BODY="$BODY}"
+              RESP=$(curl -s --max-time 290 -X POST "$API_URL" -H "Content-Type: application/json" -d "$BODY")
+              RATED=$(echo "$RESP" | jq -r '.rated // 0')
+              DONE=$(echo "$RESP" | jq -r '.done // false')
+              CURSOR=$(echo "$RESP" | jq -r '.nextCursor // ""')
+              DAY_RATED=$((DAY_RATED + RATED))
+              if [ "$DONE" = "true" ] || [ -z "$CURSOR" ] || [ "$CURSOR" = "null" ]; then break; fi
+            done
+            echo "$D: rated=$DAY_RATED"
           done
-
-      - name: Sync CSAT Ratings - Import
-        run: |
-          JOB_ID="${{ steps.csat-enqueue.outputs.jobId }}"
-          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
-          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-            -d "{\"action\":\"csat-download-import\",\"jobId\":\"$JOB_ID\",\"ratingDate\":\"${{ steps.date.outputs.date }}\"}" | jq .
 
       # Step 1b: Patch CSAT Product Type via Intercom team derivation
       # (Topic-independent — fills any rows the csat-download-import forward-fix
       # couldn't enrich because Intercom Topic hasn't synced the date yet.)
       - name: Patch CSAT Product Type
         run: |
+          FROM=$(TZ='Asia/Dhaka' date -d "${{ steps.date.outputs.date }} - 3 days" '+%Y-%m-%d')
           curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-            -d "{\"action\":\"csat-patch-product-type\",\"dateFrom\":\"${{ steps.date.outputs.date }}\",\"dateTo\":\"${{ steps.date.outputs.date }}\"}" | jq .
+            -d "{\"action\":\"csat-patch-product-type\",\"dateFrom\":\"$FROM\",\"dateTo\":\"${{ steps.date.outputs.date }}\"}" | jq .
 
       # Step 1c: Classify CSAT sub-categories (OpenAI Batch API) — loop until none left.
       # Batch actions already deployed; re-run safe (only rows with a rating and no sub-category).
@@ -259,45 +248,3 @@ jobs:
           echo "============================="
           echo "Daily sync completed for ${{ steps.date.outputs.date }}"
           echo "============================="
-
-  # Manual-only job: re-date all CSAT rows in a date range by re-exporting from
-  # Intercom and UPDATE-only fixing Date/Created-at to the actual rating date.
-  # Trigger via workflow_dispatch with backfill_from + backfill_to inputs.
-  backfill-csat-dates:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
-    if: github.event_name == 'workflow_dispatch' && inputs.backfill_from != ''
-
-    steps:
-      - name: Backfill CSAT dates ${{ inputs.backfill_from }} → ${{ inputs.backfill_to }}
-        env:
-          API_URL: https://ce-x-insights-main-1.vercel.app/api/analyze-topics
-        run: |
-          FROM="${{ inputs.backfill_from }}"
-          TO="${{ inputs.backfill_to }}"
-          if [ -z "$TO" ]; then TO="$FROM"; fi
-
-          CURRENT="$FROM"
-          PASS=0
-          while true; do
-            PASS=$((PASS + 1))
-            echo "--- Pass $PASS: from=$CURRENT to=$TO ---"
-            RESP=$(curl -s -X POST "$API_URL" \
-              -H "Content-Type: application/json" \
-              -d "{\"action\":\"csat-redate-range\",\"dateFrom\":\"$CURRENT\",\"dateTo\":\"$TO\",\"maxDays\":20}")
-            echo "$RESP" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print('totalUpdated:', d.get('totalUpdated'))
-for r in d.get('results', []):
-    print(' ', r)
-print('nextDate:', d.get('nextDate'))
-" 2>/dev/null || echo "$RESP"
-            NEXT=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('nextDate') or '')" 2>/dev/null)
-            if [ -z "$NEXT" ]; then
-              echo "Backfill complete."
-              break
-            fi
-            CURRENT="$NEXT"
-            sleep 5
-          done
