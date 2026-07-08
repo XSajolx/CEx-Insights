@@ -4,7 +4,16 @@ on:
   schedule:
     # Run at 3:00 AM Dhaka time (GMT+6) = 9:00 PM UTC previous day
     - cron: '0 21 * * *'
-  workflow_dispatch: # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      backfill_from:
+        description: 'Backfill CSAT dates FROM (YYYY-MM-DD) — triggers backfill job only'
+        required: false
+        default: ''
+      backfill_to:
+        description: 'Backfill CSAT dates TO (YYYY-MM-DD)'
+        required: false
+        default: ''
 
 env:
   API_URL: https://ce-x-insights-main-1.vercel.app/api/analyze-topics
@@ -52,7 +61,7 @@ jobs:
           JOB_ID="${{ steps.csat-enqueue.outputs.jobId }}"
           if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
           curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-            -d "{\"action\":\"csat-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
+            -d "{\"action\":\"csat-download-import\",\"jobId\":\"$JOB_ID\",\"ratingDate\":\"${{ steps.date.outputs.date }}\"}" | jq .
 
       # Step 1b: Patch CSAT Product Type via Intercom team derivation
       # (Topic-independent — fills any rows the csat-download-import forward-fix
@@ -250,3 +259,45 @@ jobs:
           echo "============================="
           echo "Daily sync completed for ${{ steps.date.outputs.date }}"
           echo "============================="
+
+  # Manual-only job: re-date all CSAT rows in a date range by re-exporting from
+  # Intercom and UPDATE-only fixing Date/Created-at to the actual rating date.
+  # Trigger via workflow_dispatch with backfill_from + backfill_to inputs.
+  backfill-csat-dates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    if: github.event_name == 'workflow_dispatch' && inputs.backfill_from != ''
+
+    steps:
+      - name: Backfill CSAT dates ${{ inputs.backfill_from }} → ${{ inputs.backfill_to }}
+        env:
+          API_URL: https://ce-x-insights-main-1.vercel.app/api/analyze-topics
+        run: |
+          FROM="${{ inputs.backfill_from }}"
+          TO="${{ inputs.backfill_to }}"
+          if [ -z "$TO" ]; then TO="$FROM"; fi
+
+          CURRENT="$FROM"
+          PASS=0
+          while true; do
+            PASS=$((PASS + 1))
+            echo "--- Pass $PASS: from=$CURRENT to=$TO ---"
+            RESP=$(curl -s -X POST "$API_URL" \
+              -H "Content-Type: application/json" \
+              -d "{\"action\":\"csat-redate-range\",\"dateFrom\":\"$CURRENT\",\"dateTo\":\"$TO\",\"maxDays\":20}")
+            echo "$RESP" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('totalUpdated:', d.get('totalUpdated'))
+for r in d.get('results', []):
+    print(' ', r)
+print('nextDate:', d.get('nextDate'))
+" 2>/dev/null || echo "$RESP"
+            NEXT=$(echo "$RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('nextDate') or '')" 2>/dev/null)
+            if [ -z "$NEXT" ]; then
+              echo "Backfill complete."
+              break
+            fi
+            CURRENT="$NEXT"
+            sleep 5
+          done
