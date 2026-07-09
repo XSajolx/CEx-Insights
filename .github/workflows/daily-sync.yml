@@ -63,6 +63,7 @@ jobs:
       # Step 1c: Classify CSAT sub-categories (OpenAI Batch API) — loop until none left.
       # Batch actions already deployed; re-run safe (only rows with a rating and no sub-category).
       - name: Classify CSAT
+        continue-on-error: true   # OpenAI quota/errors must NOT abort the run; downstream sync/enrich must still execute
         run: |
           for pass in $(seq 1 20); do
             SUB=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
@@ -118,6 +119,7 @@ jobs:
       # Step 2b: Classify Intercom Topics (Main/Sub topics, sentiment, feedback) — loop until done.
       # Server-side batch analyzer (concurrency pool); no browser needed. Re-run safe (only Sub-Topics null/[]).
       - name: Analyze Intercom Topics
+        continue-on-error: true   # OpenAI-dependent; a failure here must not block conversation sync + enrichment
         run: |
           for i in $(seq 1 200); do
             RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
