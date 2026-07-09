@@ -131,32 +131,28 @@ jobs:
             sleep 1
           done
 
-      # Step 3: Sync Conversations (SPO)
-      - name: Sync Conversations - Enqueue
-        id: cd-enqueue
+      # Step 3: Sync Conversations (SPO) via the REST search API.
+      # NOTE: the reporting-data export (consolidated_conversation_part) stopped returning
+      # human-served conversations (~2026-07) — it only yields Fin/AI rows now. spo-sync-rest
+      # enumerates chat/facebook/instagram conversations from the conversations REST API and
+      # seeds one stub per conversation; spo-enrich then rebuilds the per-agent rows. We scan a
+      # rolling 4-day window because a reply/reopen can land days after the conversation started.
+      - name: Sync Conversations (REST)
         run: |
-          RESP=$(curl -s -X POST "$API_URL" \
-            -H "Content-Type: application/json" \
-            -d '{"action":"cd-enqueue","dateFrom":"${{ steps.date.outputs.date }}","dateTo":"${{ steps.date.outputs.date }}"}')
-          echo "$RESP"
-          JOB_ID=$(echo "$RESP" | jq -r '.jobId // .job.job_identifier // empty')
-          echo "jobId=$JOB_ID" >> $GITHUB_OUTPUT
-
-      - name: Sync Conversations - Poll & Import
-        run: |
-          JOB_ID="${{ steps.cd-enqueue.outputs.jobId }}"
-          if [ -z "$JOB_ID" ]; then echo "No job ID, skipping"; exit 0; fi
-          for i in $(seq 1 60); do
-            RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-              -d "{\"action\":\"export-status\",\"jobId\":\"$JOB_ID\"}")
-            STATUS=$(echo "$RESP" | jq -r '.job.status // .status // "unknown"')
-            echo "Poll $i: $STATUS"
-            if [ "$STATUS" = "completed" ] || [ "$STATUS" = "complete" ]; then break; fi
-            if [ "$STATUS" = "failed" ]; then echo "Export failed"; exit 1; fi
-            sleep 10
+          for BACK in 3 2 1 0; do
+            D=$(TZ='Asia/Dhaka' date -d "${{ steps.date.outputs.date }} - $BACK days" '+%Y-%m-%d')
+            CURSOR=""
+            for pass in $(seq 1 25); do
+              BODY="{\"action\":\"spo-sync-rest\",\"dateFrom\":\"$D\",\"dateTo\":\"$D\",\"maxPages\":40"
+              if [ -n "$CURSOR" ]; then BODY="$BODY,\"cursor\":\"$CURSOR\""; fi
+              BODY="$BODY}"
+              RESP=$(curl -s --max-time 290 -X POST "$API_URL" -H "Content-Type: application/json" -d "$BODY")
+              DONE=$(echo "$RESP" | jq -r '.done // false')
+              CURSOR=$(echo "$RESP" | jq -r '.nextCursor // ""')
+              if [ "$DONE" = "true" ] || [ -z "$CURSOR" ] || [ "$CURSOR" = "null" ]; then break; fi
+            done
+            echo "$D synced"
           done
-          curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
-            -d "{\"action\":\"cd-download-import\",\"jobId\":\"$JOB_ID\"}" | jq .
 
       # Step 4: Enrich SPO (loop until done)
       - name: Enrich SPO (FRT/ART/AHT)
