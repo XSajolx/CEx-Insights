@@ -12,7 +12,7 @@ env:
 jobs:
   daily-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 330
 
     steps:
       - name: Calculate yesterday's date (Dhaka GMT+6)
@@ -154,15 +154,16 @@ jobs:
             echo "$D synced"
           done
 
-      # Step 4: Enrich SPO (loop until done)
+      # Step 4: Enrich SPO (loop until done). Cap raised to 3000 so a large backlog (e.g. after a
+      # backfill) drains in one robust run instead of leaving thousands pending each night.
       - name: Enrich SPO (FRT/ART/AHT)
         run: |
-          for i in $(seq 1 200); do
+          for i in $(seq 1 3000); do
             RESP=$(curl -s -X POST "$API_URL" -H "Content-Type: application/json" \
               -d '{"action":"spo-enrich","batchSize":50}')
             ENRICHED=$(echo "$RESP" | jq -r '.enriched // 0')
             REMAINING=$(echo "$RESP" | jq -r '.remaining // 0')
-            echo "Batch $i: enriched=$ENRICHED remaining=$REMAINING"
+            if [ $((i % 25)) -eq 0 ]; then echo "Batch $i: enriched=$ENRICHED remaining=$REMAINING"; fi
             if [ "$REMAINING" = "0" ]; then echo "Done!"; break; fi
             sleep 1
           done
