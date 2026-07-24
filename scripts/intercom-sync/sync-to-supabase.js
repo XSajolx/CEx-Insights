@@ -390,6 +390,52 @@ function getAgentName(author, adminMap) {
     return author.name || null;
 }
 
+// AHT = sum over each open->close cycle of (FRT -> the agent's first park in that cycle). FRT = first
+// human reply in the cycle; "park" = the agent's own snooze / close / transfer (re-assignment). The bot's
+// later auto-close is NOT a park, so its idle tail is excluded; snooze->reopen gaps fall between cycles.
+// A reopened conversation therefore contributes multiple FRT->park segments. Each cycle is credited to the
+// agent who gave its FRT. Falls back to the last human reply if the bot closed the cycle without a park.
+// Reopened cycles with no client message are excluded -- the agent reopened and closed without interaction.
+// Returns { agentName: seconds }.
+function computeOwnershipAHT(conv, adminMap) {
+    const parts = (conv.conversation_parts?.conversation_parts || []).slice().sort((a, b) => a.created_at - b.created_at);
+    const per = {};
+    let frt = null, agent = null, park = null, lastReply = null;
+    let isReopenedCycle = false;   // true after the first 'open' part (i.e. a reopen, not initial open)
+    let clientMessageSinceOpen = false; // whether the client sent a message in the current cycle
+    const endCycle = () => {
+        // Skip reopened cycles where no client message was received -- agent reopened and closed with no interaction
+        const shouldCount = !isReopenedCycle || clientMessageSinceOpen;
+        if (shouldCount && agent !== null && frt !== null) {
+            const end = park !== null ? park : lastReply;
+            if (end !== null && end > frt) per[agent] = (per[agent] || 0) + (end - frt);
+        }
+        frt = null; agent = null; park = null; lastReply = null;
+    };
+    for (const p of parts) {
+        const t = p.created_at;
+        const human = p.author?.type === 'admin' && !isBot(p.author);
+        if (p.part_type === 'open') {
+            endCycle();
+            isReopenedCycle = true;  // every subsequent cycle is a reopen
+            clientMessageSinceOpen = false;
+            continue;
+        }
+        if (p.part_type === 'close') { if (human && frt !== null && park === null) park = t; endCycle(); clientMessageSinceOpen = false; continue; }
+        if (p.author?.type === 'user') { clientMessageSinceOpen = true; continue; }
+        if (p.part_type === 'comment' && human) {
+            const name = getAgentName(p.author, adminMap);
+            if (!name) continue;
+            if (frt === null) { frt = t; agent = name; }
+            lastReply = t;
+        } else if ((p.part_type === 'snoozed' || p.part_type === 'assignment' || p.part_type === 'away_mode_assignment') && human) {
+            if (frt !== null && park === null) park = t; // first agent park after FRT
+        }
+    }
+    endCycle(); // trailing open cycle
+    return per;
+}
+
 function calculateMetricsPerAgent(conv, adminMap) {
     const stats = conv.statistics || {};
     const conversationCreatedAt = conv.created_at;
@@ -623,6 +669,9 @@ function calculateMetricsPerAgent(conv, adminMap) {
         }
     }
     
+    // Active-ownership AHT per agent (sum of ownership bursts, no idle/away time). See computeOwnershipAHT.
+    const ownershipAht = computeOwnershipAHT(conv, adminMap);
+
     // Convert agent metrics to array format
     const result = Object.values(agentMetrics).map(agent => {
         // Calculate ART (average of all ART events for this agent)
@@ -630,9 +679,9 @@ function calculateMetricsPerAgent(conv, adminMap) {
         if (agent.artEvents.length > 0) {
             art = Math.round(agent.artEvents.reduce((sum, t) => sum + t, 0) / agent.artEvents.length);
         }
-        
-        // Calculate AHT for this agent (from their first response to their last response, or conversation end)
-        const aht = agent.lastResponseTime - agent.firstResponseTime;
+
+        // AHT = active-ownership time for this agent (0 if single-reply / unmeasurable)
+        const aht = ownershipAht[agent.agentName] != null ? ownershipAht[agent.agentName] : 0;
         
         // Calculate FRT Hit Rate: 1 if FRT > 30 seconds, 0 if FRT <= 30 seconds
         let frtHitRate = null;
@@ -661,7 +710,8 @@ function calculateMetricsPerAgent(conv, adminMap) {
             artEventCount: agent.artEvents.length, // Total number of ART events
             sentiment: sentiment,
             csat: csat,
-            responseCount: agent.responseCount
+            responseCount: agent.responseCount,
+            firstResponseTime: agent.firstResponseTime // absolute unix ts of this agent's first (FRT) reply
         };
     });
     
@@ -794,6 +844,8 @@ async function upsertConversation(conv, agentMetricsArray, adminMap) {
             assignee_name: 'FIN (Bot)',
             team_id: conv.team_assignee_id ? String(conv.team_assignee_id) : null,
             frt_seconds: null,
+            first_response_at: null, // FIN/bot-only: no human FRT, so no FRT date
+
             art_seconds: null,
             aht_seconds: null,
             wait_time_seconds: waitTime,
@@ -815,7 +867,7 @@ async function upsertConversation(conv, agentMetricsArray, adminMap) {
         const { error } = await supabase
             .from(TABLE_NAME)
             .upsert(botRecord, { 
-                onConflict: 'conversation_id,assignee_id'
+                onConflict: 'conversation_id,assignee_id,created_at'
             });
         
         if (error) {
@@ -846,6 +898,9 @@ async function upsertConversation(conv, agentMetricsArray, adminMap) {
         assignee_name: assigneeName,
         team_id: conv.team_assignee_id ? String(conv.team_assignee_id) : null,
         frt_seconds: metrics.frt,
+        // FRT time = when this agent first replied. Used as the conversation's "actual date"
+        // (bucket a chat by MIN(first_response_at) across its agent rows).
+        first_response_at: metrics.firstResponseTime ? new Date(metrics.firstResponseTime * 1000).toISOString() : null,
         art_seconds: metrics.art,
         aht_seconds: metrics.aht,
         wait_time_seconds: metrics.waitTime,
@@ -868,8 +923,8 @@ async function upsertConversation(conv, agentMetricsArray, adminMap) {
     // Upsert all records (one per agent)
     const { error } = await supabase
         .from(TABLE_NAME)
-        .upsert(records, { 
-            onConflict: 'conversation_id,assignee_id'
+        .upsert(records, {
+            onConflict: 'conversation_id,assignee_id,created_at'
         });
     
     if (error) {
