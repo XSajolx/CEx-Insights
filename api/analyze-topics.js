@@ -5524,7 +5524,33 @@ ${text || '(empty transcript)'}`;
                 else if (!connectToAgentTime && firstAssignmentTime && firstAssignmentTime > convCreated)
                     avgWaitTime = firstAssignmentTime - convCreated;
 
-                return stints.map(s => ({ ...s, waitTime, avgWaitTime }));
+                // Merge consecutive same-agent same-day stints (no other agent in between).
+                // Sorted chronologically; consecutive = the immediately preceding stint is same agent.
+                // If another agent had a stint in between, they are kept as separate rows.
+                const _dhakaDay = ts => ts ? new Date((ts + 6 * 3600) * 1000).toISOString().slice(0, 10) : null;
+                const sortedStints = stints.slice().sort((a, b) => (a.firstResponseTime || 0) - (b.firstResponseTime || 0));
+                const mergedStints = [];
+                for (const s of sortedStints) {
+                    const prev = mergedStints[mergedStints.length - 1];
+                    if (prev && prev.agentId === s.agentId && _dhakaDay(prev.firstResponseTime) === _dhakaDay(s.firstResponseTime)) {
+                        // Consecutive same-agent same-day: merge AHT (sum) and ART (weighted avg)
+                        const ahtSum = (prev.aht != null || s.aht != null) ? (prev.aht || 0) + (s.aht || 0) : null;
+                        const newArtTotal = (prev.artTotal || 0) + (s.artTotal || 0);
+                        const newArtMiss  = (prev.artMissCount || 0) + (s.artMissCount || 0);
+                        prev.aht          = ahtSum;
+                        prev.art          = newArtTotal > 0
+                            ? Math.round(((prev.art || 0) * (prev.artTotal || 0) + (s.art || 0) * (s.artTotal || 0)) / newArtTotal)
+                            : prev.art;
+                        prev.artTotal     = newArtTotal || null;
+                        prev.artMissCount = newArtMiss  || null;
+                        prev.artHitRate   = newArtTotal > 0 ? Math.round((newArtMiss / newArtTotal) * 100) : prev.artHitRate;
+                        prev.responseCount = (prev.responseCount || 0) + (s.responseCount || 0);
+                    } else {
+                        mergedStints.push({ ...s });
+                    }
+                }
+
+                return mergedStints.map(s => ({ ...s, waitTime, avgWaitTime }));
         }
 
         // ============ EMAIL SPO: _calcMetricsEmail ============
