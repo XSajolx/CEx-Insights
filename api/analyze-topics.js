@@ -5350,7 +5350,9 @@ ${text || '(empty transcript)'}`;
                         const ahtEnd = parkTime || firstReplyTime;
                         if (botPeriodStart !== null) flushBotPeriod(ahtEnd);
                         const ahtGross = (ahtAnchor && ahtEnd > ahtAnchor) ? ahtEnd - ahtAnchor : null;
-                        const ahtVal = ahtGross != null ? Math.max(0, ahtGross - botExcludeSecs) : null;
+                        // Reopen with no client message → AHT null (agent reopened/closed with no interaction)
+                        const reopenNoClient = triggerType === 'reopen' && firstCustInCycle === null;
+                        const ahtVal = (ahtGross != null && !reopenNoClient) ? Math.max(0, ahtGross - botExcludeSecs) : null;
 
                         const artTotal     = artGaps.length;
                         const artMissCount = artGaps.filter(g => g > 70).length;
